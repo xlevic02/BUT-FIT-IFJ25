@@ -1,13 +1,14 @@
 // Implementace prekladace imperativniho jazyka IFJ25
 // scanner.h by William Denis "xtihelw00" Tihelka on MM/DD/25.
 //
+
 typedef enum {
     TT_EOF,             // end of file
     TT_EOL,             // end of line
 
     TT_IDENTIFIER,      // identifier
     TT_NULL,            // null literal
-    TT_INT,             // intiger
+    TT_INT,             // integer
     TT_FLOAT,           // float
     TT_STRING,          // string
 
