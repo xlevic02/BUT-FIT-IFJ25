@@ -48,9 +48,9 @@ typedef enum {
     TT_DOT,             // .
 
     TT_ERROR            // error (unknown char) - might be replaces with just error message
-} TokenType;
+} token_type_t;
 
 typedef struct {
-    TokenType type;   // token type
-    char *lexeme;     // orginial value (example: "while", "123", "x")
-} Token;
+    token_type_t type;  // token type
+    char *lexeme;       // orginial value (example: "while", "123", "x")
+} token_t;
