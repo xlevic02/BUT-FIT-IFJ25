@@ -2,6 +2,9 @@
 // scanner.h by William Denis "xtihelw00" Tihelka on MM/DD/25.
 //
 
+#ifndef SCANNER_H
+#define SCANNER_H
+
 typedef enum {
     TT_EOF,             // end of file
     TT_EOL,             // end of line
@@ -55,3 +58,5 @@ typedef struct {
     token_type_t type;  // token type
     char *lexeme;       // orginial value (example: "while", "123", "x")
 } token_t;
+
+#endif // SCANNER_H

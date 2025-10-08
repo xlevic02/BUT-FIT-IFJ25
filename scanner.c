@@ -11,14 +11,20 @@
 
 // States for the deterministic finite state machine (DFSM) used in the scanner
 typedef enum {
-    STATE_START,         // Initial state, waiting for input
-    STATE_IDENTIFIER,    // Reading an identifier or keyword
-    STATE_INT,           // Reading an integer number
-    STATE_FLOAT,         // Reading a floating-point number
-    STATE_STRING,        // Reading a string literal
-    STATE_SLASH,         // Reading a slash (could be division or start of comment)
-    STATE_COMMENT_LINE,  // Reading a single-line comment
-    STATE_COMMENT_BLOCK  // Reading a block comment
+    STATE_START,          // Initial state, waiting for input
+    STATE_IDENTIFIER,     // Reading an identifier or keyword
+    STATE_INT,            // Reading an integer number
+    STATE_FLOAT,          // Reading a floating-point number
+    STATE_STRING,         // Reading a string literal
+    STATE_SLASH,          // Reading a slash (could be division or start of comment)
+    STATE_COMMENT_LINE,   // Reading a single-line comment
+    STATE_COMMENT_BLOCK,  // Reading a block comment
+    STATE_STRING_MULTI,   // Reading a multi-line string
+    STATE_LPAREN,         // Reading a left parenthesis
+    STATE_RPAREN,         // Reading a right parenthesis
+    STATE_LBRACE,         // Reading a left brace
+    STATE_RBRACE,         // Reading a right brace
+    STATE_EQ,             // Reading an equality operator
 } State;
 
 
@@ -69,6 +75,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
         c = getchar();
         switch (state) { // FSM for tokenizing input
             case STATE_START:
+                len = 0; // reset lexeme buffer for each new token
                 if (c == EOF) return make_token(TT_EOF, NULL);
                 if (c == '\n' || c == '\r') {
                     return make_token(TT_EOL, "\\n");
@@ -82,6 +89,8 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     state = STATE_INT;
                 } else if (c == '"') {
                     state = STATE_STRING;
+                } else if (c == '/') {
+                    state = STATE_SLASH;       
                 } else {
                     // For now, treat any other char as error
                     buf[0] = c;
@@ -101,7 +110,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 }
                 break;
 
-            case STATE_INT: // Integer literals only for now
+            case STATE_INT: // Integer literals
                 if (isdigit(c)) {
                     if (len < 255) buf[len++] = c;
                 } else if (c == '.') {
@@ -115,12 +124,12 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 break;
 
             case STATE_FLOAT: // Float literals
-                if (isdigit(c) || c == '.') {
+                if (isdigit(c)) {
                     if (len < 255) buf[len++] = c;
                 } else {
                     buf[len] = '\0';
-                    if (c != EOF) ungetc(c, stdin);
-                    return make_token(TT_FLOAT, buf);
+                if (c != EOF) ungetc(c, stdin);
+                return make_token(TT_FLOAT, buf);
                 }
                 break;
 
@@ -134,18 +143,67 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     if (len < 255) buf[len++] = c;
                 }
                 break;
+            
+            case STATE_STRING_MULTI:
+                // To be implemented
+                break;
 
             case STATE_SLASH:
-                // To be implemented
+                c = getchar();
+                if (c == '/') {
+                    state = STATE_COMMENT_LINE;
+                } else if (c == '*') {
+                    state = STATE_COMMENT_BLOCK;
+                } else {
+                    // It's just a division operator
+                    buf[0] = '/'; buf[1] = '\0';
+                    if (c != EOF) ungetc(c, stdin);
+                    return make_token(TT_DIV, buf);
+                }
                 break;
 
             case STATE_COMMENT_LINE:
+                // Skip until end of line or EOF
+                while ((c = getchar()) != EOF && c != '\n' && c != '\r');
+                state = STATE_START;
+                break;
+                
+            case STATE_COMMENT_BLOCK:
+                // Skip until closing */ or EOF
+                while (1) {
+                    c = getchar();
+                    if (c == EOF) return make_token(TT_ERROR, NULL);
+                    if (c == '*') {
+                        int next = getchar();
+                        if (next == '/') {
+                            state = STATE_START;
+                            break;
+                        } else if (next != EOF) {
+                            ungetc(next, stdin);
+                        }
+                    }
+                }
+                break;
+
+            case STATE_EQ:
                 // To be implemented
+                break;
+
+            case STATE_LPAREN:
+                // To be implemented        
                 break;
             
-            case STATE_COMMENT_BLOCK:
+            case STATE_RPAREN:
                 // To be implemented
+                break;      
+            
+            case STATE_LBRACE:
+                // To be implemented    
                 break;
+            
+            case STATE_RBRACE:
+                // To be implemented
+                break;  
 
         }
     }
