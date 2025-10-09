@@ -59,4 +59,7 @@ typedef struct {
     char *lexeme;       // orginial value (example: "while", "123", "x")
 } token_t;
 
+
+token_t get_token();
+
 #endif // SCANNER_H
