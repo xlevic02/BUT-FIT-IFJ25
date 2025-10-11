@@ -122,6 +122,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     state = STATE_STRING;
                 } else if (c == '/') {
                     state = STATE_SLASH;
+                    break;
                 } else {
                     // For now, treat any other char as error
                     if (!buf_append(&buf, &len, &cap, c)) {
@@ -274,11 +275,12 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 break;
 
             case STATE_SLASH:
-                c = getchar();
                 if (c == '/') {
                     state = STATE_COMMENT_LINE;
+                    break;
                 } else if (c == '*') {
                     state = STATE_COMMENT_BLOCK;
+                    break;
                 } else {
                     // It's just a division operator
                     buf[0] = '/'; buf[1] = '\0';
