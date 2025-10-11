@@ -25,6 +25,11 @@ typedef enum {
     STATE_LBRACE,         // Reading a left brace
     STATE_RBRACE,         // Reading a right brace
     STATE_EQ,             // Reading an equality operator
+    STATE_NEQ,            // Reading a not-equal operator
+    STATE_LT,             // Reading a less-than operator   
+    STATE_GT,             // Reading a greater-than operator
+    STATE_COMMA,          // Reading a comma
+    STATE_DOT,            // Reading a dot
 } State;
 
 
@@ -46,7 +51,7 @@ token_t make_token(token_type_t type, const char *lexeme) {
 }
 
 // Helper function to append a character to a dynamic buffer, resizing if necessary
-static bool buf_append(char **buf, size_t *len, size_t *cap, char c) {
+bool buf_append(char **buf, size_t *len, size_t *cap, char c) {
     if (*len + 1 >= *cap) {
         size_t new_cap = *cap * 2;
         char *new_buf = realloc(*buf, new_cap);
@@ -99,7 +104,13 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     return make_token(TT_EOF, NULL);
                 }
 
-                if (c == '\n' || c == '\r') {
+                if (c == '\r') {
+                    int next = getchar();
+                    if (next != '\n' && next != EOF) ungetc(next, stdin);
+                    free(buf);
+                    return make_token(TT_EOL, "\\n");
+                }
+                if (c == '\n') {
                     free(buf);
                     return make_token(TT_EOL, "\\n");
                 }
@@ -120,9 +131,75 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     state = STATE_INT;
                 } else if (c == '"') {
                     state = STATE_STRING;
+                    break;
                 } else if (c == '/') {
                     state = STATE_SLASH;
                     break;
+                } else if (c == '=') {
+                    state = STATE_EQ;
+                    break;
+                } else if (c == '!') {
+                    state = STATE_NEQ;
+                    break;
+                } else if (c == '<') {
+                    state = STATE_LT;
+                    break;
+                } else if (c == '>') {
+                    state = STATE_GT;
+                    break;
+
+            case STATE_EQ:
+                if (c == '=') {
+                    token_t tok = make_token(TT_EQ, "==");
+                    free(buf);
+                    return tok;
+                } else {
+                    if (c != EOF) ungetc(c, stdin);
+                    token_t tok = make_token(TT_ASSIGN, "=");
+                    free(buf);
+                    return tok;
+                }
+                break;
+
+            case STATE_NEQ:
+                if (c == '=') {
+                    token_t tok = make_token(TT_NEQ, "!=");
+                    free(buf);
+                    return tok;
+                } else {
+                    // Just '!' is not a valid operator in IFJ25, treat as error
+                    if (c != EOF) ungetc(c, stdin);
+                    token_t tok = make_token(TT_ERROR, "!");
+                    free(buf);
+                    return tok;
+                }
+                break;
+
+            case STATE_LT:
+                if (c == '=') {
+                    token_t tok = make_token(TT_LE, "<=");
+                    free(buf);
+                    return tok;
+                } else {
+                    if (c != EOF) ungetc(c, stdin);
+                    token_t tok = make_token(TT_LT, "<");
+                    free(buf);
+                    return tok;
+                }
+                break;
+
+            case STATE_GT:
+                if (c == '=') {
+                    token_t tok = make_token(TT_GE, ">=");
+                    free(buf);
+                    return tok;
+                } else {
+                    if (c != EOF) ungetc(c, stdin);
+                    token_t tok = make_token(TT_GT, ">");
+                    free(buf);
+                    return tok;
+                }
+                break;
                 } else {
                     // For now, treat any other char as error
                     if (!buf_append(&buf, &len, &cap, c)) {
@@ -155,13 +232,13 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                         free(buf);
                         return make_token(TT_ERROR, "realloc failed");
                     }
-                } else if (c == '.') {
+                } else if (c == '.') { // Loaded decimal point, switch to float state
                     if (!buf_append(&buf, &len, &cap, c)) {
                         free(buf);
                         return make_token(TT_ERROR, "realloc failed");
                     }
                     state = STATE_FLOAT;
-                } else {
+                } else { // Whitespace or other char, end of integer
                     buf[len] = '\0';
                     if (c != EOF) ungetc(c, stdin);
                     token_t tok = make_token(TT_INT, buf);
@@ -190,21 +267,11 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     // Check for triple quote (multi-line string)
                     int c2 = getchar();
                     if (c2 == '"') {
-                        int c3 = getchar();
-                        if (c3 == '"') {
-                            // Enter multi-line string state
-                            state = STATE_STRING_MULTI;
-                            break;
-                        } else {
-                            // Only two quotes, treat as end of string and push back c3
-                            if (c3 != EOF) ungetc(c3, stdin);
-                            buf[len] = '\0';
-                            token_t tok = make_token(TT_STRING, buf);
-                            free(buf);
-                            return tok;
-                        }
+                        // Enter multi-line string state
+                        state = STATE_STRING_MULTI;
+                        break;
                     } else {
-                        // Only one quote, end of string, push back c2
+                        // Only two quotes, treat as end of string and push back c2
                         if (c2 != EOF) ungetc(c2, stdin);
                         buf[len] = '\0';
                         token_t tok = make_token(TT_STRING, buf);
@@ -221,7 +288,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     }
                 }
                 break;
-            
+
             case STATE_STRING_MULTI: // Multi-line string literals (""" ... """)
                 if (c == '"') {
                     int c2 = getchar();
@@ -296,7 +363,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 while ((c = getchar()) != EOF && c != '\n' && c != '\r');
                 state = STATE_START;
                 break;
-                
+
             case STATE_COMMENT_BLOCK:
                 // Skip until closing */ or EOF
                 while (1) {
@@ -317,26 +384,31 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 }
                 break;
 
-            case STATE_EQ:
-                // To be implemented
-                break;
-
             case STATE_LPAREN:
                 // To be implemented        
                 break;
-            
+
             case STATE_RPAREN:
                 // To be implemented
                 break;      
-            
+
             case STATE_LBRACE:
                 // To be implemented    
                 break;
-            
+
             case STATE_RBRACE:
                 // To be implemented
                 break;  
 
+            case STATE_COMMA:
+                // TODO
+                break;
+
+            case STATE_DOT:
+                // TODO 
+                break;
+
         }
     }
 }
+    
