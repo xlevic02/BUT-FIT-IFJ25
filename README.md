@@ -1,4 +1,4 @@
-# BUT-FIT-IFJ24
+# BUT-FIT-IFJ25
 
 Project name:
 Implementace prekladace imperativniho jazyka IFJ25. (vv-BVS)
