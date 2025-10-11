@@ -45,6 +45,20 @@ token_t make_token(token_type_t type, const char *lexeme) {
     return t;
 }
 
+// Helper function to append a character to a dynamic buffer, resizing if necessary
+static bool buf_append(char **buf, size_t *len, size_t *cap, char c) {
+    if (*len + 1 >= *cap) {
+        size_t new_cap = *cap * 2;
+        char *new_buf = realloc(*buf, new_cap);
+        if (!new_buf) return false;
+        *buf = new_buf;
+        *cap = new_cap;
+    }
+    (*buf)[(*len)++] = c;
+    (*buf)[*len] = '\0';
+    return true;
+}
+
 // Helper function to check if a string is a keyword and return its token_type_t, extremely inefficient but works for now
 // Returns TT_IDENTIFIER if not a keyword
 token_type_t keyword_type(const char *lexeme) { 
@@ -69,83 +83,194 @@ token_type_t keyword_type(const char *lexeme) {
 token_t get_token() { // First "functional" version of scanner with basic tokens, more to be added
     State state = STATE_START; // initial state
     int c;      // current character
-    char buf[256];  // buffer for lexeme
-    int len = 0;   // length of lexeme
+    char *buf = NULL;
+    size_t len = 0, cap = 64; // buffer length and capacity
+    buf = malloc(cap);
+    if (!buf) {
+        return make_token(TT_ERROR, NULL); // memory allocation failed
+    }
     while (1) {
         c = getchar();
         switch (state) { // FSM for tokenizing input
             case STATE_START:
                 len = 0; // reset lexeme buffer for each new token
-                if (c == EOF) return make_token(TT_EOF, NULL);
+                if (c == EOF) {
+                    free(buf);
+                    return make_token(TT_EOF, NULL);
+                }
+
                 if (c == '\n' || c == '\r') {
+                    free(buf);
                     return make_token(TT_EOL, "\\n");
                 }
+
                 if (isspace(c)) continue; // skip whitespace
+
                 if (isalpha(c) || c == '_') {
-                    buf[len++] = c;
+                    if (!buf_append(&buf, &len, &cap, c)) {
+                        free(buf);
+                        return make_token(TT_ERROR, "realloc failed");
+                    }
                     state = STATE_IDENTIFIER;
                 } else if (isdigit(c)) {
-                    buf[len++] = c;
+                    if (!buf_append(&buf, &len, &cap, c)) {
+                        free(buf);
+                        return make_token(TT_ERROR, "realloc failed");
+                    }
                     state = STATE_INT;
                 } else if (c == '"') {
                     state = STATE_STRING;
                 } else if (c == '/') {
-                    state = STATE_SLASH;       
+                    state = STATE_SLASH;
                 } else {
                     // For now, treat any other char as error
-                    buf[0] = c;
-                    buf[1] = '\0';
+                    if (!buf_append(&buf, &len, &cap, c)) {
+                        free(buf);
+                        return make_token(TT_ERROR, "realloc failed");
+                    }
                     return make_token(TT_ERROR, buf); // unknown char, should be changed to proper error handling
                 }
                 break;
 
             case STATE_IDENTIFIER: // Identifiers and keywords
                 if (isalnum(c) || c == '_') {
-                    if (len < 255) buf[len++] = c;
+                    if (!buf_append(&buf, &len, &cap, c)) {
+                        free(buf);
+                        return make_token(TT_ERROR, "realloc failed");
+                    }
                 } else {
                     buf[len] = '\0';
                     if (c != EOF) ungetc(c, stdin);
                     token_type_t type = keyword_type(buf);
-                    return make_token(type, buf);
+                    token_t tok = make_token(type, buf);
+                    free(buf);
+                    return tok;
                 }
                 break;
 
             case STATE_INT: // Integer literals
                 if (isdigit(c)) {
-                    if (len < 255) buf[len++] = c;
+                    if (!buf_append(&buf, &len, &cap, c)) {
+                        free(buf);
+                        return make_token(TT_ERROR, "realloc failed");
+                    }
                 } else if (c == '.') {
-                    if (len < 255) buf[len++] = c;
+                    if (!buf_append(&buf, &len, &cap, c)) {
+                        free(buf);
+                        return make_token(TT_ERROR, "realloc failed");
+                    }
                     state = STATE_FLOAT;
                 } else {
                     buf[len] = '\0';
                     if (c != EOF) ungetc(c, stdin);
-                    return make_token(TT_INT, buf);
+                    token_t tok = make_token(TT_INT, buf);
+                    free(buf);
+                    return tok;
                 }
                 break;
 
             case STATE_FLOAT: // Float literals
                 if (isdigit(c)) {
-                    if (len < 255) buf[len++] = c;
+                    if (!buf_append(&buf, &len, &cap, c)) {
+                        free(buf);
+                        return make_token(TT_ERROR, "realloc failed");
+                    }
                 } else {
                     buf[len] = '\0';
-                if (c != EOF) ungetc(c, stdin);
-                return make_token(TT_FLOAT, buf);
+                    if (c != EOF) ungetc(c, stdin);
+                    token_t tok = make_token(TT_FLOAT, buf);
+                    free(buf);
+                    return tok;
                 }
                 break;
 
             case STATE_STRING: // String literals
-                if (c == '"') { // missing multiple line strings
-                    buf[len] = '\0';
-                    return make_token(TT_STRING, buf);
+                if (c == '"') {
+                    // Check for triple quote (multi-line string)
+                    int c2 = getchar();
+                    if (c2 == '"') {
+                        int c3 = getchar();
+                        if (c3 == '"') {
+                            // Enter multi-line string state
+                            state = STATE_STRING_MULTI;
+                            break;
+                        } else {
+                            // Only two quotes, treat as end of string and push back c3
+                            if (c3 != EOF) ungetc(c3, stdin);
+                            buf[len] = '\0';
+                            token_t tok = make_token(TT_STRING, buf);
+                            free(buf);
+                            return tok;
+                        }
+                    } else {
+                        // Only one quote, end of string, push back c2
+                        if (c2 != EOF) ungetc(c2, stdin);
+                        buf[len] = '\0';
+                        token_t tok = make_token(TT_STRING, buf);
+                        free(buf);
+                        return tok;
+                    }
                 } else if (c == EOF) {
+                    free(buf);
                     return make_token(TT_ERROR, NULL);
                 } else {
-                    if (len < 255) buf[len++] = c;
+                    if (!buf_append(&buf, &len, &cap, c)) {
+                        free(buf);
+                        return make_token(TT_ERROR, "realloc failed");
+                    }
                 }
                 break;
             
-            case STATE_STRING_MULTI:
-                // To be implemented
+            case STATE_STRING_MULTI: // Multi-line string literals (""" ... """)
+                if (c == '"') {
+                    int c2 = getchar();
+                    if (c2 == '"') {
+                        int c3 = getchar();
+                        if (c3 == '"') {
+                            // End of multi-line string
+                            buf[len] = '\0';
+                            token_t tok = make_token(TT_STRING, buf);
+                            free(buf);
+                            return tok;
+                        } else {
+                            // Not end, append chars and continue
+                            if (!buf_append(&buf, &len, &cap, '"')) {
+                                free(buf);
+                                return make_token(TT_ERROR, "realloc failed");
+                            }
+                            if (!buf_append(&buf, &len, &cap, '"')) {
+                                free(buf);
+                                return make_token(TT_ERROR, "realloc failed");
+                            }
+                            if (c3 != EOF) {
+                                if (!buf_append(&buf, &len, &cap, c3)) {
+                                    free(buf);
+                                    return make_token(TT_ERROR, "realloc failed");
+                                }
+                            }
+                        }
+                    } else {
+                        // Not end, append quote and c2
+                        if (!buf_append(&buf, &len, &cap, '"')) {
+                            free(buf);
+                            return make_token(TT_ERROR, "realloc failed");
+                        }
+                        if (c2 != EOF) {
+                            if (!buf_append(&buf, &len, &cap, c2)) {
+                                free(buf);
+                                return make_token(TT_ERROR, "realloc failed");
+                            }
+                        }
+                    }
+                } else if (c == EOF) {
+                    free(buf);
+                    return make_token(TT_ERROR, NULL);
+                } else {
+                    if (!buf_append(&buf, &len, &cap, c)) {
+                        free(buf);
+                        return make_token(TT_ERROR, "realloc failed");
+                    }
+                }
                 break;
 
             case STATE_SLASH:
@@ -158,7 +283,9 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     // It's just a division operator
                     buf[0] = '/'; buf[1] = '\0';
                     if (c != EOF) ungetc(c, stdin);
-                    return make_token(TT_DIV, buf);
+                    token_t tok = make_token(TT_DIV, buf);
+                    free(buf);
+                    return tok;
                 }
                 break;
 
@@ -172,7 +299,10 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 // Skip until closing */ or EOF
                 while (1) {
                     c = getchar();
-                    if (c == EOF) return make_token(TT_ERROR, NULL);
+                    if (c == EOF) {
+                        free(buf);
+                        return make_token(TT_ERROR, NULL);
+                    }
                     if (c == '*') {
                         int next = getchar();
                         if (next == '/') {

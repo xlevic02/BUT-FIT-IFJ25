@@ -59,4 +59,12 @@ typedef struct {
     char *lexeme;       // orginial value (example: "while", "123", "x")
 } token_t;
 
+token_t get_token(void);
+
+token_t make_token(token_type_t type, const char *lexeme);
+
+token_type_t keyword_type(const char *lexeme);
+
+static bool buf_append(char **buf, size_t *len, size_t *cap, char c);
+
 #endif // SCANNER_H
