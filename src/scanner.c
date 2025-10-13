@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "scanner.h"
-#include "error.h"
+//#include "error.h"
 
 // States for the deterministic finite state machine (DFSM) used in the scanner
 typedef enum {
@@ -21,15 +21,10 @@ typedef enum {
     STATE_COMMENT_LINE,   // Reading a single-line comment
     STATE_COMMENT_BLOCK,  // Reading a block comment
     STATE_STRING_MULTI,   // Reading a multi-line string
-    STATE_LPAREN,         // Reading a left parenthesis
-    STATE_RPAREN,         // Reading a right parenthesis
-    STATE_LBRACE,         // Reading a left brace
-    STATE_RBRACE,         // Reading a right brace
     STATE_EQ,             // Reading an equality operator
     STATE_NEQ,            // Reading a not-equal operator
     STATE_LT,             // Reading a less-than operator   
     STATE_GT,             // Reading a greater-than operator
-    STATE_COMMA,          // Reading a comma
     STATE_DOT,            // Reading a dot
 } State;
 
@@ -97,9 +92,12 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
 
     while (1) {
         c = getchar();
+
         switch (state) { // FSM for tokenizing input
             case STATE_START:
                 len = 0; // reset lexeme buffer for each new token
+                buf[0] = '\0';
+
                 if (c == EOF) {
                     free(buf);
                     return make_token(TT_EOF, NULL);
@@ -118,37 +116,67 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
 
                 if (isspace(c)) continue; // skip whitespace
 
+                // Identifiers and keywords
                 if (isalpha(c) || c == '_') {
                     if (!buf_append(&buf, &len, &cap, c)) {
                         free(buf);
                         return make_token(TT_ERROR, "realloc failed");
                     }
                     state = STATE_IDENTIFIER;
-                } else if (isdigit(c)) {
+                } 
+                // Numbers
+                else if (isdigit(c)) {
                     if (!buf_append(&buf, &len, &cap, c)) {
                         free(buf);
                         return make_token(TT_ERROR, "realloc failed");
                     }
                     state = STATE_INT;
-                } else if (c == '"') {
+                }
+                // String literals
+                else if (c == '"') {
                     state = STATE_STRING;
                     break;
-                } else if (c == '/') {
-                    state = STATE_SLASH;
-                    break;
-                } else if (c == '=') {
-                    state = STATE_EQ;
-                    break;
-                } else if (c == '!') {
-                    state = STATE_NEQ;
-                    break;
-                } else if (c == '<') {
-                    state = STATE_LT;
-                    break;
-                } else if (c == '>') {
-                    state = STATE_GT;
-                    break;
-                } else {
+                }
+                
+                else if (c == '/') state = STATE_SLASH;
+                else if (c == '=') state = STATE_EQ;
+                else if (c == '!') state = STATE_NEQ;
+                else if (c == '<') state = STATE_LT;
+                else if (c == '>') state = STATE_GT;
+                else if (c == '.') state = STATE_DOT;
+                else if (c == '+') {
+                    free(buf);
+                    return make_token(TT_PLUS, "+");
+                }
+                else if (c == '-') {
+                    free(buf);
+                    return make_token(TT_MINUS, "-");
+                }
+                else if (c == '*') {
+                    free(buf);
+                    return make_token(TT_MUL, "*");
+                }
+                else if (c == '(') {
+                    free(buf);
+                    return make_token(TT_LPAREN, "(");
+                }
+                else if (c == ')') {
+                    free(buf);
+                    return make_token(TT_RPAREN, ")");
+                }
+                else if (c == '{') {
+                    free(buf);
+                    return make_token(TT_LBRACE, "{");
+                }
+                else if (c == '}') {
+                    free(buf);
+                    return make_token(TT_RBRACE, "}");
+                }
+                else if (c == ',') {
+                    free(buf);
+                    return make_token(TT_COMMA, ",");
+                }
+                else {
                     // For now, treat any other char as error
                     if (!buf_append(&buf, &len, &cap, c)) {
                         free(buf);
@@ -160,9 +188,8 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
 
             case STATE_EQ:
                 if (c == '=') {
-                    token_t tok = make_token(TT_EQ, "==");
                     free(buf);
-                    return tok;
+                    return make_token(TT_EQ, "==");
                 } else {
                     if (c != EOF) ungetc(c, stdin);
                     token_t tok = make_token(TT_ASSIGN, "=");
@@ -173,9 +200,8 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
 
             case STATE_NEQ:
                 if (c == '=') {
-                    token_t tok = make_token(TT_NEQ, "!=");
                     free(buf);
-                    return tok;
+                    return make_token(TT_NEQ, "!=");
                 } else {
                     // Just '!' is not a valid operator in IFJ25, treat as error
                     if (c != EOF) ungetc(c, stdin);
@@ -192,9 +218,8 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     return tok;
                 } else {
                     if (c != EOF) ungetc(c, stdin);
-                    token_t tok = make_token(TT_LT, "<");
                     free(buf);
-                    return tok;
+                    return make_token(TT_LT, "<");
                 }
                 break;
 
@@ -205,9 +230,8 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     return tok;
                 } else {
                     if (c != EOF) ungetc(c, stdin);
-                    token_t tok = make_token(TT_GT, ">");
                     free(buf);
-                    return tok;
+                    return make_token(TT_GT, ">");
                 }
                 break;
 
@@ -353,9 +377,8 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     // It's just a division operator
                     buf[0] = '/'; buf[1] = '\0';
                     if (c != EOF) ungetc(c, stdin);
-                    token_t tok = make_token(TT_DIV, buf);
                     free(buf);
-                    return tok;
+                    return make_token(TT_DIV, "/");
                 }
                 break;
 
@@ -385,28 +408,9 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 }
                 break;
 
-            case STATE_LPAREN:
-                // To be implemented        
-                break;
-
-            case STATE_RPAREN:
-                // To be implemented
-                break;      
-
-            case STATE_LBRACE:
-                // To be implemented    
-                break;
-
-            case STATE_RBRACE:
-                // To be implemented
-                break;  
-
-            case STATE_COMMA:
-                // TODO
-                break;
-
             case STATE_DOT:
-                // TODO 
+                free(buf);
+                return make_token(TT_DOT, "."); 
                 break;
 
         }
