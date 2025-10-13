@@ -11,5 +11,6 @@ int main(void) {
         printf("TOKEN: type=%d, lexeme=\"%s\"\n", tok.type, tok.lexeme);
         free(tok.lexeme); // FREE THE MEMORY!
     }
+    printf("TOKEN: type=%d, lexeme=\"%s\"\n", tok.type, tok.lexeme);
     return 0;
 }

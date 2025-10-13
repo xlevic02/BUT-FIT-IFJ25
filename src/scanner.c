@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "scanner.h"
-//#include "error.h"
+#include "error.h"
 
 // States for the deterministic finite state machine (DFSM) used in the scanner
 typedef enum {
@@ -121,6 +121,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     if (!buf_append(&buf, &len, &cap, c)) {
                         free(buf);
                         return make_token(TT_ERROR, "realloc failed");
+                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
                     }
                     state = STATE_IDENTIFIER;
                 } 
@@ -129,6 +130,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     if (!buf_append(&buf, &len, &cap, c)) {
                         free(buf);
                         return make_token(TT_ERROR, "realloc failed");
+                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
                     }
                     state = STATE_INT;
                 }
@@ -181,7 +183,9 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     if (!buf_append(&buf, &len, &cap, c)) {
                         free(buf);
                         return make_token(TT_ERROR, "realloc failed");
+                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
                     }
+                    error(ERROR_LEXICAL, MSG_LEX_PROHIBITED_CHAR);
                     return make_token(TT_ERROR, buf); // unknown char, should be changed to proper error handling
                 }
                 break;
@@ -240,6 +244,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     if (!buf_append(&buf, &len, &cap, c)) {
                         free(buf);
                         return make_token(TT_ERROR, "realloc failed");
+                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
                     }
                 } else {
                     buf[len] = '\0';
@@ -256,11 +261,13 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     if (!buf_append(&buf, &len, &cap, c)) {
                         free(buf);
                         return make_token(TT_ERROR, "realloc failed");
+                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
                     }
                 } else if (c == '.') { // Loaded decimal point, switch to float state
                     if (!buf_append(&buf, &len, &cap, c)) {
                         free(buf);
                         return make_token(TT_ERROR, "realloc failed");
+                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
                     }
                     state = STATE_FLOAT;
                 } else { // Whitespace or other char, end of integer
@@ -277,6 +284,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     if (!buf_append(&buf, &len, &cap, c)) {
                         free(buf);
                         return make_token(TT_ERROR, "realloc failed");
+                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
                     }
                 } else {
                     buf[len] = '\0';
@@ -310,6 +318,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     if (!buf_append(&buf, &len, &cap, c)) {
                         free(buf);
                         return make_token(TT_ERROR, "realloc failed");
+                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
                     }
                 }
                 break;
@@ -330,15 +339,18 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                             if (!buf_append(&buf, &len, &cap, '"')) {
                                 free(buf);
                                 return make_token(TT_ERROR, "realloc failed");
+                                error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
                             }
-                            if (!buf_append(&buf, &len, &cap, '"')) {
+                            if (!buf_append(&buf, &len, &cap, '"')) { // I NEED TO CHECK THIS LATER, IDK WHAT IS HAPPENING HERE
                                 free(buf);
                                 return make_token(TT_ERROR, "realloc failed");
+                                error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
                             }
                             if (c3 != EOF) {
                                 if (!buf_append(&buf, &len, &cap, c3)) {
                                     free(buf);
                                     return make_token(TT_ERROR, "realloc failed");
+                                    error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
                                 }
                             }
                         }
@@ -347,11 +359,13 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                         if (!buf_append(&buf, &len, &cap, '"')) {
                             free(buf);
                             return make_token(TT_ERROR, "realloc failed");
+                            error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
                         }
                         if (c2 != EOF) {
                             if (!buf_append(&buf, &len, &cap, c2)) {
                                 free(buf);
                                 return make_token(TT_ERROR, "realloc failed");
+                                error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
                             }
                         }
                     }
@@ -362,6 +376,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     if (!buf_append(&buf, &len, &cap, c)) {
                         free(buf);
                         return make_token(TT_ERROR, "realloc failed");
+                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
                     }
                 }
                 break;
@@ -409,6 +424,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 break;
 
             case STATE_DOT:
+                ungetc(*buf, stdin);
                 free(buf);
                 return make_token(TT_DOT, "."); 
                 break;
