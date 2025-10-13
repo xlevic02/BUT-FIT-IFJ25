@@ -1,9 +1,11 @@
 // Implementace prekladace imperativniho jazyka IFJ25
-// scanner.h by William Denis "xtihelw00" Tihelka on MM/DD/25.
+// scanner.h by William Denis "xtihelw00" Tihelka on 10/13/25.
 //
 
 #ifndef SCANNER_H
 #define SCANNER_H
+
+#define INITIAL_BUF_CAP 16
 
 typedef enum {
     TT_EOF,             // end of file

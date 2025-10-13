@@ -1,5 +1,5 @@
 // Implementace prekladace imperativniho jazyka IFJ25
-// scanner.c by William Denis "xtihelw00" Tihelka on MM/DD/25.
+// scanner.c by William Denis "xtihelw00" Tihelka on 10/13/25.
 //
 
 #include <ctype.h>
@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "scanner.h"
+#include "error.h"
 
 // States for the deterministic finite state machine (DFSM) used in the scanner
 typedef enum {
@@ -88,12 +89,12 @@ token_type_t keyword_type(const char *lexeme) {
 token_t get_token() { // First "functional" version of scanner with basic tokens, more to be added
     State state = STATE_START; // initial state
     int c;      // current character
-    char *buf = NULL;
-    size_t len = 0, cap = 64; // buffer length and capacity
-    buf = malloc(cap);
+    char *buf =  malloc(INITIAL_BUF_CAP);
+    size_t len = 0, cap = INITIAL_BUF_CAP; // buffer length and capacity
     if (!buf) {
         return make_token(TT_ERROR, NULL); // memory allocation failed
     }
+
     while (1) {
         c = getchar();
         switch (state) { // FSM for tokenizing input
@@ -147,6 +148,15 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 } else if (c == '>') {
                     state = STATE_GT;
                     break;
+                } else {
+                    // For now, treat any other char as error
+                    if (!buf_append(&buf, &len, &cap, c)) {
+                        free(buf);
+                        return make_token(TT_ERROR, "realloc failed");
+                    }
+                    return make_token(TT_ERROR, buf); // unknown char, should be changed to proper error handling
+                }
+                break;
 
             case STATE_EQ:
                 if (c == '=') {
@@ -198,15 +208,6 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     token_t tok = make_token(TT_GT, ">");
                     free(buf);
                     return tok;
-                }
-                break;
-                } else {
-                    // For now, treat any other char as error
-                    if (!buf_append(&buf, &len, &cap, c)) {
-                        free(buf);
-                        return make_token(TT_ERROR, "realloc failed");
-                    }
-                    return make_token(TT_ERROR, buf); // unknown char, should be changed to proper error handling
                 }
                 break;
 
