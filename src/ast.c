@@ -6,23 +6,35 @@
 #include <string.h>
 #include "ast.h"
 #include "scanner.h"
+#include "error.h"
 
 
 
 ast_node_ptr create_ast(){
     token_t *current_token = malloc(sizeof(token_t));
     *current_token = get_token();
-
-    //TODO handling prologu
-    while((*current_token = get_token()).type != TT_KEYWORD_CLASS);
-
-    if ((*current_token = get_token()).lexeme != "Pogram"){
-        //TODO error handling
-    }
-    
-    ast_node_ptr root = ast_create_node(*current_token);
+    ast_node_ptr root = ast_create_node(*current_token, NULL);
     int n_of_children = 1; //number of children of the root node
     root->children = malloc(sizeof(ast_node_ptr));
+
+
+    ast_skip_EOL(current_token);
+    if (ast_handle_prologue(current_token)){
+        ast_error(2, MSG_SYN_MISSING_PROLOG, root, current_token);
+    }
+    ast_skip_EOL(current_token);
+
+    if (current_token->type != TT_KEYWORD_CLASS){
+        ast_error(2, MSG_SYN_MISSING_TOKEN, root, current_token);
+    }
+
+    if ((*current_token = get_token()).lexeme != "Pogram"){
+        ast_error(2, MSG_SYN_MISSING_TOKEN, root, current_token);
+    }
+
+
+
+    
     do{
         switch (current_token->type)
         {
@@ -31,31 +43,39 @@ ast_node_ptr create_ast(){
             break;
         case TT_KEYWORD_STATIC:
             if((*current_token = get_token()).type != TT_IDENTIFIER){
-                //TODO error handling
+                ast_error(2, MSG_SYN_MISSING_TOKEN, root, current_token);
             }
             if(current_token->lexeme == "main"){
-                ast_node_ptr new_node = ast_create_node(*current_token);
-                //TODO check if main is already there
+                ast_node_ptr new_node = ast_create_node(*current_token, root);
+                if(root->children[0] != NULL){
+                    ast_error(2, MSG_SYN_MISSING_MAIN, root, current_token);//TODO change error message
+                }
                 root->children[0] = new_node;
-                root->children[0] = ast_regular_node(new_node, NULL, 0);
+                root->children[0] = ast_regular_node(new_node, root, current_token, 0);
             } else {
-                ast_node_ptr new_node = ast_create_node(*current_token);
+                ast_node_ptr new_node = ast_create_node(*current_token, root);
                 root->children = realloc(root->children, sizeof(ast_node_ptr) * (++n_of_children));
                 root->children[n_of_children - 1] = new_node;
                 //TODO arguent handling
-                root->children[n_of_children - 1] = ast_regular_node(new_node, NULL, 0);
+                root->children[n_of_children - 1] = ast_regular_node(new_node, root, current_token, 0);
             }
+
+            break;
         
         default:
             //should not happen
-            //TODO error handling
+            ast_error(2, "Syntax error: illegal token in root", root, current_token);
             break;
         }
         
     } while ((*current_token = get_token()).type != TT_EOF && current_token->type != TT_LBRACE);
 
-    if(current_token->type != TT_LBRACE){
-        //TODO error handling
+    if(root->children[0] == NULL){
+        ast_error(2, MSG_SYN_MISSING_MAIN, root, current_token);
+    }
+
+    if(current_token->type != TT_RBRACE){
+        ast_error(2, MSG_SYN_MISSING_TOKEN, root, current_token);
     }
 
     free(current_token);
@@ -68,7 +88,7 @@ ast_node_ptr create_ast(){
 
 ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_node, token_t *current_token, int n_of_children_initial){
     if (current_node == NULL){
-        //TODO error handling
+        ast_error(99, MSG_INT_MISSING_TOKEN, previous_node, current_token);
     }
 
     int *n_of_children = malloc(sizeof(int)); //number of children of the current node
@@ -78,7 +98,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
         switch(current_token->type){
 
             case TT_ERROR:
-                //TODO error handling
+                ast_error(1, MSG_LEX_PROHIBITED_CHAR, current_node, current_token);
                 break;
 
 
@@ -97,7 +117,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
 
 
             case TT_KEYWORD_RETURN:
-                ast_node_ptr new_node = ast_create_node(*current_token);
+                ast_node_ptr new_node = ast_create_node(*current_token, current_node);
                 new_node->token = *current_token;
                 ast_increase_children(current_node, new_node, n_of_children);
                 *current_token = get_token();
@@ -112,10 +132,10 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 
 
             case TT_KEYWORD_VAR:
-                ast_node_ptr new_node = ast_create_node(*current_token);
+                ast_node_ptr new_node = ast_create_node(*current_token, current_node);
                 new_node->token = get_token();
                 if (new_node->token.type =! TT_IDENTIFIER){
-                    //TODO error handling?
+                    ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 ast_increase_children(current_node, new_node, n_of_children);
                 break; 
@@ -128,20 +148,20 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
             case TT_KEYWORD_IF:
                 *current_token = get_token();
                 if (current_token->type != TT_LPAREN){
-                    //TODO error handling
+                    ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 ast_skip_EOL(current_token);
-                ast_node_ptr if_node = ast_create_node(*current_token);
+                ast_node_ptr if_node = ast_create_node(*current_token, current_node);
                 ast_increase_children(current_node, if_node, n_of_children);
                 if_node->children = malloc(sizeof(ast_node_ptr));
                 if_node->children[0] = ast_arithmetic_node(current_token);
                 *current_token = get_token();
                 if (current_token->type != TT_RPAREN){
-                    //TODO error handling
+                    ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 *current_token = get_token();
                 if (current_token->type != TT_LBRACE){
-                    //TODO error handling
+                    ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 ast_regular_node(if_node, current_node, current_token, 1);
 
@@ -151,11 +171,11 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 if (current_token->type != TT_KEYWORD_ELSE){
                     break;
                 }
-                ast_node_ptr else_node = ast_create_node(*current_token);
+                ast_node_ptr else_node = ast_create_node(*current_token, current_node);
                 ast_increase_children(current_node, else_node, n_of_children);
                 *current_token = get_token();
                 if (current_token->type != TT_LBRACE){
-                    //TODO error handling
+                    ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 *current_token = get_token();
                 ast_regular_node(else_node, current_node, current_token, 0);
@@ -164,27 +184,27 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
 
 
 
-            //case TT_KEYWORD_FOR: if possible TODO
+            //case TT_KEYWORD_FOR: possible TODO
             
 
 
             case TT_KEYWORD_WHILE:
-                ast_node_ptr while_node = ast_create_node(*current_token);
+                ast_node_ptr while_node = ast_create_node(*current_token, current_node);
                 ast_increase_children(current_node, while_node, n_of_children);
                 *current_token = get_token();
                 if (current_token->type != TT_LPAREN){
-                    //TODO error handling
+                    ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 ast_skip_EOL(current_token);
                 while_node->children = malloc(sizeof(ast_node_ptr));
                 while_node->children[0] = ast_arithmetic_node(current_token);
                 *current_token = get_token();
                 if (current_token->type != TT_RPAREN){
-                    //TODO error handling
+                    ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 *current_token = get_token();
                 if (current_token->type != TT_LBRACE){
-                    //TODO error handling
+                    ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 ast_regular_node(while_node, current_node, current_token, 1);
                 break;
@@ -199,17 +219,17 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
             case TT_KEYWORD_IFJ:
                 *current_token = get_token();
                 if (current_token->type != TT_DOT){
-                    //TODO error handling
+                    ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }  
                 ast_skip_EOL(current_token);
                 if (current_token->type != TT_IDENTIFIER){
-                    //TODO error handling
+                    ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
-                ast_node_ptr inherent_function_node = ast_create_node(*current_token);
+                ast_node_ptr inherent_function_node = ast_create_node(*current_token, current_node);
                 ast_increase_children(current_node, inherent_function_node, n_of_children);
                 *current_token = get_token();
                 if (current_token->type != TT_LPAREN){
-                    //TODO error handling
+                    ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 *current_token = get_token();
                 while(current_token->type != TT_RPAREN){
@@ -220,7 +240,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                     if (current_token->type != TT_IDENTIFIER && current_token->type != TT_INT && current_token->type != TT_FLOAT && current_token->type != TT_STRING && current_token->type != TT_KEYWORD_Null){
                         //TODO error handling
                     }
-                    ast_increase_children(inherent_function_node, ast_create_node(*current_token), n_of_children);
+                    ast_increase_children(inherent_function_node, ast_create_node(*current_token, current_node), n_of_children);
                     *current_token = get_token();
                 }
                 break;
@@ -232,12 +252,12 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 return current_node;
 
             case TT_EOL:
-                //ignore
+                ast_skip_EOL(current_token);
                 break;
 
-                //???? dont know what this is
+
+            /*    //Should not happen
             case TT_KEYWORD_NUM:
-                //Should not happen
             case TT_RPAREN:
             case TT_COMMA:
             case TT_DOT:
@@ -258,13 +278,11 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
             case TT_KEYWORD_CLASS:
             case TT_KEYWORD_IMPORT:
             case TT_EOF:
-            case TT_KEYWORD_STATIC:
-                //TODO error handling
-                break;
+            case TT_KEYWORD_STATIC:*/
 
                 //should not happen
             default:
-                //TODO error handling
+                ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 break;
         }
     }
@@ -277,7 +295,7 @@ ast_node_ptr ast_arithmetic_node(token_t *current_token){
     //TODO
 }
 
-//TODO check if this works as intended
+
 void ast_skip_EOL(token_t *current_token){
     while(current_token->type == TT_EOL){
         *current_token = get_token();
@@ -285,16 +303,56 @@ void ast_skip_EOL(token_t *current_token){
 }
 
 
-ast_node_ptr ast_create_node(token_t token){
+int ast_handle_prologue(token_t *current_token){
+    if (current_token->type != TT_KEYWORD_CLASS && (*current_token = get_token()).lexeme != "ifj25" && (*current_token = get_token()).type != TT_KEYWORD_FOR && (*current_token = get_token()).type != TT_KEYWORD_IFJ){
+        return 1;
+    }
+    return 0;
+}
+
+
+ast_node_ptr ast_create_node(token_t token, ast_node_ptr parent){
     ast_node_ptr new_node = malloc(sizeof(ast_node_t));
     new_node->token = token;
     new_node->value.int_value = 0;
     new_node->children = NULL;
+    new_node->parent = parent;
     return new_node;
-    //TODO
 }
 
 void ast_increase_children(ast_node_ptr current_node, ast_node_ptr new_node, int *n_of_children){
     current_node->children = realloc(current_node->children, sizeof(ast_node_ptr) * (++*n_of_children));
     current_node->children[*n_of_children - 1] = new_node;
+}
+
+
+
+
+
+
+
+void ast_error(int err_num, const char* err_message, ast_node_ptr node, token_t *current_token) {
+    free(current_token);
+    destroy_ast(node);
+    fprintf(stderr,err_message);
+    exit(err_num);
+}
+
+void destroy_ast(ast_node_ptr node){
+    if (node == NULL) return;
+    while(node->parent != NULL){
+        node = node->parent;
+    }
+    free_ast(node);
+}
+
+void free_ast(ast_node_ptr node){
+    if (node == NULL) return;
+    if (node->children != NULL){
+        for (int i = 0; node->children[i] != NULL; i++){
+            free_ast(node->children[i]);
+        }
+        free(node->children);
+    }
+    free(node);
 }

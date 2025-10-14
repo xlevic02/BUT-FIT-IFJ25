@@ -14,6 +14,7 @@ typedef struct ast_node_t* ast_node_ptr;
 typedef struct ast_node_t{
     ast_node_ptr* children; //pointer to a field of children
     token_t token; //token of data
+    ast_node_ptr parent; //pointer to parent node
     union
     {
         int int_value;
