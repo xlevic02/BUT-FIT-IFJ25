@@ -1,14 +1,28 @@
-CC=gcc
-CFLAGS=-Wall -Wextra -std=c99
-SRC=main.c scanner.c
-BIN=scanner
+CC = gcc
+# CFLAGS=-Wall -Wextra -std=c99
+CFLAGS = -std=c99 -Wall -Wextra -Wpedantic -Werror
 
-all: $(BIN)
+SRC_DIR = src
+BUILD_DIR = build
+BIN_DIR = bin
 
-$(BIN): $(SRC)
-	$(CC) $(CFLAGS) -o $(BIN) $(SRC)
+TARGET = $(BIN_DIR)/scanner
+
+SRCS = $(wildcard $(SRC_DIR)/*.c)
+OBJS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRCS))
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS) | $(BIN_DIR)
+	$(CC) $^ -o $@
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR) $(BIN_DIR):
+	mkdir -p $@
 
 clean:
-	rm -f $(BIN)
+	rm -rf $(BUILD_DIR) $(BIN_DIR)
 
-.PHONY: all run clean
+.PHONY: all clean

@@ -1,4 +1,15 @@
-# BUT-FIT-IFJ24
+# BUT-FIT-IFJ25
+
+Project name:
+Implementace prekladace imperativniho jazyka IFJ25. (vv-BVS)
+
+
+Team members:
+- Jan Frantisek "xlevic02" Levicek (leader)
+- Jan "xspacej00" Spacek
+- Marek "xbalism00" Balis
+- William Denis "xtihelw00" Tihelka
+---------------------------------------------------------------------------
 
 Head of every file must start with:
 
