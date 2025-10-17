@@ -17,7 +17,6 @@ ast_node_ptr create_ast(){
     *current_token = get_token();       //get first token
     ast_node_ptr root = ast_create_node(*current_token, NULL);
     int n_of_children = 0;              //number of children of the root node
-    root->children = malloc(sizeof(ast_node_ptr));
 
     //prologue handling
     ast_skip_EOL(current_token);
@@ -48,12 +47,11 @@ ast_node_ptr create_ast(){
                 }
 
                 ast_node_ptr new_node = ast_create_node(*current_token, root);
-                root->children = realloc(root->children, sizeof(ast_node_ptr) * (++n_of_children));
-                root->children[n_of_children - 1] = new_node;
+                ast_increase_children(root, new_node, ++n_of_children);
 
                 new_node->children[0] = ast_parameter_node(current_token, new_node);
 
-                root->children[n_of_children - 1] = ast_regular_node(new_node, root, current_token, 1);
+                ast_regular_node(new_node, root, current_token, 1);
                 break;
             
             //Fail state of incompatible tokens
