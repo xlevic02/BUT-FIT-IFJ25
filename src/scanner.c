@@ -138,7 +138,10 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 else if (c == '!') state = STATE_NEQ;
                 else if (c == '<') state = STATE_LT;
                 else if (c == '>') state = STATE_GT;
-                else if (c == '.') state = STATE_DOT;
+                else if (c == '.') {
+                    free(buf);
+                    return make_token(TT_DOT, ".");
+                }
                 else if (c == '+') {
                     free(buf);
                     return make_token(TT_PLUS, "+");
@@ -198,9 +201,10 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 } else {
                     // Just '!' is not a valid operator in IFJ25, treat as error
                     if (c != EOF) ungetc(c, stdin);
-                    token_t tok = make_token(TT_ERROR, "!");
+                    //token_t tok = make_token(TT_ERROR, "!");
                     free(buf);
-                    return tok;
+                    error(ERROR_LEXICAL, MSG_LEX_PROHIBITED_CHAR);
+                    //return tok;
                 }
                 break;
 
@@ -244,6 +248,36 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
             case STATE_INT: // Integer literals
                 if (isdigit(c)) {
                     buf_append(&buf, &len, &cap, c);
+                }
+                else if (c == 'x' || c == 'X') {
+                    // Hexadecimal literal
+                    if (len == 1 && buf[0] == '0') {
+                        buf_append(&buf, &len, &cap, c);
+                        while (1) {
+                            c = getchar();
+                            if (isxdigit(c)) {
+                                buf_append(&buf, &len, &cap, c);
+                            } 
+                            else if (len <= 2) {  
+                                // “0x” or “0X” with nothing after it → invalid
+                                free(buf);
+                                error(ERROR_LEXICAL, MSG_LEX_INVALID_NUMBER);
+                            } else {
+                                buf[len] = '\0';
+                                if (c != EOF) ungetc(c, stdin);
+                                token_t tok = make_token(TT_INT, buf);
+                                free(buf);
+                                return tok;
+                            }
+                        }
+                    } else {
+                        // 'x' or 'X' not preceded by '0', treat as end of integer
+                        buf[len] = '\0';
+                        if (c != EOF) ungetc(c, stdin);
+                        token_t tok = make_token(TT_INT, buf);
+                        free(buf);
+                        return tok;
+                }
 
                 } else if (c == '.') { // Loaded decimal point, switch to float state
                     buf_append(&buf, &len, &cap, c);
@@ -369,11 +403,11 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     }
                 }
                 break;
-
-            case STATE_DOT:
-                ungetc(*buf, stdin);
+            
+            default:
+                // Should never reach here
                 free(buf);
-                return make_token(TT_DOT, "."); 
+                error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
                 break;
 
         }
