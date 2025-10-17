@@ -67,6 +67,6 @@ token_t make_token(token_type_t type, const char *lexeme);
 
 token_type_t keyword_type(const char *lexeme);
 
-bool buf_append(char **buf, size_t *len, size_t *cap, char c);
+void buf_append(char **buf, size_t *len, size_t *cap, char c);
 
 #endif // SCANNER_H

@@ -32,8 +32,12 @@
 #define ERROR_GEN_INTERNAL 60           // internal error of interpreter not influenced by input program (e.g., memory allocation failure, file opening error)
 
 // Lexical error
-#define MSG_LEX_PROHIBITED_CHAR "Lexical error:\tprohibited character\n"
-#define MSG_LEX_INCOMPLETE_TOKEN "Lexical error:\tincomplete token\n"
+#define MSG_LEX_PROHIBITED_CHAR "Lexical error:\tProhibited or unexpected character\n"
+#define MSG_LEX_INCOMPLETE_TOKEN "Lexical error:\tIncomplete token\n"
+#define MSG_LEX_UNCLOSED_STRING "Lexical error:\tUnclosed string literal.\n"
+#define MSG_LEX_UNCLOSED_COMMENT "Lexical error:\tUnclosed block comment (/* ... missing */).\n"
+#define MSG_LEX_INVALID_NUMBER "Lexical error:\tInvalid numeric literal format.\n"
+#define MSG_LEX_INVALID_ESCAPE "Lexical error:\tInvalid escape sequence in string.\n"
 
 // Syntax error
 #define MSG_SYN_MISSING_TOKEN "Syntax error:\tmissing token\n"

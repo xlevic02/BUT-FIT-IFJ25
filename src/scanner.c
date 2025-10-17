@@ -33,31 +33,32 @@ typedef enum {
 token_t make_token(token_type_t type, const char *lexeme) {
     token_t t;
     t.type = type;
+
     if (lexeme) {
-        t.lexeme = malloc(strlen(lexeme) + 1); // memory allocation, +1 for null terminator
-        if (t.lexeme) strcpy(t.lexeme, lexeme); // copy lexeme into token
-        else {
-            t.type = TT_ERROR; // if malloc fails, return error token, TO BE CHANGED ONCE PROPER ERROR HANDLING IS IMPLEMENTED
-            t.lexeme = NULL;
-        }
+        t.lexeme = malloc(strlen(lexeme) + 1);
+        if (!t.lexeme)
+            error(ERROR_INTERNAL, MSG_GEN_INTERNAL);  // Exits immediately
+
+        strcpy(t.lexeme, lexeme);
     } else {
-        t.lexeme = NULL; // for tokens without lexeme (like TT_EOF, which doesnt work... yet)
+        t.lexeme = NULL;
     }
+
     return t;
 }
 
+
 // Helper function to append a character to a dynamic buffer, resizing if necessary
-bool buf_append(char **buf, size_t *len, size_t *cap, char c) {
+void buf_append(char **buf, size_t *len, size_t *cap, char c) {
     if (*len + 1 >= *cap) {
         size_t new_cap = *cap * 2;
         char *new_buf = realloc(*buf, new_cap);
-        if (!new_buf) return false;
+        if (!new_buf) error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
         *buf = new_buf;
         *cap = new_cap;
     }
     (*buf)[(*len)++] = c;
     (*buf)[*len] = '\0';
-    return true;
 }
 
 // Helper function to check if a string is a keyword and return its token_type_t, extremely inefficient but works for now
@@ -87,7 +88,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
     char *buf =  malloc(INITIAL_BUF_CAP);
     size_t len = 0, cap = INITIAL_BUF_CAP; // buffer length and capacity
     if (!buf) {
-        return make_token(TT_ERROR, NULL); // memory allocation failed
+        error(ERROR_INTERNAL, MSG_GEN_INTERNAL); // memory allocation failed
     }
 
     while (1) {
@@ -118,20 +119,12 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
 
                 // Identifiers and keywords
                 if (isalpha(c) || c == '_') {
-                    if (!buf_append(&buf, &len, &cap, c)) {
-                        free(buf);
-                        return make_token(TT_ERROR, "realloc failed");
-                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
-                    }
+                    buf_append(&buf, &len, &cap, c);
                     state = STATE_IDENTIFIER;
                 } 
                 // Numbers
                 else if (isdigit(c)) {
-                    if (!buf_append(&buf, &len, &cap, c)) {
-                        free(buf);
-                        return make_token(TT_ERROR, "realloc failed");
-                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
-                    }
+                    buf_append(&buf, &len, &cap, c);
                     state = STATE_INT;
                 }
                 // String literals
@@ -180,13 +173,9 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 }
                 else {
                     // For now, treat any other char as error
-                    if (!buf_append(&buf, &len, &cap, c)) {
-                        free(buf);
-                        return make_token(TT_ERROR, "realloc failed");
-                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
-                    }
+                    buf_append(&buf, &len, &cap, c);
                     error(ERROR_LEXICAL, MSG_LEX_PROHIBITED_CHAR);
-                    return make_token(TT_ERROR, buf); // unknown char, should be changed to proper error handling
+                    return make_token(TT_ERROR, buf);
                 }
                 break;
 
@@ -241,11 +230,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
 
             case STATE_IDENTIFIER: // Identifiers and keywords
                 if (isalnum(c) || c == '_') {
-                    if (!buf_append(&buf, &len, &cap, c)) {
-                        free(buf);
-                        return make_token(TT_ERROR, "realloc failed");
-                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
-                    }
+                    buf_append(&buf, &len, &cap, c);
                 } else {
                     buf[len] = '\0';
                     if (c != EOF) ungetc(c, stdin);
@@ -258,17 +243,11 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
 
             case STATE_INT: // Integer literals
                 if (isdigit(c)) {
-                    if (!buf_append(&buf, &len, &cap, c)) {
-                        free(buf);
-                        return make_token(TT_ERROR, "realloc failed");
-                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
-                    }
+                    buf_append(&buf, &len, &cap, c);
+
                 } else if (c == '.') { // Loaded decimal point, switch to float state
-                    if (!buf_append(&buf, &len, &cap, c)) {
-                        free(buf);
-                        return make_token(TT_ERROR, "realloc failed");
-                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
-                    }
+                    buf_append(&buf, &len, &cap, c);
+                    
                     state = STATE_FLOAT;
                 } else { // Whitespace or other char, end of integer
                     buf[len] = '\0';
@@ -281,11 +260,8 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
 
             case STATE_FLOAT: // Float literals
                 if (isdigit(c)) {
-                    if (!buf_append(&buf, &len, &cap, c)) {
-                        free(buf);
-                        return make_token(TT_ERROR, "realloc failed");
-                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
-                    }
+                    buf_append(&buf, &len, &cap, c);
+
                 } else {
                     buf[len] = '\0';
                     if (c != EOF) ungetc(c, stdin);
@@ -313,17 +289,18 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     }
                 } else if (c == EOF) {
                     free(buf);
-                    return make_token(TT_ERROR, NULL);
+                    error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
                 } else {
-                    if (!buf_append(&buf, &len, &cap, c)) {
-                        free(buf);
-                        return make_token(TT_ERROR, "realloc failed");
-                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
-                    }
+                    buf_append(&buf, &len, &cap, c);
                 }
                 break;
 
             case STATE_STRING_MULTI: // Multi-line string literals (""" ... """)
+                if (c == EOF) {
+                    free(buf);
+                    error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
+                }
+
                 if (c == '"') {
                     int c2 = getchar();
                     if (c2 == '"') {
@@ -335,51 +312,22 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                             free(buf);
                             return tok;
                         } else {
-                            // Not end, append chars and continue
-                            if (!buf_append(&buf, &len, &cap, '"')) {
-                                free(buf);
-                                return make_token(TT_ERROR, "realloc failed");
-                                error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
-                            }
-                            if (!buf_append(&buf, &len, &cap, '"')) { // I NEED TO CHECK THIS LATER, IDK WHAT IS HAPPENING HERE
-                                free(buf);
-                                return make_token(TT_ERROR, "realloc failed");
-                                error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
-                            }
-                            if (c3 != EOF) {
-                                if (!buf_append(&buf, &len, &cap, c3)) {
-                                    free(buf);
-                                    return make_token(TT_ERROR, "realloc failed");
-                                    error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
-                                }
-                            }
+                        // Not end, append chars and continue reading
+                        buf_append(&buf, &len, &cap, '"');
+                        buf_append(&buf, &len, &cap, '"');
+                        if (c3 != EOF) buf_append(&buf, &len, &cap, c3);
                         }
                     } else {
-                        // Not end, append quote and c2
-                        if (!buf_append(&buf, &len, &cap, '"')) {
-                            free(buf);
-                            return make_token(TT_ERROR, "realloc failed");
-                            error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
-                        }
-                        if (c2 != EOF) {
-                            if (!buf_append(&buf, &len, &cap, c2)) {
-                                free(buf);
-                                return make_token(TT_ERROR, "realloc failed");
-                                error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
-                            }
-                        }
+                        // Only one quote, not a triple
+                        buf_append(&buf, &len, &cap, '"');
+                        if (c2 != EOF) buf_append(&buf, &len, &cap, c2);
                     }
-                } else if (c == EOF) {
-                    free(buf);
-                    return make_token(TT_ERROR, NULL);
                 } else {
-                    if (!buf_append(&buf, &len, &cap, c)) {
-                        free(buf);
-                        return make_token(TT_ERROR, "realloc failed");
-                        error(ERROR_INTERNAL, MSG_GEN_INTERNAL);
-                    }
+                    // Normal character inside multi-line string
+                    buf_append(&buf, &len, &cap, c);
                 }
                 break;
+
 
             case STATE_SLASH:
                 if (c == '/') {
@@ -408,8 +356,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 while (1) {
                     c = getchar();
                     if (c == EOF) {
-                        free(buf);
-                        return make_token(TT_ERROR, NULL);
+                        error(ERROR_LEXICAL,MSG_LEX_UNCLOSED_COMMENT);
                     }
                     if (c == '*') {
                         int next = getchar();
