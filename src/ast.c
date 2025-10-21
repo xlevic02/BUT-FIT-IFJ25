@@ -28,8 +28,8 @@ ast_node_ptr create_ast(){
     ast_skip_EOL(current_token);
 
 
-    if (current_token->type != TT_KEYWORD_CLASS && (*current_token = get_token()).lexeme != "Program"){
-        ast_error(2, "Syntax error:\tincorrect Program\n", root, current_token);
+    if (current_token->type != TT_KEYWORD_CLASS && strcmp((*current_token = get_token()).lexeme , "Program") && (*current_token = get_token()).type != TT_LBRACE){
+        ast_error(2, "Syntax error:\tincorrect Program declaration\n", root, current_token);
     }
 
     //Main loop to handle all top-level constructs (functions, main)
@@ -62,10 +62,6 @@ ast_node_ptr create_ast(){
         }
         
     } while (((*current_token = get_token()).type != TT_EOF) && (current_token->type != TT_LBRACE));;
-
-    if(root->children[0] == NULL){
-        ast_error(2, MSG_SYN_MISSING_MAIN, root, current_token);
-    }
 
     if(current_token->type != TT_RBRACE){
         ast_error(2, MSG_SYN_MISSING_TOKEN, root, current_token);
@@ -134,7 +130,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
             case TT_KEYWORD_VAR:
                 ast_node_ptr new_node = ast_create_node(*current_token, current_node);
                 new_node->token = get_token();
-                if (new_node->token.type =! TT_IDENTIFIER){
+                if (new_node->token.type != TT_IDENTIFIER){
                     ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 ast_increase_children(current_node, new_node, ++n_of_children);
@@ -377,7 +373,7 @@ void ast_skip_EOL(token_t *current_token){
 
 
 int ast_handle_prologue(token_t *current_token){
-    if (current_token->type != TT_KEYWORD_CLASS && (*current_token = get_token()).lexeme != "ifj25" && (*current_token = get_token()).type != TT_KEYWORD_FOR && (*current_token = get_token()).type != TT_KEYWORD_IFJ){
+    if (current_token->type != TT_KEYWORD_CLASS && strcmp((*current_token = get_token()).lexeme, "ifj25") && (*current_token = get_token()).type != TT_KEYWORD_FOR && (*current_token = get_token()).type != TT_KEYWORD_IFJ){
         return 1;
     }
     return 0;
