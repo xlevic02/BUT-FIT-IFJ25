@@ -16,6 +16,7 @@ typedef enum {
     STATE_IDENTIFIER,     // Reading an identifier or keyword
     STATE_INT,            // Reading an integer number
     STATE_FLOAT,          // Reading a floating-point number
+    STATE_FLOAT_EXP,      // Reading exponent part of a float
     STATE_STRING,         // Reading a string literal
     STATE_SLASH,          // Reading a slash (could be division or start of comment)
     STATE_COMMENT_LINE,   // Reading a single-line comment
@@ -283,7 +284,12 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     buf_append(&buf, &len, &cap, c);
                     
                     state = STATE_FLOAT;
-                } else { // Whitespace or other char, end of integer
+                } else if (c == 'e' || c == 'E') {
+                    buf_append(&buf, &len, &cap, c);
+                    state = STATE_FLOAT_EXP; 
+                }
+                else {
+                    // Whitespace or other char, end of integer
                     buf[len] = '\0';
                     if (c != EOF) ungetc(c, stdin);
                     token_t tok = make_token(TT_INT, buf);
@@ -295,7 +301,33 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
             case STATE_FLOAT: // Float literals
                 if (isdigit(c)) {
                     buf_append(&buf, &len, &cap, c);
+                } else if (c == 'e' || c == 'E') {
+                    buf_append(&buf, &len, &cap, c);
+                    state = STATE_FLOAT_EXP;
+                } else {
+                    buf[len] = '\0';
+                    if (c != EOF) ungetc(c, stdin);
+                    token_t tok = make_token(TT_FLOAT, buf);
+                    free(buf);
+                    return tok;
+                }
+                break;
 
+            case STATE_FLOAT_EXP: // Float literals with exponent
+                if (isdigit(c)) {
+                    buf_append(&buf, &len, &cap, c);
+                } else if (c == '+' || c == '-') {
+                    // Only valid if immediately after 'e' or 'E'
+                        if (buf[len - 1] == 'e' || buf[len - 1] == 'E') {
+                            buf_append(&buf, &len, &cap, c);
+                        } else {
+                            free(buf);
+                            error(ERROR_LEXICAL, MSG_LEX_INVALID_NUMBER);
+                        }    
+                } else if (buf[len - 1] == 'e' || buf[len - 1] == 'E' || buf[len - 1] == '+' || buf[len - 1] == '-') {
+                    // no digits after e/+/- → invalid
+                    free(buf);
+                    error(ERROR_LEXICAL, MSG_LEX_INVALID_NUMBER);
                 } else {
                     buf[len] = '\0';
                     if (c != EOF) ungetc(c, stdin);
