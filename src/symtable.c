@@ -6,13 +6,37 @@
 
 
 
+//Funciton to declare a variable in the current scope
+int bst_declare_variable(bst_scope_ptr scope, char *name){
+  if (scope == NULL) return;
+  if (bst_search_scope(scope, get_hash(name)).type != TT_ERROR){
+    //Variable already declared in this or parent scope
+    return 1;
+  } else{
+    bst_node_content_t new_var = node_content_init(name, TT_ERROR);
+    bst_insert(&scope->tree, get_hash(name), new_var);
+    return 0;
+  }
+}
+
+//Main function to define a variable type
+int bst_define_variable(bst_scope_ptr scope, char *name, token_type_t type){
+  bst_node_ptr node = bst_node_scope_search_ptr(scope, get_hash(name));
+  if (node != NULL){
+    node->content.type = type;
+    return 0;
+  } else{
+    //Variable not declared in this or parent scope
+    return 1;
+  } 
+}
 
 
 //Support function to search through scopes of the BST
-token_type_t bst_search_scope(bst_scope_ptr scope, unsigned int key, char *name){
-    token_type_t temp = bst_search(scope->tree, key).token.type;
-    if (temp == TT_ERROR){
-        return bst_search_scope(scope->parent, key, name);
+bst_node_content_t bst_search_scope(bst_scope_ptr scope, unsigned int key){
+    bst_node_content_t temp = bst_search(scope->tree, key);
+    if (temp.type == TT_ERROR){
+        return bst_search_scope(scope->parent, key);
     }
     return temp;
 }
@@ -42,10 +66,10 @@ void bst_decrease_scope(bst_scope_ptr *scope){
 
 
 //Support function to create empty node content
-bst_node_content_t node_content_init(char *name, token_t token){
+bst_node_content_t node_content_init(char *name, token_type_t type){
     bst_node_content_t node;
     node.name = name;
-    node.token = token;
+    node.type = type;
     node.args = NULL;
     node.n_of_arguments = -1;
     return node;
@@ -114,7 +138,7 @@ void bst_insert(bst_node_ptr *tree, unsigned int key, bst_node_content_t value){
 bst_node_content_t bst_search(bst_node_ptr tree, unsigned int key){
     if (tree == NULL) {
         bst_node_content_t error;
-        error.token.type = TT_ERROR;
+        error.type = TT_ERROR;
         return error;
     }else if (tree->key == key) {
         return tree->content;
@@ -128,9 +152,37 @@ bst_node_content_t bst_search(bst_node_ptr tree, unsigned int key){
     } 
 
     bst_node_content_t error;
-    error.token.type = TT_ERROR;
+    error.type = TT_ERROR;
     return error;
 }
+
+
+//For searching for a node pointer (not content) through a BST
+bst_node_ptr bst_node_search_ptr(bst_node_ptr tree, unsigned int key){
+    if (tree == NULL) {
+        return NULL;
+    }else if (tree->key == key) {
+        return tree;
+    } else {
+        if (tree->key > key) {
+        return bst_node_search_ptr(tree->left, key);
+        }
+        else if (tree->key < key) {
+        return bst_node_search_ptr(tree->right, key);
+        }
+    } 
+
+    return NULL;
+}
+bst_node_ptr bst_node_scope_search_ptr(bst_scope_ptr scope, unsigned int key){
+    bst_node_ptr temp = bst_node_search_ptr(scope->tree, key);
+    if (temp == NULL){
+        return bst_node_scope_search_ptr(scope->parent, key);
+    }
+    return temp;
+}
+
+
 
 //To insert an element into a BST
 void bst_insert(bst_node_ptr *tree, unsigned int key, bst_node_content_t value){

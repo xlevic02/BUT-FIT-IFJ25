@@ -273,6 +273,12 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
             case TT_RBRACE:
                 current_node->value.int_value = n_of_children;
                 return current_node;
+            
+            case TT_LBRACE:
+                ast_node_ptr sub_node  = ast_create_node(*current_token, current_node);
+                ast_increase_children(current_node, sub_node, ++n_of_children);
+                ast_regular_node(sub_node, current_node, current_token, 0);
+
 
                 //End of a line, continue
             case TT_EOL:
