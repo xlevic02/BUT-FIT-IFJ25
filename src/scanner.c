@@ -27,6 +27,8 @@ typedef enum {
     STATE_LT,             // Reading a less-than operator   
     STATE_GT,             // Reading a greater-than operator
     STATE_DOT,            // Reading a dot
+    STATE_STRING_ESCAPE,   // after reading '\'
+    STATE_STRING_HEX,      // parsing hex digits after \x
 } State;
 
 
@@ -47,7 +49,6 @@ token_t make_token(token_type_t type, const char *lexeme) {
 
     return t;
 }
-
 
 // Helper function to append a character to a dynamic buffer, resizing if necessary
 void buf_append(char **buf, size_t *len, size_t *cap, char c) {
@@ -83,7 +84,7 @@ token_type_t keyword_type(const char *lexeme) {
 
 // Main scanner function implementing a deterministic finite state machine (DFSM)
 // Reads input character by character and transitions between states to build tokens
-token_t get_token() { // First "functional" version of scanner with basic tokens, more to be added
+token_t get_token() {
     State state = STATE_START; // initial state
     int c;      // current character
     char *buf =  malloc(INITIAL_BUF_CAP);
@@ -353,6 +354,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                         free(buf);
                         return tok;
                     }
+
                 } else if (c == EOF) {
                     free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
@@ -366,7 +368,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
                 }
-
+                
                 if (c == '"') {
                     int c2 = getchar();
                     if (c2 == '"') {
@@ -394,6 +396,47 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 }
                 break;
 
+            case STATE_STRING_ESCAPE:
+                switch (c) {
+                    case 'n': buf_append(&buf, &len, &cap, '\n'); state = STATE_STRING; break;
+                    case 't': buf_append(&buf, &len, &cap, '\t'); state = STATE_STRING; break;
+                    case 'r': buf_append(&buf, &len, &cap, '\r'); state = STATE_STRING; break;
+                    case '"': buf_append(&buf, &len, &cap, '"');  state = STATE_STRING; break;
+                    case '\\': buf_append(&buf, &len, &cap, '\\'); state = STATE_STRING; break;
+                    case 'x':  // start of hexadecimal escape sequence
+                        state = STATE_STRING_HEX;
+                        buf_append(&buf, &len, &cap, '\\');
+                        buf_append(&buf, &len, &cap, 'x');
+                        break;
+                    default:
+                        // invalid escape sequence
+                        free(buf);
+                        error(ERROR_LEXICAL, MSG_LEX_INVALID_ESCAPE);
+                }
+                break;
+
+            case STATE_STRING_HEX:
+                {
+                    int count = 0;
+                    char hex_digits[3] = {0};
+
+                    while (count < 2) { // allow exactly two hex digits
+                        if (!isxdigit(c)) {
+                            error(ERROR_LEXICAL, MSG_LEX_INVALID_ESCAPE);
+                        }
+                        hex_digits[count++] = (char)c;
+                        c = getchar();
+                    }
+
+                    // convert the hex string to actual character
+                    unsigned int value;
+                    sscanf(hex_digits, "%2x", &value);
+                    buf_append(&buf, &len, &cap, (char)value);
+
+                    if (c != EOF) ungetc(c, stdin);
+                    state = STATE_STRING;
+                }
+                break;
 
             case STATE_SLASH:
                 if (c == '/') {
