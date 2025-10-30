@@ -7,6 +7,6 @@
 #include "error.h"
 
 void error(int err_num, const char* err_message) {
-    fprintf(stderr,err_message);
+    fprintf(stderr,"%s", err_message);
     exit(err_num);
 }
