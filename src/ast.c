@@ -496,8 +496,8 @@ int ast_get_precedence(token_type_t type) {
         case TT_GE:
         case TT_ASSIGN:
             return 3;
-        /*case TT_IS: //well, its only optional
-            return 2;*/
+        case TT_KEYWORD_IS:
+            return 2;
         case TT_EQ:
         case TT_NEQ:
             return 1;
