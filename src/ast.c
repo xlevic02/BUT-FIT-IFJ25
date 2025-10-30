@@ -1,13 +1,7 @@
 //implementace abstraktního syntaktického stromu
 //AST by Jan Špaček <xspacej00> on 09/10/2025
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
 #include "ast.h"
-#include "scanner.h"
-#include "error.h"
 
 
 //Main function to create the AST from tokens
@@ -101,7 +95,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
             case TT_FLOAT:
             case TT_STRING:
             case TT_IDENTIFIER:
-                ast_increase_children(current_node, ast_arithmetic_node(current_token), ++n_of_children);
+                ast_increase_children(current_node, ast_expression_node(current_token, 0, current_node), ++n_of_children);
 
                 *current_token = get_token();
                 break;
@@ -117,7 +111,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 *current_token = get_token();
                 if(current_token->type != TT_EOL){
                     new_node->children[0] = malloc(sizeof(ast_node_ptr));
-                    new_node->children[0] = ast_arithmetic_node(current_token);
+                    new_node->children[0] = ast_expression_node(current_token, 0, new_node->children[0]);
                 }
 
                 *current_token = get_token();
@@ -128,11 +122,12 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 
             //Variable declaration
             case TT_KEYWORD_VAR:
+                *current_token = get_token();
                 ast_node_ptr new_node = ast_create_node(*current_token, current_node);
-                new_node->token = get_token();
                 if (new_node->token.type != TT_IDENTIFIER){
                     ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
+                new_node->token.type = TT_KEYWORD_VAR;
                 ast_increase_children(current_node, new_node, ++n_of_children);
 
                 *current_token = get_token();
@@ -154,7 +149,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
 
                 //Possible TODO: condition handling
                 if_node->children = malloc(sizeof(ast_node_ptr));
-                if_node->children[0] = ast_arithmetic_node(current_token);
+                if_node->children[0] = ast_expression_node(current_token, 0, if_node->children[0]);
 
                 //Handle closing parenthesis, opening brace and EOL
                 if((*current_token = get_token()).type != TT_RPAREN && (*current_token = get_token()).type != TT_LBRACE && (*current_token = get_token()).type != TT_EOL){
@@ -205,7 +200,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
 
                 //Possible TODO: condition handling
                 while_node->children = malloc(sizeof(ast_node_ptr));
-                while_node->children[0] = ast_arithmetic_node(current_token);
+                while_node->children[0] = ast_expression_node(current_token, 0, while_node->children[0]);
 
                 //Handle closing parenthesis, opening brace and EOL
                 if((*current_token = get_token()).type != TT_RPAREN && (*current_token = get_token()).type != TT_LBRACE && (*current_token = get_token()).type != TT_EOL){
@@ -327,10 +322,60 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
 
 
 
+//TODO check logic
+//Function to handle expressions with operator precedence
+ast_node_ptr ast_expression_node(token_t *current_token, int min_precedence, ast_node_ptr parent_node){
+    
+    ast_node_ptr lhs = parse_primary(current_token, parent_node);
 
-ast_node_ptr ast_arithmetic_node(token_t *current_token){
-    //TODO
+    while (ast_get_precedence(current_token) != -1 &&
+           ast_get_precedence(current_token->type) >= min_precedence) {
+
+        token_t op_token = *current_token;
+        int precedence = ast_get_precedence(op_token.type);
+        int next_min_prec = precedence + 1;
+
+        *current_token = get_token(); // consume operator
+        ast_node_ptr rhs = parse_expression(current_token, next_min_prec);
+
+        ast_node_ptr op_node = ast_create_node(op_token, parent_node);
+        ast_increase_children(op_node, lhs, 1);
+        ast_increase_children(op_node, rhs, 2);
+        lhs = op_node;
+    }
+
+    return lhs;
 } 
+
+//Helper function to parse primary expressions
+ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node) {
+    ast_node_ptr node = NULL;
+
+    switch (current_token->type) {
+        case TT_INT:
+        case TT_FLOAT:
+        case TT_STRING:
+        case TT_IDENTIFIER:
+        case TT_KEYWORD_Null:
+            node = ast_create_node(*current_token, parent_node);
+            *current_token = get_token(); // consume
+            break;
+
+        case TT_LPAREN:
+            *current_token = get_token(); // consume '('
+            node = parse_expression(current_token, 0);
+            if (current_token->type != TT_RPAREN) {
+                ast_error(2, MSG_SYN_MISSING_TOKEN, node, current_token);
+            }
+            *current_token = get_token(); // consume ')'
+            break;
+
+        default:
+            ast_error(2, MSG_SYN_TOKEN_ORDER, node, current_token);
+    }
+
+    return node;
+}
 
 
 
@@ -366,6 +411,9 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
             ast_error(2, "Syntax error:\tillegal token in parameters\n", parent_node, current_token);
             break;
         }
+    }
+    if (comma_present){
+        ast_error(2, "Syntax error:\ttrailing comma in parameters\n", parent_node, current_token);
     }
     parameter_node->value.int_value = n_of_children;
     return parameter_node;
@@ -428,4 +476,32 @@ void free_ast(ast_node_ptr node){
         free(node->children);
     }
     free(node);
+}
+
+
+
+
+
+int ast_get_precedence(token_type_t type) {
+    switch (type) {
+        case TT_MUL:
+        case TT_DIV:
+            return 5;
+        case TT_PLUS:
+        case TT_MINUS:
+            return 4;
+        case TT_LT:
+        case TT_GT:
+        case TT_LE:
+        case TT_GE:
+        case TT_ASSIGN:
+            return 3;
+        /*case TT_IS: //well, its only optional
+            return 2;*/
+        case TT_EQ:
+        case TT_NEQ:
+            return 1;
+        default:
+            return -1; // not an operator
+    }
 }
