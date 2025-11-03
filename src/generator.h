@@ -76,7 +76,7 @@ void print_isint_isints(FILE *file);
 //Program flow instructions
 void print_label(FILE *file, char* label);
 void print_jump(FILE *file, char* label);
-void print_jumpifeqs(FILE *file, char* label, char* symbol_1, char* symbol_2);
+void print_jumpifeqs(FILE *file, char* label);
 void print_jumpifneq(FILE *file, char* label);
 void print_exit(FILE *file, char* symbol);
 
