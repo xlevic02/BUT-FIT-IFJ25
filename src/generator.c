@@ -91,7 +91,7 @@ void print_relation(FILE *file, RELATION relation)
                     break;
                 default:
                     fprintf(stderr, "Error, non existent operation\n");
-                    return 1;
+                    return;
             }
     }
 
@@ -110,7 +110,7 @@ void print_boolean(FILE *file, BOOLEAN boolean)
                     break;
                 default:
                     fprintf(stderr, "Error, non existent operation\n");
-                    return 1;
+                    return;
             }
     }
 
@@ -138,7 +138,7 @@ void print_conversion(FILE *file, CONVERSTION conversion)
                     break;
                 default:
                     fprintf(stderr, "Error, non existent operation\n");
-                    return 1;
+                    return;
             }
     }
 
@@ -192,14 +192,14 @@ void print_jump(FILE *file, char* label)
         fprintf(file, "JUMP %s\n", label);
     }
 
-void print_jumpifeqs(FILE *file, char* label, char* symbol_1, char* symbol_2)
+void print_jumpifeqs(FILE *file, char* label)
     {
-        fprintf(file, "JUMPIFEQS %s %s %s\n", label, symbol_1, symbol_2);
+        fprintf(file, "JUMPIFEQS %s\n", label);
     }
 
 void print_jumpifneqs(FILE *file, char* label)
     {
-        fprintf(file, "JUMPIFNEQS %s %s %s\n", label);
+        fprintf(file, "JUMPIFNEQS %s\n", label);
     }
 
 void print_exit(FILE *file, char* symbol)
