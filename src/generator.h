@@ -37,7 +37,7 @@ typedef enum
         STRI2INT,
         FLOAT2STR,
         INT2STR
-    }CONVERSTION;
+    }CONVERSION;
 
 //Ramec, volanie funkcii
 void print_createframe(FILE *file);
@@ -57,7 +57,7 @@ void print_clears(FILE *file);
 void print_arithmetic(FILE *file, ARITHMETIC arithmetic);
 void print_relation(FILE *file, RELATION relation);
 void print_boolean(FILE *file, BOOLEAN boolean);
-void print_conversion(FILE *file, CONVERSTION conversion);
+void print_conversion(FILE *file, CONVERSION conversion);
 
 //In-Out instructions
 void print_read(FILE *file, char* type, char* var);
