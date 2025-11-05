@@ -114,7 +114,7 @@ void print_boolean(FILE *file, BOOLEAN boolean)
             }
     }
 
-void print_conversion(FILE *file, CONVERSTION conversion)
+void print_conversion(FILE *file, CONVERSION conversion)
     {
         switch(conversion)
             {
