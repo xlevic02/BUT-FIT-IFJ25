@@ -330,7 +330,7 @@ ast_node_ptr ast_expression_node(token_t *current_token, int min_precedence, ast
 
     while (ast_get_precedence(current_token) != -1 &&
            ast_get_precedence(current_token->type) >= min_precedence) {
-
+            
         token_t op_token = *current_token;
         int precedence = ast_get_precedence(op_token.type);
         int next_min_prec = precedence + 1;

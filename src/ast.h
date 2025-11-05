@@ -32,6 +32,8 @@ ast_node_ptr ast_expression_node(token_t *current_token, int min_precedence, ast
 ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node);
 ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr parent, token_t *current_token, int n_of_children);
 ast_node_ptr ast_create_node(token_t token, ast_node_ptr parent);
+ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node);
+int ast_get_precedence(token_type_t type);
 void ast_increase_children(ast_node_ptr current_node, ast_node_ptr new_node, int n_of_children);
 void ast_skip_EOL(token_t *current_token);
 int ast_handle_prologue(token_t *current_token);
