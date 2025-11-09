@@ -1,5 +1,5 @@
 // Implementace prekladace imperativniho jazyka IFJ25
-// scanner.c by William Denis "xtihelw00" Tihelka on 10/13/25.
+// Scanner by William Denis "xtihelw00" Tihelka on 10/13/25.
 //
 
 #include <ctype.h>

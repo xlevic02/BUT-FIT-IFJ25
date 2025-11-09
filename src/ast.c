@@ -1,5 +1,5 @@
-//implementace abstraktního syntaktického stromu
-//AST by Jan Špaček <xspacej00> on 09/10/2025
+// Implementace prekladace imperativniho jazyka IFJ25
+// AST by Jan Špaček "xspacej00" on 10/09/2025
 
 #include "ast.h"
 
