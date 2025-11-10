@@ -1,5 +1,5 @@
 // Implementace prekladace imperativniho jazyka IFJ25
-// scanner.c by William Denis "xtihelw00" Tihelka on 10/13/25.
+// Scanner by William Denis "xtihelw00" Tihelka on 10/13/25.
 //
 
 #include <ctype.h>
@@ -175,10 +175,8 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     return make_token(TT_COMMA, ",");
                 }
                 else {
-                    // For now, treat any other char as error
-                    buf_append(&buf, &len, &cap, c);
+                    free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_PROHIBITED_CHAR);
-                    return make_token(TT_ERROR, buf);
                 }
                 break;
 
@@ -201,10 +199,8 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 } else {
                     // Just '!' is not a valid operator in IFJ25, treat as error
                     if (c != EOF) ungetc(c, stdin);
-                    //token_t tok = make_token(TT_ERROR, "!");
                     free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_PROHIBITED_CHAR);
-                    //return tok;
                 }
                 break;
 
