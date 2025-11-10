@@ -175,6 +175,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     return make_token(TT_COMMA, ",");
                 }
                 else {
+                    free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_PROHIBITED_CHAR);
                 }
                 break;
@@ -198,10 +199,8 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 } else {
                     // Just '!' is not a valid operator in IFJ25, treat as error
                     if (c != EOF) ungetc(c, stdin);
-                    //token_t tok = make_token(TT_ERROR, "!");
                     free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_PROHIBITED_CHAR);
-                    //return tok;
                 }
                 break;
 
