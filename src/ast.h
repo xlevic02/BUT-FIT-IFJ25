@@ -34,7 +34,7 @@ typedef struct ast_node_t{
     token_t token; //token of data
     union
     {
-        int int_value;
+        int int_value; //number of children/
         float float_value;
         char* string_value;
     } value;

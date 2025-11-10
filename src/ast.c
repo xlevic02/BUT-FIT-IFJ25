@@ -1,5 +1,6 @@
 // Implementace prekladace imperativniho jazyka IFJ25
-// AST by Jan Špaček "xspacej00" on 10/09/2025
+// AST by: Jan "xspacej00" Špaček on 10/09/2025
+//         Jan Frantisek "xlevic02" Levicek on 11/10/2025
 
 #include "ast.h"
 
@@ -28,12 +29,9 @@ ast_node_ptr create_ast(){
     ast_skip_EOL(current_token);
 
 
-    if (current_token->type != TT_KEYWORD_CLASS) {
-        free(current_token);
-        error(ERROR_SYNTAX, MSG_SYN_PROGRAM_DECLARATION);
-    }
-
-    if (strcmp((*current_token = get_token()).lexeme , "Program")) {
+    if (current_token->type != TT_KEYWORD_CLASS &&
+        strcmp((*current_token = get_token()).lexeme , "Program"))
+    {
         free(current_token);
         error(ERROR_SYNTAX, MSG_SYN_PROGRAM_DECLARATION);
     }
@@ -60,14 +58,25 @@ ast_node_ptr create_ast(){
             
             //Function handling
             case TT_KEYWORD_STATIC:
-                if((*current_token = get_token()).type != TT_IDENTIFIER){
+                if((*current_token = get_token()).type != TT_IDENTIFIER)
                     ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, root, current_token);
-                }
+
+
 
                 ast_node_ptr new_node = ast_create_node(*current_token, root, NT_FUNC_DECL);
                 ast_increase_children(root, new_node, ++n_of_children);
 
                 new_node->children[0] = ast_parameter_node(current_token, new_node);
+
+
+
+                if((*current_token = get_token()).type != TT_LBRACE)
+                    ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, root, current_token);
+
+                if((*current_token = get_token()).type != TT_EOL)
+                    ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, root, current_token);
+
+
 
                 ast_regular_node(new_node, root, current_token, 1);
                 break;
@@ -95,24 +104,19 @@ ast_node_ptr create_ast(){
 
 //Function to handle whole regular nodes (if, while, return, var, expressions, etc.)
 ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_node, token_t *current_token, int n_of_children_initial){
-    
-    if (current_node == NULL){
-        ast_error(99, MSG_INT_MISSING_TOKEN, previous_node, current_token);
-    }
+
+    ast_node_ptr new_node = NULL;
+
+    /* TODO: check if necessary
+    if (current_node == NULL)
+        ast_error(ERROR_INTERNAL, MSG_INT_MISSING_TOKEN, previous_node, current_token);
+    */
 
     int n_of_children = n_of_children_initial;
 
     //Main loop to handle all constructs inside a regular node
     do{
-
         switch(current_token->type){
-
-            //Fail state of incompatible tokens
-            case TT_ERROR:
-                ast_error(1, MSG_LEX_PROHIBITED_CHAR, current_node, current_token);
-                break;
-
-
             //Arithmetic expressions
             case TT_LPAREN:
             case TT_INT:
@@ -129,16 +133,19 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
 
             //Return statement
             case TT_KEYWORD_RETURN:
-                ast_node_ptr new_node = ast_create_node(*current_token, current_node);
+                new_node = ast_create_node(*current_token, current_node, NT_RETURN);
                 new_node->token = *current_token;
                 ast_increase_children(current_node, new_node, ++n_of_children);
                 *current_token = get_token();
                 if(current_token->type != TT_EOL){
                     new_node->children[0] = malloc(sizeof(ast_node_ptr));
+                    if(new_node->children[0] == NULL)
+                        ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, previous_node, current_token);
+
                     new_node->children[0] = ast_expression_node(current_token, 0, new_node->children[0]);
+                    *current_token = get_token(); //TODO check
                 }
 
-                *current_token = get_token();
                 break;
 
 
@@ -332,7 +339,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
             default:
                 ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 break;
-        }
+        }//switch
 
         //Ensure each statement ends with an EOL
         if (current_token->type != TT_EOL){
@@ -407,7 +414,10 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
     if ((*current_token = get_token()).type != TT_LPAREN){
         ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, parent_node, current_token);
     }
-    ast_node_ptr parameter_node =  ast_create_node(*current_token, parent_node);
+
+    ast_node_ptr parameter_node =  ast_create_node(*current_token, parent_node, NT_PARAM);
+    ast_skip_EOL(current_token);
+
     bool comma_present = true;
     int n_of_children = 0;
     while((*current_token = get_token()).type != TT_RPAREN){
@@ -415,11 +425,12 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
         {
         case TT_IDENTIFIER:
             if(!comma_present){
-                ast_error(2, "Syntax error:\tmissing comma in parameters\n", parent_node, current_token);
+                ast_error(ERROR_SYNTAX, "Syntax error:\tmissing comma in parameters\n", parent_node, current_token);
             }
+
             comma_present = false;
-            ast_node_ptr subparameter_node = ast_create_node(*current_token, parameter_node);
-            ast_increase_children(parameter_node, subparameter_node, ++n_of_children);
+            ast_node_ptr param_id_node = ast_create_node(*current_token, parameter_node, NT_ID);
+            ast_increase_children(parameter_node, param_id_node, ++n_of_children);
             break;
 
         case TT_COMMA:
@@ -433,11 +444,13 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
         default:
             ast_error(2, "Syntax error:\tillegal token in parameters\n", parent_node, current_token);
             break;
-        }
+        }//switch
+    }//while
+
+    if (comma_present && (n_of_children != 0)){
+        ast_error(ERROR_SYNTAX, "Syntax error:\ttrailing comma in parameters\n", parent_node, current_token);
     }
-    if (comma_present){
-        ast_error(2, "Syntax error:\ttrailing comma in parameters\n", parent_node, current_token);
-    }
+
     parameter_node->value.int_value = n_of_children;
     return parameter_node;
 }
@@ -475,6 +488,9 @@ int ast_handle_prologue(token_t *current_token){
 
 ast_node_ptr ast_create_node(token_t token, ast_node_ptr parent, ast_node_type_t node_type){
     ast_node_ptr new_node = malloc(sizeof(ast_node_t));
+    if(new_node == NULL)
+        ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, parent, &token);
+
     new_node->parent = parent;
     new_node->children = NULL;
     new_node->node_type = node_type;
