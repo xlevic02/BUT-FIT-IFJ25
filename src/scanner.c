@@ -175,10 +175,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     return make_token(TT_COMMA, ",");
                 }
                 else {
-                    // For now, treat any other char as error
-                    buf_append(&buf, &len, &cap, c);
                     error(ERROR_LEXICAL, MSG_LEX_PROHIBITED_CHAR);
-                    return make_token(TT_ERROR, buf);
                 }
                 break;
 

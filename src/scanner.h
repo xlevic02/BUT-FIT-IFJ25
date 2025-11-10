@@ -51,9 +51,7 @@ typedef enum {
     TT_LBRACE,          // { = 33
     TT_RBRACE,          // } = 34
     TT_COMMA,           // , = 35
-    TT_DOT,             // . = 36
-
-    TT_ERROR            // error (unknown char) - might be replaces with just error message
+    TT_DOT              // . = 36
 } token_type_t;
 
 typedef struct {
