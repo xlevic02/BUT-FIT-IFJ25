@@ -38,6 +38,7 @@ typedef struct ast_node_t{
         float float_value;
         char* string_value;
     } value;
+    int n_of_children; //number of children
 } ast_node_t;
 
 
@@ -49,7 +50,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr parent, to
 ast_node_ptr ast_create_node(token_t token, ast_node_ptr parent, ast_node_type_t node_type);
 ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node);
 int ast_get_precedence(token_type_t type);
-void ast_increase_children(ast_node_ptr current_node, ast_node_ptr new_node, int n_of_children);
+void ast_increase_children(ast_node_ptr current_node, ast_node_ptr new_node);
 void ast_skip_EOL(token_t *current_token);
 int ast_handle_prologue(token_t *current_token);
 void ast_error(int err_num, const char* err_message, ast_node_ptr node, token_t *current_token);
