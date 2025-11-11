@@ -16,9 +16,6 @@ ast_node_ptr create_ast(){
     //declare and initialize the root node with the first token
     token_t *current_token = malloc(sizeof(token_t));
     *current_token = get_token();       //get first token
-    ast_node_ptr root = ast_create_node(*current_token, NULL, NT_TODO);
-    root->token.type = TT_KEYWORD_CLASS;
-    root->token.lexeme = "Program";
 
     //prologue handling
     ast_skip_EOL(current_token);
@@ -130,7 +127,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
 
 
             //Return statement
-            case TT_KEYWORD_RETURN:
+            case TT_KEYWORD_RETURN:{
                 ast_node_ptr new_node = ast_create_node(*current_token, current_node, NT_TODO);
                 new_node->token = *current_token;
                 ast_increase_children(current_node, new_node);
@@ -145,7 +142,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 }
 
                 *current_token = get_token();
-                break;
+                break;}
 
 
 
