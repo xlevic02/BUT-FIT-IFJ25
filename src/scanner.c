@@ -338,8 +338,6 @@ token_t get_token() {
                         // Enter multi-line string state
                         state = STATE_STRING_MULTI;
                         break;
-                    } else if (c == '\\') {
-                        state = STATE_STRING_ESCAPE;
                     } else {
                         // Only two quotes, treat as end of string and push back c2
                         if (c2 != EOF) ungetc(c2, stdin);
@@ -348,7 +346,8 @@ token_t get_token() {
                         free(buf);
                         return tok;
                     }
-
+                } else if (c == '\\') {
+                    state = STATE_STRING_ESCAPE;
                 } else if (c == EOF) {
                     free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
@@ -414,6 +413,7 @@ token_t get_token() {
 
                     while (count < 2) { // allow exactly two hex digits
                         if (!isxdigit(c)) {
+                            free(buf);
                             error(ERROR_LEXICAL, MSG_LEX_INVALID_ESCAPE);
                         }
                         hex_digits[count++] = (char)c;
