@@ -125,7 +125,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
             case TT_FLOAT:
             case TT_STRING:
             case TT_IDENTIFIER:
-                ast_increase_children(current_node, ast_expression_node(current_token, 0, current_node));
+                if(ast_increase_children(current_node, ast_expression_node(current_token, current_node))) //TODO fix
 
                 *current_token = get_token();
                 break;
@@ -136,21 +136,33 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
             //Return statement
             case TT_KEYWORD_RETURN:
                 new_node = ast_create_node(*current_token, current_node, NT_RETURN);
-                new_node->token = *current_token;
-                ast_increase_children(current_node, new_node);
+                if(ast_increase_children(current_node, new_node))
+                    ast_error(ERROR_INTERNAL, MSG_INT_REALLOC, current_node, current_token);
+
                 *current_token = get_token();
+
                 if(current_token->type != TT_EOL){
+                    if (current_token->type == TT_EOF)
+                        ast_error(ERROR_SYNTAX, MSG_SYN_UNEXPECTED_EOF, new_node, current_token);
+
+
                     new_node->children[0] = malloc(sizeof(ast_node_ptr));
                     if(new_node->children[0] == NULL)
                         ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, previous_node, current_token);
 
-                    new_node->children[0] = ast_expression_node(current_token, 0, new_node->children[0]);
-                    *current_token = get_token(); //TODO check
-                }
+                    new_node->children[0] = ast_expression_node(current_token, NULL);
+                    if(new_node->children[0] == NULL)
+                        ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, new_node, current_token);
 
+                    if(new_node->children[0] == (ast_node_ptr) -1)
+                        ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, new_node, current_token);
+
+                    new_node->children[0]->parent = new_node;
+                }//if
+
+
+                *current_token = get_token();
                 break;
-
-
 
                 
             //Variable declaration
@@ -182,7 +194,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
 
                 //Possible TODO: condition handling
                 if_node->children = malloc(sizeof(ast_node_ptr));
-                if_node->children[0] = ast_expression_node(current_token, 0, if_node->children[0]);
+                if_node->children[0] = ast_expression_node(current_token, if_node->children[0]);
 
                 //Handle closing parenthesis, opening brace and EOL
                 if((*current_token = get_token()).type != TT_RPAREN && (*current_token = get_token()).type != TT_LBRACE && (*current_token = get_token()).type != TT_EOL){
@@ -233,7 +245,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
 
                 //Possible TODO: condition handling
                 while_node->children = malloc(sizeof(ast_node_ptr));
-                while_node->children[0] = ast_expression_node(current_token, 0, while_node->children[0]);
+                while_node->children[0] = ast_expression_node(current_token, while_node->children[0]);
 
                 //Handle closing parenthesis, opening brace and EOL
                 if((*current_token = get_token()).type != TT_RPAREN && (*current_token = get_token()).type != TT_LBRACE && (*current_token = get_token()).type != TT_EOL){
@@ -353,69 +365,201 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
 
         //Ensure each statement ends with an EOL
         if (current_token->type != TT_EOL){
-            ast_error(2, MSG_SYN_MISSING_EOL, current_node, current_token);
+            ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, current_node, current_token);
         }
         //skip all EOLs
         ast_skip_EOL(current_token);
 
-    } while ((*current_token = get_token()).type != TT_ERROR);
+    } while(1);     // while ((*current_token = get_token()).type != TT_ERROR); TODO: change condition
+}
+
+ast_node_ptr ast_expression_node(token_t *current_token, ast_node_ptr parent_node) {
+    ast_node_ptr term = NULL;
+    ast_node_ptr operator = NULL;
+    ast_node_ptr top = NULL;
+
+    term = ast_get_term(current_token, parent_node);
+    if(term == NULL)
+        return NULL;
+
+    if(term == (ast_node_ptr) -1)
+        return term;
+
+
+    *current_token = get_token();
+
+    while(current_token->type != TT_EOL) {
+
+        switch (current_token->type) {
+            case TT_EQ:              // ==
+            case TT_NEQ:             // !=
+            case TT_LT:              // <
+            case TT_GT:              // >
+            case TT_LE:              // <=
+            case TT_GE:              // >=
+            case TT_KEYWORD_IS:      // is
+                operator = ast_create_node(*current_token, parent_node, NT_BOOL_EXPR);
+                if(operator == NULL) {
+                    destroy_ast(term);
+                    return NULL;
+                }
+
+                if (ast_operator_eval(operator, parent_node, term)) {
+                    free(operator);
+                    destroy_ast(term);
+                    return NULL;
+                }
+
+                parent_node = operator;
+
+                break;
+
+            case TT_PLUS:            // +
+            case TT_MINUS:           // -
+            case TT_MUL:             // *
+            case TT_DIV:             // /
+                operator = ast_create_node(*current_token, parent_node, NT_AR_EXPR);
+                if(operator == NULL) {
+                    destroy_ast(term);
+                    return NULL;
+                }
+
+                if (ast_operator_eval(operator, parent_node, term)) {
+                    free(operator);
+                    destroy_ast(term);
+                    return NULL;
+                }
+
+                parent_node = operator;
+
+                break;
+
+            case TT_RPAREN:
+                top = ast_find_top(parent_node);
+                return top == NULL ? term : top;
+
+            default:
+                destroy_ast(term);
+                return (ast_node_ptr) -1;
+
+        }//switch
+
+        *current_token = get_token();
+        ast_skip_EOL(current_token);
+
+        term = ast_get_term(current_token, operator);
+        if(term == NULL) {
+            destroy_ast(operator);
+            return NULL;
+        }
+
+        if(term == (ast_node_ptr) -1) {
+            destroy_ast(operator);
+            return term;
+        }
+
+        if(ast_increase_children(operator, term)) {
+            free(term);
+            destroy_ast(operator);
+            return NULL;
+        }
+
+        *current_token = get_token();
+    }//while
+
+    top = ast_find_top(parent_node);
+    return top == NULL ? term : top;
 }
 
 
 
-//TODO check logic
-//Function to handle expressions with operator precedence
-ast_node_ptr ast_expression_node(token_t *current_token, int min_precedence, ast_node_ptr parent_node){
-    
-    ast_node_ptr lhs = parse_primary(current_token, parent_node);
+ast_node_ptr ast_find_top(ast_node_ptr parent_node) {
+    if(parent_node == NULL)
+        return NULL;
 
-    while (ast_get_precedence(current_token) != -1 &&
-           ast_get_precedence(current_token->type) >= min_precedence) {
-            
-        token_t op_token = *current_token;
-        int precedence = ast_get_precedence(op_token.type);
-        int next_min_prec = precedence + 1;
+    while(parent_node->parent != NULL)
+        parent_node = parent_node->parent;
 
-        *current_token = get_token(); // consume operator
-        ast_node_ptr rhs = parse_expression(current_token, next_min_prec);
+    return parent_node;
+}
 
-        ast_node_ptr op_node = ast_create_node(op_token, parent_node);
-        ast_increase_children(op_node, lhs);
-        ast_increase_children(op_node, rhs);
-        lhs = op_node;
-    }
 
-    return lhs;
-} 
 
-//Helper function to parse primary expressions
-ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node) {
-    ast_node_ptr node = NULL;
+// Finds operators place in expression subtree based on precedence
+int ast_operator_eval(ast_node_ptr operator, ast_node_ptr parent_node, ast_node_ptr term) {
+    ast_node_ptr tmp = NULL;
 
-    switch (current_token->type) {
+    if(parent_node == NULL) {
+        if(ast_increase_children(operator, term))
+            return 1;
+
+        term->parent = operator;
+
+        return 0;
+    } else {
+        tmp = parent_node;
+
+        while(tmp != NULL) {
+            if (ast_get_precedence(operator->token.type) > ast_get_precedence(tmp->token.type)) {
+
+                if (ast_increase_children(operator, tmp->children[1]))
+                    return 1;
+
+                tmp->children[1] = operator;
+                operator->parent = tmp;
+
+                return 0;
+            } else {
+                if(tmp->parent == NULL) {
+                    if (ast_increase_children(operator, tmp))
+                        return 1;
+
+                    tmp->parent = operator;
+                    operator->parent = NULL;
+
+                    return 0;
+                }
+
+                tmp = tmp->parent;
+            }
+        }//while
+    }//if
+}
+
+
+ast_node_ptr ast_get_term(token_t *current_token, ast_node_ptr parent_node) {
+    ast_node_ptr new_node = NULL;
+
+    switch(current_token->type) {
+        case TT_IDENTIFIER:
+            new_node = ast_create_node(*current_token, parent_node, NT_ID);
+
+            return new_node;
+
         case TT_INT:
         case TT_FLOAT:
         case TT_STRING:
-        case TT_IDENTIFIER:
-        case TT_KEYWORD_Null:
-            node = ast_create_node(*current_token, parent_node);
-            *current_token = get_token(); // consume
-            break;
+        case TT_NULL:
+            new_node = ast_create_node(*current_token, parent_node, NT_LITERAL);
+
+            return new_node;
 
         case TT_LPAREN:
-            *current_token = get_token(); // consume '('
-            node = parse_expression(current_token, 0);
-            if (current_token->type != TT_RPAREN) {
-                ast_error(2, MSG_SYN_MISSING_TOKEN, node, current_token);
+            *current_token = get_token();
+            ast_skip_EOL(current_token);
+            new_node = ast_expression_node(current_token, NULL);
+            if(current_token->type != TT_RPAREN) {
+                destroy_ast(new_node);
+                return (ast_node_ptr) -1;
             }
-            *current_token = get_token(); // consume ')'
-            break;
 
+            *current_token = get_token();
+
+            return new_node;
         default:
-            ast_error(2, MSG_SYN_TOKEN_ORDER, node, current_token);
-    }
 
-    return node;
+            return (ast_node_ptr) -1;
+    }
 }
 
 
@@ -501,7 +645,7 @@ int ast_handle_prologue(token_t *current_token){
 ast_node_ptr ast_create_node(token_t token, ast_node_ptr parent, ast_node_type_t node_type){
     ast_node_ptr new_node = malloc(sizeof(ast_node_t));
     if(new_node == NULL)
-        ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, parent, &token);
+        return NULL;
 
     new_node->parent = parent;
     new_node->children = NULL;
@@ -512,9 +656,13 @@ ast_node_ptr ast_create_node(token_t token, ast_node_ptr parent, ast_node_type_t
     return new_node;
 }
 
-void ast_increase_children(ast_node_ptr current_node, ast_node_ptr new_node){
+int ast_increase_children(ast_node_ptr current_node, ast_node_ptr new_node){
     current_node->children = realloc(current_node->children, sizeof(ast_node_ptr) * ++current_node->n_of_children);
+    if(current_node->children == NULL)
+        return 1;
+
     current_node->children[current_node->n_of_children - 1] = new_node;
+    return 0;
 }
 
 

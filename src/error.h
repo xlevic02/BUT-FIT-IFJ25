@@ -50,12 +50,14 @@
 #define MSG_SYN_PROGRAM_DECLARATION "Syntax error:\tincorrect Program declaration\n"
 
 // Semantic error
-#define MSG_SEN_UNDEFINED_VAR "Semantic error:\tuse of undefined variable/function\n"
-#define MSG_SEN_REDEFINING "Semantic error:\tredefining variable/function\n"
-#define MSG_SEN_INCOMPATIBLE "Semantic error:\twrong type of variable input into a function\n"
+#define MSG_SEM_UNDEFINED_VAR "Semantic error:\tuse of undefined variable/function\n"
+#define MSG_SEM_REDEFINING "Semantic error:\tredefining variable/function\n"
+#define MSG_SEM_INCOMPATIBLE "Semantic error:\twrong type of variable input into a function\n"
+#define MSG_SEM_RETURN "Semantic error:\tmissing return expression or not an expression in return\n"
+#define MSG_SEM_EXPECTED_EXPR "Semantic error:\tinvalid token in expression\n"
 
 // Internal error
-#define MSG_INT_MALLOC "Internal error:\tfailed to allocate memory for a new token\n"
+#define MSG_INT_MALLOC "Internal error:\tfailed to allocate memory\n"
 #define MSG_INT_DSTR_APPEND "Internal error:\tfailed to append buffer dynamic string\n"
 #define MSG_INT_DSTR_RESET "Internal error:\tfailed to reallocate memory for buffer dynamic string\n"
 #define MSG_INT_DSTR_INIT "Internal error:\tfailed to initialize buffer dynamic string\n"
