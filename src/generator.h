@@ -3,9 +3,18 @@
 #include <string.h>
 #include <stdbool.h>
 
-FILE *file;
 static int label_counter = 0;
-
+static char label_stack[100][32];
+static int label_stack_top = -1;
+typedef enum 
+    {
+        VARIABLE,
+        LITERAL_INT,
+        LITERAL_FLOAT,
+        LITERAL_STRING,
+        LITERAL_BOOL,
+        LITERAL_NULL
+    }SYM_TYPE;
 typedef enum
     {
         ADD,
@@ -39,47 +48,67 @@ typedef enum
         INT2STR
     }CONVERSION;
 
-//Ramec, volanie funkcii
-void print_createframe(FILE *file);
-void print_pushframe(FILE *file);
-void print_popframe(FILE *file);
-void print_call(FILE *file, char* label);
-void print_return(FILE *file);
-void print_defvar(FILE *file, char* var_name);
-void print_move(FILE *file, char* source, char* destination);
+//Recursive function to proccess nodes
+void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope);
+
+//Function to generate code for an expression
+void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope);
+
+//Main function for generating code
+int generate_code(ast_node_ptr root, bst_scope_ptr symtable);
+
+//Function for getting the name of a variable
+char* get_variable_id(bst_scope_ptr scope, char* lexeme);
+
+//Funkction to get a frame for a variable from symtable
+char* get_variable_frame(bst_scope_ptr scope, char* var_name);
+
+//Creates a unique label for if, else, while
+void get_unique_label(char* buffer, const char* prefix);
+
+//Function to format string for IFJcode25
+char* format_string_for_ifjcode(const char* lexeme);
+
+//Function to format float for IFJcode25
+char* format_float_for_ifjcode(const char* lexeme);
+
+//Scope, function calling
+void print_call(char* label);
+void print_defvar(char* var_name);
+void print_move( char* destination, char* source);
 
 //Instructions working with stack
-void print_pushs(FILE *file, char* symbol);
-void print_pops(FILE *file, char* var);
-void print_clears(FILE *file);
+void print_pushs(SYM_TYPE type, char* value, char* frame);
+void print_pops(char* var);
+void print_clears();
 
 //Arithmetic, relation, boolean and conversion instruction
-void print_arithmetic(FILE *file, ARITHMETIC arithmetic);
-void print_relation(FILE *file, RELATION relation);
-void print_boolean(FILE *file, BOOLEAN boolean);
-void print_conversion(FILE *file, CONVERSION conversion);
+void print_arithmetic(ARITHMETIC arithmetic);
+void print_relation(RELATION relation);
+void print_boolean(BOOLEAN boolean);
+void print_conversion(CONVERSION conversion);
 
 //In-Out instructions
-void print_read(FILE *file, char* type, char* var);
-void print_write(FILE *file, char* symbol);
+void print_read(char* type, char* var);
+void print_write(char* symbol);
 
 //String instructions
-void print_concat(FILE *file, char* var, char* symbol_1, char* symbol_2);
-void print_strlen(FILE *file, char* var, char* symbol);
-void print_getchar(FILE *file, char* var, char* symbol, char* index);
-void print_setchar(FILE *file, char* var, char* index, char* symbol);
+void print_concat(char* var, char* symbol_1, char* symbol_2);
+void print_strlen(char* var, char* symbol);
+void print_getchar(char* var, char* symbol, char* index);
+void print_setchar(char* var, char* index, char* symbol);
 
 //Type instructions
-void print_types(FILE *file);
-void print_isint_isints(FILE *file);
+void print_types();
+void print_isint_isints();
 
 //Program flow instructions
-void print_label(FILE *file, char* label);
-void print_jump(FILE *file, char* label);
-void print_jumpifeqs(FILE *file, char* label);
-void print_jumpifneq(FILE *file, char* label);
-void print_exit(FILE *file, char* symbol);
+void print_label(char* label);
+void print_jump(char* label);
+void print_jumpifeqs(char* label);
+void print_jumpifneqs(char* label);
+void print_exit(char* symbol);
 
 //Debugging instructions
-void print_break(FILE *file);
-void print_dprint(FILE *file, char* symbol);
+void print_break();
+void print_dprint(char* symbol);
