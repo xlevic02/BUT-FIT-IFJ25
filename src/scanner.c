@@ -195,12 +195,10 @@ token_t get_token() {
                     free(buf);
                     return make_token(TT_NEQ, "!=");
                 } else {
-                    // Just '!' is not a valid operator in IFJ25, treat as error
+                    // Just '!' is not a valid operator 
                     if (c != EOF) ungetc(c, stdin);
-                    //token_t tok = make_token(TT_ERROR, "!");
                     free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_PROHIBITED_CHAR);
-                    //return tok;
                 }
                 break;
 
@@ -454,7 +452,7 @@ token_t get_token() {
                 state = STATE_START;
                 break;
 
-            case STATE_COMMENT_BLOCK:
+            case STATE_COMMENT_BLOCK: ; // Yes this is has to be here or it cant compile, yes, c is stupid
                 // Skip until closing */ or EOF
                 int depth = 1;
                 while (depth > 0) {
