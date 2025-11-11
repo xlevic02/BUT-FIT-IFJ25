@@ -74,6 +74,8 @@ token_type_t keyword_type(const char *lexeme) {
     if (strcmp(lexeme, "for") == 0) return TT_KEYWORD_FOR;
     if (strcmp(lexeme, "num") == 0) return TT_KEYWORD_NUM;
     if (strcmp(lexeme, "Null") == 0) return TT_KEYWORD_Null;
+    if (strcmp(lexeme, "Num") == 0) return TT_KEYWORD_NUM;
+    if (strcmp(lexeme, "null") == 0) return TT_NULL;
     return TT_IDENTIFIER; // not a keyword, return identifier type
 }
 
@@ -338,6 +340,8 @@ token_t get_token() {
                         // Enter multi-line string state
                         state = STATE_STRING_MULTI;
                         break;
+                    } else if (c == '\\') {
+                        state = STATE_STRING_ESCAPE;
                     } else {
                         // Only two quotes, treat as end of string and push back c2
                         if (c2 != EOF) ungetc(c2, stdin);
@@ -397,8 +401,6 @@ token_t get_token() {
                     case '\\': buf_append(&buf, &len, &cap, '\\'); state = STATE_STRING; break;
                     case 'x':  // start of hexadecimal escape sequence
                         state = STATE_STRING_HEX;
-                        buf_append(&buf, &len, &cap, '\\');
-                        buf_append(&buf, &len, &cap, 'x');
                         break;
                     default:
                         // invalid escape sequence
@@ -454,21 +456,26 @@ token_t get_token() {
 
             case STATE_COMMENT_BLOCK:
                 // Skip until closing */ or EOF
-                while (1) {
+                int depth = 1;
+                while (depth > 0) {
                     c = getchar();
                     if (c == EOF) {
                         error(ERROR_LEXICAL,MSG_LEX_UNCLOSED_COMMENT);
                     }
-                    if (c == '*') {
+                    if (c == '/') {
+                        int n = getchar();
+                        if (n == '*') depth++;
+                        else ungetc(n, stdin);
+                    } else if (c == '*') {
                         int next = getchar();
                         if (next == '/') {
-                            state = STATE_START;
-                            break;
+                            depth--;
                         } else if (next != EOF) {
                             ungetc(next, stdin);
                         }
                     }
                 }
+                state = STATE_START;
                 break;
             
             default:
