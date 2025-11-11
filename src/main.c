@@ -5,32 +5,6 @@
 #include "ast.h"
 
 
-
-int main(void) {
-
-    /*
-    token_t tok;
-    while ((tok = get_token()).type != TT_EOF) {
-        printf("TOKEN: type=%d, lexeme=\"%s\"\n", tok.type, tok.lexeme);
-        free(tok.lexeme); // FREE THE MEMORY!
-    }
-    printf("TOKEN: type=%d, lexeme=\"%s\"\n", tok.type, tok.lexeme);
-     */
-
-    ast_node_ptr ast_root = create_ast();
-
-    visualize_ast(ast_root);
-
-    destroy_ast(ast_root);
-
-    return 0;
-}
-
-
-
-
-
-
 //REMOVE, FOR TESTING PURPOSES ONLY
 
 // --- Helper: convert token type to readable name ---
@@ -108,3 +82,28 @@ void visualize_ast(const ast_node_ptr root) {
     print_ast_branch(root, "", 1);
     printf("\n");
 }
+
+int main(void) {
+
+    /*
+    token_t tok;
+    while ((tok = get_token()).type != TT_EOF) {
+        printf("TOKEN: type=%d, lexeme=\"%s\"\n", tok.type, tok.lexeme);
+        free(tok.lexeme); // FREE THE MEMORY!
+    }
+    printf("TOKEN: type=%d, lexeme=\"%s\"\n", tok.type, tok.lexeme);
+     */
+
+    ast_node_ptr ast_root = create_ast();
+
+    visualize_ast(ast_root);
+
+    destroy_ast(ast_root);
+
+    return 0;
+}
+
+
+
+
+

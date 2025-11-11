@@ -20,22 +20,22 @@ typedef struct bst_node_content_t {
 typedef struct bst_node bst_node_t;
 typedef bst_node_t *bst_node_ptr;
 
-typedef struct bst_node {
+struct bst_node {
   unsigned int key;
   bst_node_content_t content;
   bst_node_ptr left;
   bst_node_ptr right;
-} bst_node_t;
+};
 
 typedef struct bst_scope bst_scope_t;
 typedef bst_scope_t *bst_scope_ptr;
 
-typedef struct bst_scope {
+struct bst_scope {
   bst_node_ptr tree;
   bst_scope_ptr *child;
   bst_scope_ptr parent;
   int n_of_children;
-} bst_scope_t;
+};
 
 int bst_declare_variable(bst_scope_ptr scope, char *name);
 int bst_define_variable(bst_scope_ptr scope, char *name, token_type_t type);
