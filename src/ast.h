@@ -29,6 +29,7 @@ typedef enum {
 
 //structure for an AST node
 typedef struct ast_node_t{
+    ast_node_ptr parent; //pointer to parent node
     ast_node_ptr* children; //pointer to a field of children
     ast_node_type_t node_type;
     token_t token; //token of data
