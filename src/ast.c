@@ -16,6 +16,9 @@ ast_node_ptr create_ast(){
     //declare and initialize the root node with the first token
     token_t *current_token = malloc(sizeof(token_t));
     *current_token = get_token();       //get first token
+    ast_node_ptr root = ast_create_node(*current_token, NULL);
+    root->token.type = TT_KEYWORD_CLASS;
+    root->token.lexeme = "Program";
 
     //prologue handling
     ast_skip_EOL(current_token);
@@ -102,12 +105,10 @@ ast_node_ptr create_ast(){
 
 //Function to handle whole regular nodes (if, while, return, var, expressions, etc.)
 ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_node, token_t *current_token, int n_of_children_initial){
-
-
-    /* TODO: check if necessary
-    if (current_node == NULL)
-        ast_error(ERROR_INTERNAL, MSG_INT_MISSING_TOKEN, previous_node, current_token);
-    */
+    
+    if (current_node == NULL){
+        ast_error(99, MSG_INT_MISSING_TOKEN, previous_node, current_token);
+    }
 
     current_node->n_of_children = n_of_children_initial;
 
@@ -129,8 +130,8 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
 
 
             //Return statement
-            case TT_KEYWORD_RETURN:{
-                ast_node_ptr new_node = ast_create_node(*current_token, current_node, NT_TODO);
+            case TT_KEYWORD_RETURN:
+                ast_node_ptr new_node = ast_create_node(*current_token, current_node);
                 new_node->token = *current_token;
                 ast_increase_children(current_node, new_node);
                 *current_token = get_token();
@@ -144,7 +145,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 }
 
                 *current_token = get_token();
-                break;}
+                break;
 
 
 
@@ -434,8 +435,8 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
             }
 
             comma_present = false;
-            ast_node_ptr param_id_node = ast_create_node(*current_token, parameter_node, NT_ID);
-            ast_increase_children(parameter_node, param_id_node);
+            ast_node_ptr subparameter_node = ast_create_node(*current_token, parameter_node);
+            ast_increase_children(parameter_node, subparameter_node);
             break;
 
         case TT_COMMA:
@@ -449,12 +450,13 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
         default:
             ast_error(2, "Syntax error:\tillegal token in parameters\n", parent_node, current_token);
             break;
-        }//switch
-    }//while
-
-    if (comma_present && (parameter_node->n_of_children != 0)){
-        ast_error(ERROR_SYNTAX, "Syntax error:\ttrailing comma in parameters\n", parent_node, current_token);
+        }
+    }while((*current_token = get_token()).type != TT_RPAREN);
+    if (comma_present){
+        ast_error(2, "Syntax error:\ttrailing comma in parameters\n", parent_node, current_token);
     }
+
+    parameter_node->value.int_value = n_of_children;
     return parameter_node;
 }
 
