@@ -2,11 +2,10 @@
 // lexer_tests.c by Jan Frantisek "xlogin00" Levicek on 10/22/25.
 //
 
-#include "/src/scanner.h"
+#include "../../src/scanner.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 typedef struct {
     const char *name;
@@ -56,9 +55,15 @@ static const name_val_t MAP[] = {
         ENTRY(TT_RBRACE),
         ENTRY(TT_COMMA),
         ENTRY(TT_DOT),
-
-        ENTRY(TT_ERROR),
 };
+
+static const char *enum_to_name(token_type_t type)
+{
+    for (size_t i = 0; i < sizeof(MAP)/sizeof(MAP[0]); ++i)
+        if (MAP[i].value == type)
+            return MAP[i].name;
+    return "UNKNOWN";
+}
 
 static void white_space_remover(char *s)
 {
@@ -87,9 +92,7 @@ static int split_tab3(char *line, char **a, char **b, char **c)
 
 int main (int argc, char **argv)
 {
-    printf("running\n");
-    if (argc != 3)
-    {
+    if (argc != 3) {
         usage(argv[0]);
         return 2;
     }
@@ -98,10 +101,10 @@ int main (int argc, char **argv)
     const char *golden_path = argv[2];
 
     FILE *src = freopen(source_path, "r", stdin);
-    if(!src) { perror("Couldn't open input file\n"); return 2; }
+    if(!src) { perror("Couldn't open input file"); return 2; }
 
     FILE *gold = fopen(golden_path, "r");
-    if(!gold) { perror("Couldn't open test file\n"); return 2; }
+    if(!gold) { perror("Couldn't open test file"); return 2; }
 
     char line[4096];
     size_t line_no = 0;
@@ -114,30 +117,36 @@ int main (int argc, char **argv)
         if (line[0] == '\0') continue;
 
         char *lex_exp, *name_exp, *num_exp_s;
-        split_tab3(line, &lex_exp, &name_exp, &num_exp_s);
+        if (!split_tab3(line, &lex_exp, &name_exp, &num_exp_s))
+            continue;
 
-        char *endp = NULL;
-        long enum_exp = strtol(num_exp_s, &endp, 10);
+        long enum_exp = strtol(num_exp_s, NULL, 10);
 
         token_t token = get_token();
         checks++;
 
-        if((long)token.type != enum_exp) {
+        if ((long)token.type != enum_exp) {
             fprintf(stderr, "Line %zu: invalid TYPE; exp.: %s(%ld) got: %s(%d)\n",
-                    line_no, name_exp, enum_exp, enum_to_name(token.type), (int) token.type);
+                    line_no, name_exp, enum_exp, enum_to_name(token.type), (int)token.type);
             failures++;
         }
 
-        fclose(gold);
-
-        if (failures == 0) {
-            printf("OK: %d comparisons\n", checks);
-            return 0;
-        } else {
-            fprintf(stderr, "DONE: %d comparisons, %d failures\n", checks, failures);
+        if (strcmp(token.lexeme ? token.lexeme : "", lex_exp) != 0) {
+            fprintf(stderr, "Line %zu: invalid LEXEME; exp.: \"%s\" got: \"%s\"\n",
+                    line_no, lex_exp, token.lexeme ? token.lexeme : "");
+            failures++;
         }
 
+        if (token.lexeme) free(token.lexeme);
     }
 
+    fclose(gold);
+    fclose(src);
 
+    if (failures == 0)
+        printf("OK: %d comparisons\n", checks);
+    else
+        fprintf(stderr, "DONE: %d comparisons, %d failures\n", checks, failures);
+
+    return failures ? 1 : 0;
 }
