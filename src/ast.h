@@ -19,12 +19,16 @@ typedef enum {
     NT_ID,              // Identifier            [3]
     NT_VAR_DECL,        // Variable declaration  [4]
     NT_IF,              // If statement          [5]
+//  NT_IF_STATEMENT,
+//  NT_IF_BODY,
+//  NT_ELSE_BODY
     NT_ELSE,            // Else                  [6]
     NT_BOOL_EXPR,       // Boolean expression    [7]
     NT_AR_EXPR,         // Arithmetic expression [8]
     NT_LITERAL,         // Literal               [9]
     NT_BUILTIN,         // Builtin function      [10]
-    NT_RETURN           // Return                [11]
+    NT_WHILE,           // While                 [11]
+    NT_RETURN           // Return                [12]
 }ast_node_type_t;
 
 //structure for an AST node
@@ -45,8 +49,8 @@ typedef struct ast_node_t{
 
 
 ast_node_ptr create_ast();
-ast_node_ptr ast_expression_node(token_t *current_token, ast_node_ptr parent_node);
-ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr parent, token_t *current_token, int n_of_children);
+ast_node_ptr ast_expression_subtree(token_t *current_token, ast_node_ptr parent_node);
+void ast_regular_node(ast_node_ptr current_node, ast_node_ptr parent, token_t *current_token);
 ast_node_ptr ast_create_node(token_t token, ast_node_ptr parent, ast_node_type_t node_type);
 ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node);
 ast_node_ptr ast_find_top(ast_node_ptr parent_node);
@@ -60,3 +64,4 @@ void destroy_ast(ast_node_ptr node);
 void free_ast(ast_node_ptr node);
 int ast_operator_eval(ast_node_ptr operator, ast_node_ptr parent_node, ast_node_ptr term);
 void ast_expr_error(ast_node_ptr operator, ast_node_ptr parent_node, ast_node_ptr term, token_t *current_token);
+void ast_expression_node(ast_node_ptr current_node, ast_node_ptr new_node, token_t *current_token);
