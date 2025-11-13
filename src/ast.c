@@ -405,9 +405,11 @@ ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node) {
         case TT_IDENTIFIER:
         case TT_KEYWORD_Null:
             node = ast_create_node(*current_token, parent_node, NT_TODO);
-    ast_print_token(*current_token);
+    ast_print_token(*current_token); // 42
+    ast_print_token(*current_token); // 42
+
             *current_token = get_token(); // consume
-    ast_print_token(*current_token);
+    ast_print_token(*current_token); // }
             break;
 
         case TT_LPAREN:{
