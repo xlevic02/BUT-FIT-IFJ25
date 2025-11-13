@@ -7,6 +7,12 @@
 
 #define INITIAL_BUF_CAP 16
 
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "error.h"
+
 typedef enum {
     TT_EOF,             // end of file = 0
     TT_EOL,             // end of line = 1
@@ -51,7 +57,9 @@ typedef enum {
     TT_LBRACE,          // { = 33
     TT_RBRACE,          // } = 34
     TT_COMMA,           // , = 35
-    TT_DOT              // . = 36
+    TT_DOT,              // . = 36
+
+    TT_ERROR
 } token_type_t;
 
 typedef struct {

@@ -2,13 +2,9 @@
 // Scanner by William Denis "xtihelw00" Tihelka on 10/13/25.
 //
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
+
 #include "scanner.h"
-#include "error.h"
+
 
 // States for the deterministic finite state machine (DFSM) used in the scanner
 typedef enum {
