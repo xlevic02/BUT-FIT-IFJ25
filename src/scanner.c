@@ -42,6 +42,8 @@ token_t make_token(token_type_t type, const char *lexeme) {
         t.lexeme = NULL;
     }
 
+    printf("Created token: type=%d, lexeme=%s\n", t.type, t.lexeme ? t.lexeme : "NULL");
+    
     return t;
 }
 

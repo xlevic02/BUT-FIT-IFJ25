@@ -52,7 +52,6 @@ ast_node_ptr create_ast(){
         if(current_token->type == TT_EOL){
             ast_skip_EOL(current_token);
         }
-        ast_print_token(*current_token);
         switch (current_token->type){
             
             //Function handling
@@ -84,8 +83,6 @@ ast_node_ptr create_ast(){
             //Fail state of incompatible tokens
             default:
                 //should not happen
-                
-                ast_print_token(*current_token);
                 ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, root, current_token);
                 break;
         }
@@ -147,7 +144,6 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                     ast_increase_children(new_node, ast_expression_node(current_token, 0, new_node));
 
                 }
-                ast_print_token(*current_token);
 
                 //*current_token = get_token();
                 break;}
@@ -396,20 +392,16 @@ ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node) {
     ast_node_ptr node = NULL;
 
     
-    ast_print_token(*current_token);
 
     switch (current_token->type) {
         case TT_INT:
         case TT_FLOAT:
         case TT_STRING:
         case TT_IDENTIFIER:
+        case TT_KEYWORD_NUM:
         case TT_KEYWORD_Null:
             node = ast_create_node(*current_token, parent_node, NT_TODO);
-    ast_print_token(*current_token); // 42
-    ast_print_token(*current_token); // 42
-
             *current_token = get_token(); // consume
-    ast_print_token(*current_token); // }
             break;
 
         case TT_LPAREN:{
@@ -426,7 +418,6 @@ ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node) {
     }
 
     
-    ast_print_token(*current_token);
     return node;
 }
 
