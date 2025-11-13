@@ -28,6 +28,7 @@ ast_node_ptr create_ast(){
     ast_skip_EOL(current_token);
 
 
+        ast_print_token(*current_token);
     if (current_token->type != TT_KEYWORD_CLASS &&
         strcmp((*current_token = get_token()).lexeme , "Program"))
     {
@@ -36,14 +37,19 @@ ast_node_ptr create_ast(){
     }
 
     ast_node_ptr root = ast_create_node(*current_token, NULL, NT_ROOT);
+    
+        ast_print_token(*current_token);
+        *current_token = get_token();//????TODO why twice?
+        ast_print_token(*current_token);
+    if ((*current_token = get_token()).type != TT_LBRACE){
+        
+        ast_print_token(*current_token);
 
-    if ((*current_token = get_token()).type != TT_LBRACE)
-    {
         ast_error(ERROR_SYNTAX, MSG_SYN_PROGRAM_DECLARATION, root, current_token);
     }
 
-    if((*current_token = get_token()).type != TT_EOL)
-    {
+    if((*current_token = get_token()).type != TT_EOL){
+        ast_print_token(*current_token);
         ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, root, current_token);
     }
 
@@ -117,11 +123,15 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
             case TT_INT:
             case TT_FLOAT:
             case TT_STRING:
-            case TT_IDENTIFIER:
+            case TT_IDENTIFIER:{
                 ast_increase_children(current_node, ast_expression_node(current_token, 0, current_node));
 
+                token_type_t control_token = current_node->children[current_node->n_of_children - 1]->token.type;
+                if(control_token == TT_IDENTIFIER || control_token == TT_INT || control_token == TT_FLOAT || control_token == TT_STRING || control_token == TT_LPAREN){
+                    ast_error(ERROR_SYNTAX, "Syntax error:\texpressionless literal or numeral\n", previous_node, current_token);
+                }
                 *current_token = get_token();
-                break;
+                break;}
 
 
 
@@ -221,6 +231,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 ast_increase_children(current_node, while_node);
                 *current_token = get_token();
                 if (current_token->type != TT_LPAREN){
+                    free(while_node);
                     ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 ast_skip_EOL(current_token);
@@ -482,6 +493,7 @@ int ast_handle_prologue(token_t *current_token){
     ast_skip_EOL(current_token);
 
     if(current_token->type != TT_KEYWORD_IFJ) return 1;
+    *current_token = get_token();
 
     return 0;
 }
@@ -535,8 +547,10 @@ void free_ast(ast_node_ptr node){
     free(node);
 }
 
-
-
+// Debugging function to print token information
+void ast_print_token(token_t token){
+    printf("Token type: %d, lexeme: %s\n", token.type, token.lexeme);
+}
 
 
 int ast_get_precedence(token_type_t type) {

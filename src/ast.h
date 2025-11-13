@@ -57,3 +57,4 @@ int ast_handle_prologue(token_t *current_token);
 void ast_error(int err_num, const char* err_message, ast_node_ptr node, token_t *current_token);
 void destroy_ast(ast_node_ptr node);
 void free_ast(ast_node_ptr node);
+void ast_print_token(token_t token); // Debugging function to print token information
