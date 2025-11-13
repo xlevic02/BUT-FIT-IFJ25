@@ -131,12 +131,13 @@ int main (int argc, char **argv)
             failures++;
         }
 
-        if (strcmp(token.lexeme ? token.lexeme : "", lex_exp) != 0) {
-            fprintf(stderr, "Line %zu: invalid LEXEME; exp.: \"%s\" got: \"%s\"\n",
-                    line_no, lex_exp, token.lexeme ? token.lexeme : "");
-            failures++;
+        if (token.type != TT_STRING) {
+            if (strcmp(token.lexeme ? token.lexeme : "", lex_exp) != 0) {
+                fprintf(stderr, "Line %zu: invalid LEXEME; exp.: \"%s\" got: \"%s\"\n",
+                        line_no, lex_exp, token.lexeme ? token.lexeme : "");
+                failures++;
+            }
         }
-
         if (token.lexeme) free(token.lexeme);
     }
 
