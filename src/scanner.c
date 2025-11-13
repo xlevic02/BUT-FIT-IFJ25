@@ -103,15 +103,16 @@ token_t get_token() {
                     return make_token(TT_EOF, NULL);
                 }
 
-                if (c == '\r') {
-                    int next = getchar();
-                    if (next != '\n' && next != EOF) ungetc(next, stdin);
+                if (c == '\r' || c == '\n') {
+                // normalize all EOL variants
+                    if (c == '\r') {
+                        int next = getchar();
+                        if (next != '\n' && next != EOF)
+                            ungetc(next, stdin);
+                    }
+                    token_t tok = make_token(TT_EOL, "\\n");
                     free(buf);
-                    return make_token(TT_EOL, "\\n");
-                }
-                if (c == '\n') {
-                    free(buf);
-                    return make_token(TT_EOL, "\\n");
+                    return tok;  // OK to return once per line, ensures clean buffer reset
                 }
 
                 if (isspace(c)) continue; // skip whitespace
@@ -450,7 +451,7 @@ token_t get_token() {
                 // Skip until end of line or EOF
                 while ((c = getchar()) != EOF && c != '\n' && c != '\r');
                 state = STATE_START;
-                break;
+                continue;
 
             case STATE_COMMENT_BLOCK: ; // Yes this is has to be here or it cant compile, yes, c is stupid
                 // Skip until closing */ or EOF
@@ -474,7 +475,7 @@ token_t get_token() {
                     }
                 }
                 state = STATE_START;
-                break;
+                continue;
             
             default:
                 // Should never reach here
