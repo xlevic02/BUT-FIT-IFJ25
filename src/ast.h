@@ -50,6 +50,7 @@ ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node);
 ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr parent, token_t *current_token, int n_of_children);
 ast_node_ptr ast_create_node(token_t token, ast_node_ptr parent, ast_node_type_t node_type);
 ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node);
+ast_node_ptr ast_ifj_function_call_node(token_t *current_token, ast_node_ptr current_node);
 int ast_get_precedence(token_type_t type);
 void ast_increase_children(ast_node_ptr current_node, ast_node_ptr new_node);
 void ast_skip_EOL(token_t *current_token);
@@ -57,5 +58,5 @@ int ast_handle_prologue(token_t *current_token);
 void ast_error(int err_num, const char* err_message, ast_node_ptr node, token_t *current_token);
 void destroy_ast(ast_node_ptr node);
 void free_ast(ast_node_ptr node);
-const char* ast_token_type_to_string(token_type_t type);
+const char* token_type_to_string(token_type_t type);
 void ast_print_token(token_t token); // Debugging function to print token information
