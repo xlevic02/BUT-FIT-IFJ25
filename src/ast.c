@@ -232,7 +232,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
             //If statement
             case TT_KEYWORD_IF:
-                new_node = ast_create_node(*current_token, current_node, NT_IF);
+                new_node = ast_create_node(*current_token, current_node, NT_IF_STATEMENT);
                 if(new_node == NULL)
                     ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, current_node, current_token);
 
@@ -242,9 +242,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
                 }
 
 
-                *current_token = get_token();
-
-                if (current_token->type != TT_LPAREN)
+                if((*current_token = get_token()).type != TT_LPAREN)
                     ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, current_node, current_token);
 
                 *current_token = get_token();
@@ -253,39 +251,57 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
                 ast_expression_node(new_node, current_token, 0);
 
+
                 //Handle opening brace and EOL
-                if((*current_token = get_token()).type != TT_LBRACE && (*current_token = get_token()).type != TT_EOL)
+                if((*current_token = get_token()).type != TT_LBRACE)
                     ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, current_node, current_token);
 
-                *current_token = get_token();
-                //TODO: possible improvement
-                //  IfStatement
-                //  ├── Condition (...)
-                //  ├── IfBody ──── ...
-                //  └── ElseBody ── ...
+                tmp_node = ast_create_node(*current_token, new_node, NT_IF_BODY);
+                if(tmp_node == NULL)
+                    ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, new_node, current_token);
+
+                if(ast_increase_children(new_node, tmp_node)) {
+                    free(tmp_node);
+                    ast_error(ERROR_INTERNAL, MSG_INT_REALLOC, new_node, current_token);
+                }
+
+                if((*current_token = get_token()).type != TT_EOL)
+                    ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, new_node, current_token);
+
+                ast_skip_EOL(current_token);
 
 
                 //Handle if body
-                ast_regular_node(new_node, current_token);
+                ast_regular_node(tmp_node, current_token);
 
                 *current_token = get_token();
 
-                //Else handling
+
+                //Else body
                 if (current_token->type != TT_KEYWORD_ELSE){
                     break; 
                 }
 
-                ast_node_ptr else_node = ast_create_node(*current_token, current_node, NT_ELSE);
-                ast_increase_children(current_node, else_node);
+                tmp_node = ast_create_node(*current_token, current_node, NT_ELSE_BODY);
+                if(tmp_node == NULL)
+                    ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, new_node, current_token);
+
+                if(ast_increase_children(current_node, tmp_node)) {
+                    free(tmp_node);
+                    ast_error(ERROR_INTERNAL, MSG_INT_REALLOC, new_node, current_token);
+                }
+
 
                 //Handle opening brace and EOL
                 if ((*current_token = get_token()).type != TT_LBRACE && (*current_token = get_token()).type != TT_EOL){
-                    ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
+                    ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, current_node, current_token);
                 }
-                *current_token = get_token();
+
+                ast_skip_EOL(current_token);
+
 
                 //Handle else body
-                ast_regular_node(else_node, current_token);
+                ast_regular_node(tmp_node, current_token);
 
                 *current_token = get_token();
                 break;
@@ -317,10 +333,23 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
                 ast_expression_node(new_node, current_token,0);
 
                 //Handle opening brace and EOL
-                if((*current_token = get_token()).type != TT_LBRACE && (*current_token = get_token()).type != TT_EOL)
+                if((*current_token = get_token()).type != TT_LBRACE)
                     ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, current_node, current_token);
 
-                *current_token = get_token();
+                tmp_node = ast_create_node(*current_token, new_node, NT_WHILE_BODY);
+                if(tmp_node == NULL)
+                    ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, new_node, current_token);
+
+                if(ast_increase_children(new_node, tmp_node)) {
+                    free(tmp_node);
+                    ast_error(ERROR_INTERNAL, MSG_INT_REALLOC, new_node, current_token);
+                }
+
+                if((*current_token = get_token()).type != TT_EOL)
+                    ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, new_node, current_token);
+
+                ast_skip_EOL(current_token);
+                
 
                 //Handle while body
                 ast_regular_node(new_node, current_token);
