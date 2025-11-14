@@ -127,7 +127,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
         if(current_token->type == TT_EOL){
             ast_skip_EOL(current_token);
         }
-                    ast_print_token(*current_token);
+
         switch(current_token->type){
             //Arithmetic expressions
             case TT_LPAREN:
@@ -615,9 +615,11 @@ void destroy_ast(ast_node_ptr node){
 }
 
 void free_ast(ast_node_ptr node){
-    if (node == NULL) return;
+    if (node == NULL) {
+        return;
+    }
     if (node->children != NULL){
-        for (int i = 0; node->children[i] < node->n_of_children; i++){
+        for (int i = 0; i < node->n_of_children; i++){
             free_ast(node->children[i]);
         }
         free(node->children);
