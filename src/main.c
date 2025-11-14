@@ -53,7 +53,7 @@ int main(void) {
 
     visualize_ast(ast_root);
 
-    free_ast(ast_root);
+    destroy_ast(ast_root);
 
     return 0;
 }

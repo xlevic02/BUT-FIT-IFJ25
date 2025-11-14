@@ -617,7 +617,7 @@ void destroy_ast(ast_node_ptr node){
 void free_ast(ast_node_ptr node){
     if (node == NULL) return;
     if (node->children != NULL){
-        for (int i = 0; node->children[i] != NULL; i++){
+        for (int i = 0; node->children[i] < node->n_of_children; i++){
             free_ast(node->children[i]);
         }
         free(node->children);
