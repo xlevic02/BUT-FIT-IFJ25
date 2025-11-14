@@ -450,6 +450,9 @@ token_t get_token() {
             case STATE_COMMENT_LINE:
                 // Skip until end of line or EOF
                 while ((c = getchar()) != EOF && c != '\n' && c != '\r');
+                if (c != EOF) {
+                    ungetc(c, stdin);
+                }
                 state = STATE_START;
                 continue;
 
