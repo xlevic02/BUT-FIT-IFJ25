@@ -391,6 +391,10 @@ token_t get_token() {
                 break;
 
             case STATE_STRING_ESCAPE:
+                if (c == EOF) {
+                    free(buf);
+                    error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
+                }
                 switch (c) {
                     case 'n': buf_append(&buf, &len, &cap, '\n'); state = STATE_STRING; break;
                     case 't': buf_append(&buf, &len, &cap, '\t'); state = STATE_STRING; break;
@@ -413,6 +417,10 @@ token_t get_token() {
                     char hex_digits[3] = {0};
 
                     while (count < 2) { // allow exactly two hex digits
+                        if (c == EOF) {
+                            free(buf);
+                            error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
+                        }
                         if (!isxdigit(c)) {
                             free(buf);
                             error(ERROR_LEXICAL, MSG_LEX_INVALID_ESCAPE);
