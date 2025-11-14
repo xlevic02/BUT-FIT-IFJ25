@@ -16,19 +16,21 @@ typedef enum {
     NT_ROOT,            // Root                  [0]
     NT_VAR_DEFINITION,  // Variable definition   [1]
     NT_FUNC_DECL,       // Function declaration  [2]
-    NT_PARAM,           // Parameters            [3]
-    NT_ID,              // Identifier            [4]
-    NT_ASSIGN,          // Variable declaration  [5]
-    NT_IF_STATEMENT,    // If statement          [6]
-    NT_IF_BODY,         // If body               [7]
-    NT_ELSE_BODY,       // Else body             [8]
-    NT_BOOL_EXPR,       // Boolean expression    [9]
-    NT_AR_EXPR,         // Arithmetic expression [10]
-    NT_LITERAL,         // Literal               [11]
-    NT_BUILTIN,         // Builtin function      [12]
-    NT_WHILE,           // While                 [13]
-    NT_WHILE_BODY,      // While body            [14]
-    NT_RETURN           // Return                [15]
+    NT_GETTER,          // Getter declaration    [3]
+    NT_SETTER,          // Setter declaration    [4]
+    NT_PARAM,           // Parameters            [5]
+    NT_ID,              // Identifier            [6]
+    NT_ASSIGN,          // Variable declaration  [7]
+    NT_IF_STATEMENT,    // If statement          [8]
+    NT_IF_BODY,         // If body               [9]
+    NT_ELSE_BODY,       // Else body             [10]
+    NT_BOOL_EXPR,       // Boolean expression    [11]
+    NT_AR_EXPR,         // Arithmetic expression [12]
+    NT_LITERAL,         // Literal               [13]
+    NT_BUILTIN,         // Builtin function      [14]
+    NT_WHILE,           // While                 [15]
+    NT_WHILE_BODY,      // While body            [16]
+    NT_RETURN           // Return                [17]
 }ast_node_type_t;
 
 //structure for an AST node
@@ -65,3 +67,5 @@ void free_ast(ast_node_ptr node);
 int ast_operator_eval(ast_node_ptr operator, ast_node_ptr parent_node, ast_node_ptr term);
 void ast_expr_error(ast_node_ptr operator, ast_node_ptr parent_node, ast_node_ptr term, token_t *current_token);
 void ast_expression_node(ast_node_ptr new_node, token_t *current_token, int n_of_children);
+void ast_getter(token_t* current_token, ast_node_ptr getter_node);
+void ast_setter(token_t* current_token, ast_node_ptr setter_node);

@@ -4,4 +4,7 @@
 #ifndef BUT_FIT_IFJ25_SEM_ANALYSIS_H
 #define BUT_FIT_IFJ25_SEM_ANALYSIS_H
 
+#include<stdio.h>
+#include<stdlib.h>
+
 #endif //BUT_FIT_IFJ25_SEM_ANALYSIS_H
