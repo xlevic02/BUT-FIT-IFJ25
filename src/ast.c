@@ -757,7 +757,7 @@ void ast_expression_node(ast_node_ptr new_node, token_t *current_token, int n_of
 
 
 
-//TODO error handeling if called from ast_expression_subtree
+
 ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node){
     ast_node_ptr param_id_node = NULL;
     ast_node_ptr parameter_node =  ast_create_node(*current_token, parent_node, NT_PARAM);
