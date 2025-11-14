@@ -49,8 +49,13 @@ ast_node_ptr create_ast(){
 
     //Main loop to handle all top-level constructs (functions, main)
     do{
+
         if(current_token->type == TT_EOL){
             ast_skip_EOL(current_token);
+        }
+
+        if (current_token->type == TT_RBRACE){
+            break;
         }
         
         if (current_token->type != TT_KEYWORD_STATIC){
@@ -81,6 +86,9 @@ ast_node_ptr create_ast(){
             ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, root, current_token);
         }else if(current_token->type != TT_LBRACE){
             ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, root, current_token);
+        }else{
+            ast_node_ptr getter_node = ast_create_node(*current_token, new_node, NT_TODO);
+            ast_increase_children(new_node, getter_node);
         }
         //TODO handle getters/setters, potentially by a specific first node?
 
@@ -92,9 +100,7 @@ ast_node_ptr create_ast(){
 
         ast_regular_node(new_node, root, current_token, 1);
         
-        
-        
-    } while (((*current_token = get_token()).type != TT_EOF) || (current_token->type != TT_LBRACE));;
+    } while (((*current_token = get_token()).type != TT_EOF) || (current_token->type != TT_RBRACE));;
 
     if(current_token->type != TT_RBRACE){
         ast_error(2, MSG_SYN_MISSING_TOKEN, root, current_token);
@@ -136,7 +142,6 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                     ast_error(ERROR_SYNTAX, "Syntax error:\texpressionless literal or numeral\n", previous_node, current_token);
                 }
                 
-                ast_print_token(*current_token);
                 break;}
 
 
