@@ -182,6 +182,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
                 break;
 
+                
 
 
 
@@ -665,6 +666,12 @@ ast_node_ptr ast_get_term(token_t *current_token, ast_node_ptr parent_node) {
                 destroy_ast(new_node);
                 return NULL;
             }
+
+            if((*current_token = get_token()).type != TT_LPAREN) {
+                destroy_ast(new_node);
+                return (ast_node_ptr) -1;
+            }
+
 
             //Ifj params
             tmp = ast_parameter_node(current_token, new_node);
