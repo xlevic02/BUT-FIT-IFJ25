@@ -332,23 +332,34 @@ token_t get_token() {
                 break;
 
             case STATE_STRING: // String literals
-                if (c == '"') {
-                    // Check for triple quote (multi-line string)
-                    int c2 = getchar();
-                    if (c2 == '"') {
-                        // Enter multi-line string state
-                        state = STATE_STRING_MULTI;
-                        break;
-                    } else {
-                        // Only two quotes, treat as end of string and push back c2
-                        if (c2 != EOF) ungetc(c2, stdin);
-                        buf[len] = '\0';
-                        token_t tok = make_token(TT_STRING, buf);
-                        free(buf);
-                        return tok;
-                    }
-                } else if (c == '\\') {
+                if (c == '\\') {
                     state = STATE_STRING_ESCAPE;
+                }
+                if (len == 0) {
+                    if (c == '"') {
+                        // Check for triple quote (multi-line string)
+                        int c2 = getchar();
+                        if (c2 == '"') {
+                            // Enter multi-line string state
+                            state = STATE_STRING_MULTI;
+                            break;
+                        } else if (c == '\\') {
+                            state = STATE_STRING_ESCAPE;
+                        } else {
+                            // Only two quotes, treat as end of string and push back c2
+                            if (c2 != EOF) ungetc(c2, stdin);
+                            buf[len] = '\0';
+                            token_t tok = make_token(TT_STRING, buf);
+                            free(buf);
+                            return tok;
+                        }
+                    }
+                } else if (c == '"') {
+                    // End of string
+                    buf[len] = '\0';
+                    token_t tok = make_token(TT_STRING, buf);
+                    free(buf);
+                    return tok;
                 } else if (c == EOF) {
                     free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
