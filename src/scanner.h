@@ -1,5 +1,5 @@
 // Implementace prekladace imperativniho jazyka IFJ25
-// Scanner by William Denis "xtihelw00" Tihelka on 10/13/25.
+// scanner.h by William Denis "xtihelw00" Tihelka on 10/13/25.
 //
 
 #ifndef SCANNER_H
@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include "error.h"
 
 typedef enum {
@@ -57,9 +58,7 @@ typedef enum {
     TT_LBRACE,          // { = 33
     TT_RBRACE,          // } = 34
     TT_COMMA,           // , = 35
-    TT_DOT,              // . = 36
-
-    TT_ERROR
+    TT_DOT              // . = 36
 } token_type_t;
 
 typedef struct {

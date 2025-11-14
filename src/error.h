@@ -66,8 +66,8 @@
 
 // Generator error msg
 #define MSG_INVALID_INPUT_PARAMS "Runtime error: \tincorrect input parameters specified on command line when running the interpreter\n"
-#define MSG_ANALYSIS_FAILURE "Error during the analysis (lexical, syntactic) of IFJcode24 source code\n"
-#define MSG_SEMANTIC_CHECK_FAILURE "Error during semantic checks of IFJcode24 source code\n"
+#define MSG_ANALYSIS_FAILURE "Error during the analysis (lexical, syntactic) of IFJcode25 source code\n"
+#define MSG_SEMANTIC_CHECK_FAILURE "Error during semantic checks of IFJcode25 source code\n"
 #define MSG_RUNTIME_WRONG_OPERAND "Runtime error:\tincorrect operand types during interpretation\n"
 #define MSG_ACCESS_NONEXISTENT_VAR "Runtime error:\taccess to a non-existent variable (frame exists)\n"
 #define MSG_NONEXISTENT_FRAME "Runtime error:\tframe does not exist (e.g., reading from empty stack of frames)\n"
