@@ -2,13 +2,8 @@
 // scanner.c by William Denis "xtihelw00" Tihelka on 10/13/25.
 //
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
 #include "scanner.h"
-#include "error.h"
+
 
 // States for the deterministic finite state machine (DFSM) used in the scanner
 typedef enum {
@@ -16,6 +11,7 @@ typedef enum {
     STATE_IDENTIFIER,     // Reading an identifier or keyword
     STATE_INT,            // Reading an integer number
     STATE_FLOAT,          // Reading a floating-point number
+    STATE_FLOAT_EXP,      // Reading exponent part of a float
     STATE_STRING,         // Reading a string literal
     STATE_SLASH,          // Reading a slash (could be division or start of comment)
     STATE_COMMENT_LINE,   // Reading a single-line comment
@@ -26,6 +22,8 @@ typedef enum {
     STATE_LT,             // Reading a less-than operator   
     STATE_GT,             // Reading a greater-than operator
     STATE_DOT,            // Reading a dot
+    STATE_STRING_ESCAPE,   // after reading '\'
+    STATE_STRING_HEX,      // parsing hex digits after \x
 } State;
 
 
@@ -44,9 +42,10 @@ token_t make_token(token_type_t type, const char *lexeme) {
         t.lexeme = NULL;
     }
 
+    printf("Created token: type=%d, lexeme=%s\n", t.type, t.lexeme ? t.lexeme : "NULL");
+    
     return t;
 }
-
 
 // Helper function to append a character to a dynamic buffer, resizing if necessary
 void buf_append(char **buf, size_t *len, size_t *cap, char c) {
@@ -77,12 +76,14 @@ token_type_t keyword_type(const char *lexeme) {
     if (strcmp(lexeme, "for") == 0) return TT_KEYWORD_FOR;
     if (strcmp(lexeme, "num") == 0) return TT_KEYWORD_NUM;
     if (strcmp(lexeme, "Null") == 0) return TT_KEYWORD_Null;
+    if (strcmp(lexeme, "Num") == 0) return TT_KEYWORD_NUM;
+    if (strcmp(lexeme, "null") == 0) return TT_NULL;
     return TT_IDENTIFIER; // not a keyword, return identifier type
 }
 
 // Main scanner function implementing a deterministic finite state machine (DFSM)
 // Reads input character by character and transitions between states to build tokens
-token_t get_token() { // First "functional" version of scanner with basic tokens, more to be added
+token_t get_token() {
     State state = STATE_START; // initial state
     int c;      // current character
     char *buf =  malloc(INITIAL_BUF_CAP);
@@ -104,15 +105,16 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     return make_token(TT_EOF, NULL);
                 }
 
-                if (c == '\r') {
-                    int next = getchar();
-                    if (next != '\n' && next != EOF) ungetc(next, stdin);
+                if (c == '\r' || c == '\n') {
+                // normalize all EOL variants
+                    if (c == '\r') {
+                        int next = getchar();
+                        if (next != '\n' && next != EOF)
+                            ungetc(next, stdin);
+                    }
+                    token_t tok = make_token(TT_EOL, "\\n");
                     free(buf);
-                    return make_token(TT_EOL, "\\n");
-                }
-                if (c == '\n') {
-                    free(buf);
-                    return make_token(TT_EOL, "\\n");
+                    return tok;  // OK to return once per line, ensures clean buffer reset
                 }
 
                 if (isspace(c)) continue; // skip whitespace
@@ -175,10 +177,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     return make_token(TT_COMMA, ",");
                 }
                 else {
-                    // For now, treat any other char as error
-                    buf_append(&buf, &len, &cap, c);
                     error(ERROR_LEXICAL, MSG_LEX_PROHIBITED_CHAR);
-                    return make_token(TT_ERROR, buf);
                 }
                 break;
 
@@ -199,12 +198,10 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     free(buf);
                     return make_token(TT_NEQ, "!=");
                 } else {
-                    // Just '!' is not a valid operator in IFJ25, treat as error
+                    // Just '!' is not a valid operator 
                     if (c != EOF) ungetc(c, stdin);
-                    //token_t tok = make_token(TT_ERROR, "!");
                     free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_PROHIBITED_CHAR);
-                    //return tok;
                 }
                 break;
 
@@ -283,7 +280,12 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     buf_append(&buf, &len, &cap, c);
                     
                     state = STATE_FLOAT;
-                } else { // Whitespace or other char, end of integer
+                } else if (c == 'e' || c == 'E') {
+                    buf_append(&buf, &len, &cap, c);
+                    state = STATE_FLOAT_EXP; 
+                }
+                else {
+                    // Whitespace or other char, end of integer
                     buf[len] = '\0';
                     if (c != EOF) ungetc(c, stdin);
                     token_t tok = make_token(TT_INT, buf);
@@ -295,7 +297,33 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
             case STATE_FLOAT: // Float literals
                 if (isdigit(c)) {
                     buf_append(&buf, &len, &cap, c);
+                } else if (c == 'e' || c == 'E') {
+                    buf_append(&buf, &len, &cap, c);
+                    state = STATE_FLOAT_EXP;
+                } else {
+                    buf[len] = '\0';
+                    if (c != EOF) ungetc(c, stdin);
+                    token_t tok = make_token(TT_FLOAT, buf);
+                    free(buf);
+                    return tok;
+                }
+                break;
 
+            case STATE_FLOAT_EXP: // Float literals with exponent
+                if (isdigit(c)) {
+                    buf_append(&buf, &len, &cap, c);
+                } else if (c == '+' || c == '-') {
+                    // Only valid if immediately after 'e' or 'E'
+                        if (buf[len - 1] == 'e' || buf[len - 1] == 'E') {
+                            buf_append(&buf, &len, &cap, c);
+                        } else {
+                            free(buf);
+                            error(ERROR_LEXICAL, MSG_LEX_INVALID_NUMBER);
+                        }    
+                } else if (buf[len - 1] == 'e' || buf[len - 1] == 'E' || buf[len - 1] == '+' || buf[len - 1] == '-') {
+                    // no digits after e/+/- → invalid
+                    free(buf);
+                    error(ERROR_LEXICAL, MSG_LEX_INVALID_NUMBER);
                 } else {
                     buf[len] = '\0';
                     if (c != EOF) ungetc(c, stdin);
@@ -321,6 +349,8 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                         free(buf);
                         return tok;
                     }
+                } else if (c == '\\') {
+                    state = STATE_STRING_ESCAPE;
                 } else if (c == EOF) {
                     free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
@@ -334,7 +364,7 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                     free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
                 }
-
+                
                 if (c == '"') {
                     int c2 = getchar();
                     if (c2 == '"') {
@@ -362,6 +392,46 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 }
                 break;
 
+            case STATE_STRING_ESCAPE:
+                switch (c) {
+                    case 'n': buf_append(&buf, &len, &cap, '\n'); state = STATE_STRING; break;
+                    case 't': buf_append(&buf, &len, &cap, '\t'); state = STATE_STRING; break;
+                    case 'r': buf_append(&buf, &len, &cap, '\r'); state = STATE_STRING; break;
+                    case '"': buf_append(&buf, &len, &cap, '"');  state = STATE_STRING; break;
+                    case '\\': buf_append(&buf, &len, &cap, '\\'); state = STATE_STRING; break;
+                    case 'x':  // start of hexadecimal escape sequence
+                        state = STATE_STRING_HEX;
+                        break;
+                    default:
+                        // invalid escape sequence
+                        free(buf);
+                        error(ERROR_LEXICAL, MSG_LEX_INVALID_ESCAPE);
+                }
+                break;
+
+            case STATE_STRING_HEX:
+                {
+                    int count = 0;
+                    char hex_digits[3] = {0};
+
+                    while (count < 2) { // allow exactly two hex digits
+                        if (!isxdigit(c)) {
+                            free(buf);
+                            error(ERROR_LEXICAL, MSG_LEX_INVALID_ESCAPE);
+                        }
+                        hex_digits[count++] = (char)c;
+                        c = getchar();
+                    }
+
+                    // convert the hex string to actual character
+                    unsigned int value;
+                    sscanf(hex_digits, "%2x", &value);
+                    buf_append(&buf, &len, &cap, (char)value);
+
+                    if (c != EOF) ungetc(c, stdin);
+                    state = STATE_STRING;
+                }
+                break;
 
             case STATE_SLASH:
                 if (c == '/') {
@@ -383,26 +453,31 @@ token_t get_token() { // First "functional" version of scanner with basic tokens
                 // Skip until end of line or EOF
                 while ((c = getchar()) != EOF && c != '\n' && c != '\r');
                 state = STATE_START;
-                break;
+                continue;
 
-            case STATE_COMMENT_BLOCK:
+            case STATE_COMMENT_BLOCK: ; // Yes this is has to be here or it cant compile, yes, c is stupid
                 // Skip until closing */ or EOF
-                while (1) {
+                int depth = 1;
+                while (depth > 0) {
                     c = getchar();
                     if (c == EOF) {
                         error(ERROR_LEXICAL,MSG_LEX_UNCLOSED_COMMENT);
                     }
-                    if (c == '*') {
+                    if (c == '/') {
+                        int n = getchar();
+                        if (n == '*') depth++;
+                        else ungetc(n, stdin);
+                    } else if (c == '*') {
                         int next = getchar();
                         if (next == '/') {
-                            state = STATE_START;
-                            break;
+                            depth--;
                         } else if (next != EOF) {
                             ungetc(next, stdin);
                         }
                     }
                 }
-                break;
+                state = STATE_START;
+                continue;
             
             default:
                 // Should never reach here

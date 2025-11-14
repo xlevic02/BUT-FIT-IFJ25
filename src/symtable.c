@@ -1,20 +1,37 @@
-//implementace abstraktního syntaktického stromu
-//AST by Jan Špaček <xspacej00> on 18/10/2025
+// Implementace prekladace imperativniho jazyka IFJ25
+// AST by Jan Špaček "xspacej00" on 10/18/2025
 
 
 #include "symtable.h"
 
 
+//TODO -- add IJF functions to the symbol table upon initialization
+
 
 //Funciton to declare a variable in the current scope
 int bst_declare_variable(bst_scope_ptr scope, char *name){
-  if (scope == NULL) return;
+  if (scope == NULL) return 0;
   if (bst_search_scope(scope, get_hash(name)).type != TT_ERROR){
     //Variable already declared in this or parent scope
     return 1;
   } else{
     bst_node_content_t new_var = node_content_init(name, TT_ERROR);
     bst_insert(&scope->tree, get_hash(name), new_var);
+    return 0;
+  }
+}
+
+int bst_declare_global_variable(bst_scope_ptr scope, char *name){
+  bst_scope_ptr global_scope = scope;
+  while (global_scope->parent != NULL){
+    global_scope = global_scope->parent;
+  }
+  if (bst_search_scope(global_scope, get_hash(name)).type != TT_ERROR){
+    //Variable already declared in this or parent scope
+    return 1;
+  } else{
+    bst_node_content_t new_var = node_content_init(name, TT_ERROR);
+    bst_insert(&global_scope->tree, get_hash(name), new_var);
     return 0;
   }
 }
@@ -183,37 +200,6 @@ bst_node_ptr bst_node_scope_search_ptr(bst_scope_ptr scope, unsigned int key){
 }
 
 
-
-//To insert an element into a BST
-void bst_insert(bst_node_ptr *tree, unsigned int key, bst_node_content_t value){
-    if ((*tree) == NULL) {
-
-        (*tree) = malloc(sizeof(bst_node_t));
-        if ((*tree) == NULL)
-        return;
-        (*tree)->key = key;
-        (*tree)->content = value;
-        (*tree)->left = NULL;
-        (*tree)->right = NULL;
-        return;
-    }
-
-    else if (key == (*tree)->key) {
-        (*tree)->content = value;
-        return;
-    }
-
-
-    else if ((*tree)->key > key) {
-        bst_insert(&((*tree)->left), key, value);
-        (*tree)->left = bst_balance((*tree)->left);
-    }
-
-    else if ((*tree)->key < key) {
-        bst_insert(&((*tree)->right), key, value);
-        (*tree)->right = bst_balance((*tree)->right);
-    }
-}
 
 //A helping function to replace a node by its rightmost child
 void bst_replace_by_rightmost(bst_node_ptr target, bst_node_ptr *tree){
