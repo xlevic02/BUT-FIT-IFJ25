@@ -58,7 +58,9 @@ typedef enum {
     TT_LBRACE,          // { = 33
     TT_RBRACE,          // } = 34
     TT_COMMA,           // , = 35
-    TT_DOT              // . = 36
+    TT_DOT,              // . = 36
+
+    TT_ERROR
 } token_type_t;
 
 typedef struct {

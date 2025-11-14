@@ -43,6 +43,7 @@
 #define MSG_SYN_MISSING_EOL "Syntax error:\tmissing end of line\n"
 #define MSG_SYN_UNEXPECTED_EOF "Syntax error:\tunexpected end of file\n"
 #define MSG_SYN_MISSING_TOKEN "Syntax error:\tmissing token\n"
+#define MSG_SYN_MISSING_IDENTIFIER "Syntax error:\tmissing identifier\n"
 #define MSG_SYN_TOKEN_ORDER "Syntax error:\twrong token order\n"
 #define MSG_SYN_MISSING_PROLOG "Syntax error:\tmissing prolog\n"
 #define MSG_SYN_MISSING_MAIN "Syntax error:\tmissing main\n"

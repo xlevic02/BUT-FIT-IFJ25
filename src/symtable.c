@@ -5,6 +5,8 @@
 #include "symtable.h"
 
 
+//TODO -- add IJF functions to the symbol table upon initialization
+
 
 //Funciton to declare a variable in the current scope
 int bst_declare_variable(bst_scope_ptr scope, char *name){
