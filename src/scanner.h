@@ -60,7 +60,7 @@ typedef enum {
     TT_COMMA,           // , = 35
     TT_DOT,              // . = 36
 
-    TT_ERROR           // error token = 99
+    TT_ERROR
 } token_type_t;
 
 typedef struct {
