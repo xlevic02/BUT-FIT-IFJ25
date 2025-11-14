@@ -138,7 +138,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
     //Main loop to handle all constructs inside a block
     while(current_token->type != TT_EOF){
         switch(current_token->type){
-            //Arithmetic expressions
+            //Assign
             case TT_IDENTIFIER:
                 tmp_tok = current_token;
                 *current_token = get_token();
@@ -363,104 +363,6 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
                 *current_token = get_token();
                 break;
                 
-                
-
-
-
-
-
-            //Inherent function call
-            case TT_KEYWORD_IFJ:
-
-                if ((*current_token = get_token()).type != TT_DOT)
-                    ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, current_node, current_token);
-
-
-                *current_token = get_token();
-                ast_skip_EOL(current_token);
-
-                if (current_token->type != TT_IDENTIFIER)
-                    ast_error(ERROR_SYNTAX, MSG_SYN_TOKEN_ORDER, current_node, current_token);
-
-
-                new_node = ast_create_node(*current_token, current_node, NT_BUILTIN);
-                if(new_node == NULL)
-                    ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, current_node, current_token);
-
-                if(ast_increase_children(current_node, new_node)) {
-                    free(new_node);
-                    ast_error(ERROR_INTERNAL, MSG_INT_REALLOC, current_node, current_token);
-                }
-
-
-
-                if((*current_token = get_token()).type != TT_LPAREN)
-                    ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, current_node, current_token);
-
-                *current_token = get_token();
-                ast_skip_EOL(current_token);
-
-
-                bool comma_present = true;
-                ast_node_ptr param_node = NULL;
-                //Argument handling
-                while(current_token->type != TT_RPAREN){
-                    switch (current_token->type)
-                    {
-                        case TT_IDENTIFIER:
-                        case TT_INT:
-                        case TT_FLOAT:
-                        case TT_STRING:
-                        case TT_NULL:
-                            if(!comma_present)
-                                ast_error(ERROR_SYNTAX, "Syntax error:\tmissing comma in parameters\n", current_node, current_token);
-
-                            comma_present = false;
-
-                            ast_node_type_t nt_param;
-                            if(current_token->type == TT_IDENTIFIER)
-                                nt_param = NT_ID;
-                            else
-                                nt_param = NT_LITERAL;
-
-                            param_node = ast_create_node(*current_token, new_node, nt_param);
-                            if(param_node == NULL)
-                                ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, current_node, current_token);
-
-                            if(ast_increase_children(new_node, param_node)) {
-                                free(param_node);
-                                ast_error(ERROR_INTERNAL, MSG_INT_REALLOC, current_node, current_token);
-                            }
-
-                            *current_token = get_token();
-                            break;
-
-                        case TT_COMMA:
-                            if (comma_present)
-                                ast_error(ERROR_SYNTAX,"Syntax error:\tmultiple commas in parameter\n", current_node,current_token);
-
-                            comma_present = true;
-                            *current_token = get_token();
-                            ast_skip_EOL(current_token);
-                            break;
-
-                        default:
-                            ast_error(ERROR_SYNTAX, "Syntax error:\tillegal token in parameters\n", current_node, current_token);
-                            break;
-                    }//switch
-
-
-                    *current_token = get_token();
-                }
-
-                if(comma_present && new_node->n_of_children != 0)
-                    ast_error(ERROR_SYNTAX, "Syntax error:\ttrailing comma in parameters\n", current_node, current_token);
-
-                if((*current_token = get_token()).type != TT_EOL)
-                    ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, current_node, current_token);
-
-            break;
-
 
 
 
@@ -499,7 +401,8 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
             case TT_KEYWORD_CLASS:
             case TT_KEYWORD_IMPORT:
             case TT_EOF:
-            case TT_KEYWORD_STATIC:*/
+            case TT_KEYWORD_STATIC:
+            case TT_KEYWORD_IFJ */
 
                 //should not happen
             default:
@@ -579,7 +482,7 @@ ast_node_ptr ast_expression_subtree(token_t *current_token, ast_node_ptr parent_
                 break;
 
             case TT_LPAREN:
-                if(term->node_type != NT_ID) {
+                if(term->node_type != NT_ID && term->node_type != NT_BUILTIN) {
                     destroy_ast(term);
                     return (ast_node_ptr) -1;
                 }
@@ -612,6 +515,9 @@ ast_node_ptr ast_expression_subtree(token_t *current_token, ast_node_ptr parent_
                 return tmp == NULL ? term : tmp;
 
             default:
+                if(term->node_type == NT_BUILTIN)
+                    return term;
+
                 destroy_ast(term);
                 return (ast_node_ptr) -1;
 
@@ -729,6 +635,61 @@ ast_node_ptr ast_get_term(token_t *current_token, ast_node_ptr parent_node) {
             *current_token = get_token();
 
             return new_node;
+
+        case TT_KEYWORD_IFJ:
+            new_node = ast_create_node(*current_token, parent_node, NT_BUILTIN);
+            if(new_node == NULL)
+                return new_node;
+
+            if((*current_token = get_token()).type != TT_DOT) {
+                destroy_ast(new_node);
+                return (ast_node_ptr) -1;
+            }
+
+            *current_token = get_token();
+            ast_skip_EOL(current_token);
+
+            //Ifj.ID
+            if(current_token->type != TT_IDENTIFIER) {
+                destroy_ast(new_node);
+                return (ast_node_ptr) -1;
+            }
+
+            ast_node_ptr tmp = ast_create_node(*current_token, new_node, NT_ID);
+            if(tmp == NULL) {
+                destroy_ast(new_node);
+                return tmp;
+            }
+
+            if(ast_increase_children(new_node, tmp)) {
+                destroy_ast(new_node);
+                return NULL;
+            }
+
+            //Ifj params
+            tmp = ast_parameter_node(current_token, new_node);
+            if(tmp == NULL) {
+                destroy_ast(new_node);
+                return NULL;
+            }
+
+            if(tmp == (ast_node_ptr) -1) {
+                destroy_ast(new_node);
+                return tmp;
+            }
+
+            if(ast_increase_children(new_node, tmp)) {
+                destroy_ast(new_node);
+                return NULL;
+            }
+
+            if((*current_token = get_token()).type != TT_EOL) {
+                destroy_ast(new_node);
+                return (ast_node_ptr) -1;
+            }
+
+            return new_node;
+
         default:
 
             return (ast_node_ptr) -1;
