@@ -4,6 +4,7 @@
 #include "scanner.h"
 #include "ast.h"
 
+void visualize_ast(const ast_node_ptr root);
 
 
 int main(void) {

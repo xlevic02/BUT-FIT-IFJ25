@@ -19,7 +19,6 @@ ast_node_ptr create_ast(){
         error(ERROR_INTERNAL, MSG_INT_MALLOC);
 
     *current_token = get_token();       //get first token
-    int n_of_children = 0;              //number of children of the root node
 
     //prologue handling
     ast_skip_EOL(current_token);

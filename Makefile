@@ -1,43 +1,44 @@
-CC = gcc
-# CFLAGS=-Wall -Wextra -std=c99
-CFLAGS = -std=c99 -Wall -Wextra -Wpedantic -Werror
+# === Makefile ===
 
-SRC_DIR = src
-TEST_DIR = tests
-BUILD_DIR = build
-BIN_DIR = bin
+# Compiler and flags
+CC := gcc
+CFLAGS := -Wall -Wextra -std=c11 -I./src
 
+# Directories
+SRC_DIR := src
+BUILD_DIR := build
+INPUT_DIR := inputs
 
-clean:
-    rm -rf $(BUILD_DIR) $(BIN_DIR)
-    
-TARGET = $(BIN_DIR)/ifj
-SRCS := $(wildcard $(SRC_DIR)/*.c)
-OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRCS))
+# Files
+SOURCES := $(wildcard $(SRC_DIR)/*.c)
+OBJECTS := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
+TARGET := $(BUILD_DIR)/wren_compiler
 
-TEST_SRCS := $(wildcard $(TEST_DIR)/*.c)
-TEST_BINS := $(patsubst $(TEST_DIR)/%.c,$(BIN_DIR)/%.test,$(TEST_SRCS))
-
+# Default target
 all: $(TARGET)
 
-$(TARGET): $(OBJS) | $(BIN_DIR)
-    $(CC) $(CFLAGS) -o $@ $(OBJS)
+# Build binary
+$(TARGET): $(OBJECTS) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $^ -o $@
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
-    $(CC) $(CFLAGS) -c $< -o $@
+# Compile .c files into .o files
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR) $(BIN_DIR):
-    mkdir -p $@
+# Create build directory if missing
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
-# Build and run tests
-test: all $(TEST_BINS)
-    @for t in $(TEST_BINS); do \
-        echo "Running $$t"; \
-        ./$$t || exit 1; \
-    done
-    @echo "All tests passed."
+# Run with input file (usage: make run FILE=ex1-faktorial-iterativne.wren)
+run: $(TARGET)
+	@if [ -z "$(FILE)" ]; then \
+		echo "Usage: make run FILE=<filename.wren>"; \
+	else \
+		$(TARGET) < $(INPUT_DIR)/$(FILE); \
+	fi
 
-$(BIN_DIR)/%.test: $(TEST_DIR)/%.c $(OBJS) | $(BIN_DIR)
-    $(CC) $(CFLAGS) -I$(SRC_DIR) $< $(OBJS) -o $@
+# Clean build files
+clean:
+	rm -rf $(BUILD_DIR)
 
-.PHONY: all clean test
+.PHONY: all clean run
