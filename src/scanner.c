@@ -76,6 +76,7 @@ token_type_t keyword_type(const char *lexeme) {
     if (strcmp(lexeme, "Null") == 0) return TT_KEYWORD_Null;
     if (strcmp(lexeme, "Num") == 0) return TT_KEYWORD_NUM;
     if (strcmp(lexeme, "null") == 0) return TT_NULL;
+    if (strcmp(lexeme, "Str") == 0) return TT_STRING;
     return TT_IDENTIFIER; // not a keyword, return identifier type
 }
 
@@ -402,17 +403,20 @@ token_t get_token() {
                     error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
                 }
                 switch (c) {
-                    case 'n': buf_append(&buf, &len, &cap, '\n'); state = STATE_STRING; break;
-                    case 't': buf_append(&buf, &len, &cap, '\t'); state = STATE_STRING; break;
-                    case 'r': buf_append(&buf, &len, &cap, '\r'); state = STATE_STRING; break;
-                    case '"': buf_append(&buf, &len, &cap, '\"');  state = STATE_STRING; break;
-                    case '\\': buf_append(&buf, &len, &cap, '\\'); state = STATE_STRING; break;
-                    case 'e': buf_append(&buf, &len, &cap, '\e'); state = STATE_STRING; break;
-                    case 'v': buf_append(&buf, &len, &cap, '\v'); state = STATE_STRING; break;
                     case '0': buf_append(&buf, &len, &cap, '\0'); state = STATE_STRING; break;
+                    case '"': buf_append(&buf, &len, &cap, '\"'); state = STATE_STRING; break;
+                    case '\\': buf_append(&buf, &len, &cap, '\\'); state = STATE_STRING; break;
+                    case '%': buf_append(&buf, &len, &cap, '%'); state = STATE_STRING; break;
+
                     case 'a': buf_append(&buf, &len, &cap, '\a'); state = STATE_STRING; break;
                     case 'b': buf_append(&buf, &len, &cap, '\b'); state = STATE_STRING; break;
-                    case '%': buf_append(&buf, &len, &cap, '\%'); state = STATE_STRING; break;                            
+                    case 'e': buf_append(&buf, &len, &cap, 0x1B); state = STATE_STRING; break;
+                    case 'f': buf_append(&buf, &len, &cap, '\f'); state = STATE_STRING; break;
+                    case 'n': buf_append(&buf, &len, &cap, '\n'); state = STATE_STRING; break;
+                    case 'r': buf_append(&buf, &len, &cap, '\r'); state = STATE_STRING; break;
+                    case 't': buf_append(&buf, &len, &cap, '\t'); state = STATE_STRING; break;
+                    case 'v': buf_append(&buf, &len, &cap, '\v'); state = STATE_STRING; break;    
+
                     case 'x':  // start of hexadecimal escape sequence
                         state = STATE_STRING_HEX;
                         break;
