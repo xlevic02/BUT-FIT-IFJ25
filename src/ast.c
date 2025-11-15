@@ -28,15 +28,21 @@ ast_node_ptr create_ast(){
         error(ERROR_SYNTAX, MSG_SYN_MISSING_PROLOG);
     }
 
+    *current_token = get_token();
     ast_skip_EOL(current_token);
 
 
-    if (current_token->type != TT_KEYWORD_CLASS &&
-        strcmp((*current_token = get_token()).lexeme , "Program"))
-    {
+    if (current_token->type != TT_KEYWORD_CLASS) {
         free(current_token);
         error(ERROR_SYNTAX, MSG_SYN_PROGRAM_DECLARATION);
     }
+
+    if(strcmp((*current_token = get_token()).lexeme , "Program")) {
+        free(current_token);
+        error(ERROR_SYNTAX, MSG_SYN_PROGRAM_DECLARATION);
+    }
+
+
 
     ast_node_ptr root = ast_create_node(*current_token, NULL, NT_ROOT);
     if(root == NULL) {
@@ -44,7 +50,8 @@ ast_node_ptr create_ast(){
         error(ERROR_INTERNAL, MSG_INT_MALLOC);
     }
 
-    if ((*current_token = get_token()).type != TT_LBRACE)
+    *current_token = get_token();
+    if(strcmp(current_token->lexeme, "{"))
         ast_error(ERROR_SYNTAX, MSG_SYN_PROGRAM_DECLARATION, root, current_token);
 
 
@@ -57,15 +64,13 @@ ast_node_ptr create_ast(){
         switch (current_token->type){
             //Skip empty lines
             case TT_EOL:
-                ast_skip_EOL(current_token);
                 break;
             
             //Function handling
             case TT_KEYWORD_STATIC:
-                if((*current_token = get_token()).type != TT_IDENTIFIER)
+                if((*current_token = get_token()).type != TT_IDENTIFIER) {
                     ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, root, current_token);
-
-
+                }
 
                 ast_node_ptr new_node = ast_create_node(*current_token, root, NT_FUNC_DECL);
                 if(new_node == NULL)
@@ -77,7 +82,6 @@ ast_node_ptr create_ast(){
                 }
 
                 *current_token = get_token();
-
                 if(current_token->type == TT_LBRACE) {
                     ast_getter(current_token, new_node);
                     break;
@@ -90,6 +94,12 @@ ast_node_ptr create_ast(){
 
                 if(current_token->type != TT_LPAREN)
                     ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, root, current_token);
+
+
+                new_node->children = malloc(sizeof(ast_node_ptr));
+
+                if(new_node->children == NULL)
+                    ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, new_node, current_token);
 
                 new_node->children[0] = ast_parameter_node(current_token, new_node);
 
@@ -110,8 +120,6 @@ ast_node_ptr create_ast(){
 
                 ast_regular_node(new_node, current_token);
 
-                if(current_token->type != TT_RBRACE)
-                    ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, root, current_token);
 
                 if((*current_token = get_token()).type != TT_EOL)
                     ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, root, current_token);
@@ -125,7 +133,6 @@ ast_node_ptr create_ast(){
                 break;
 
         }//switch
-        
     } while (((*current_token = get_token()).type != TT_RBRACE));
 
     if((*current_token = get_token()).type != TT_EOF)
@@ -141,7 +148,6 @@ ast_node_ptr create_ast(){
 
 //Function to handle whole regular nodes (if, while, return, var, expressions, etc.)
 void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
-
     ast_node_ptr new_node = NULL;
     ast_node_ptr tmp_node = NULL;
     token_t* tmp_tok = NULL;
@@ -189,8 +195,8 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
                 *current_token = get_token();
                 ast_skip_EOL(current_token);
 
-                ast_expression_node(new_node, current_token, 1);
-
+                ast_expression_node(new_node, current_token);
+                //*current_token = get_token();
                 break;
 
 
@@ -210,15 +216,13 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
 
                 *current_token = get_token();
-
                 if(current_token->type != TT_EOL){
                     if (current_token->type == TT_EOF)
                         ast_error(ERROR_SYNTAX, MSG_SYN_UNEXPECTED_EOF, new_node, current_token);
 
-                    ast_expression_node(new_node, current_token, 0);
+                    ast_expression_node(new_node, current_token);
                 }
 
-                *current_token = get_token();
                 break;
 
 
@@ -267,7 +271,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
                 ast_skip_EOL(current_token);
 
 
-                ast_expression_node(new_node, current_token, 0);
+                ast_expression_node(new_node, current_token);
 
 
                 //Handle opening brace and EOL
@@ -292,9 +296,6 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
                 //Handle if body
                 ast_regular_node(tmp_node, current_token);
 
-                *current_token = get_token();
-
-
                 //Else body
                 if (current_token->type != TT_KEYWORD_ELSE){
                     break; 
@@ -311,9 +312,11 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
 
                 //Handle opening brace and EOL
-                if ((*current_token = get_token()).type != TT_LBRACE && (*current_token = get_token()).type != TT_EOL){
+                if ((*current_token = get_token()).type != TT_LBRACE)
                     ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, current_node, current_token);
-                }
+
+                if((*current_token = get_token()).type != TT_EOL)
+                    ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, current_node, current_token);
 
                 ast_skip_EOL(current_token);
 
@@ -321,7 +324,6 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
                 //Handle else body
                 ast_regular_node(tmp_node, current_token);
 
-                *current_token = get_token();
                 break;
 
 
@@ -346,9 +348,10 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
                 if (current_token->type != TT_LPAREN)
                     ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, current_node, current_token);
 
+                *current_token = get_token();
                 ast_skip_EOL(current_token);
 
-                ast_expression_node(new_node, current_token,0);
+                ast_expression_node(new_node, current_token);
 
                 //Handle opening brace and EOL
                 if((*current_token = get_token()).type != TT_LBRACE)
@@ -423,20 +426,19 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
         }//switch
 
         //Ensure each statement ends with an EOL
-        if (current_token->type != TT_EOL){
+        if (current_token->type != TT_EOL)
             ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, current_node, current_token);
-        }
+
         //skip all EOLs
         ast_skip_EOL(current_token);
 
-    }
+    }//while
 }
 
 ast_node_ptr ast_expression_subtree(token_t *current_token, ast_node_ptr parent_node) {
     ast_node_ptr term = NULL;
     ast_node_ptr operator = NULL;
     ast_node_ptr tmp = NULL;
-
     term = ast_get_term(current_token, parent_node);
     if(term == NULL)
         return NULL;
@@ -701,10 +703,12 @@ ast_node_ptr ast_get_term(token_t *current_token, ast_node_ptr parent_node) {
                 return NULL;
             }
 
-            if((*current_token = get_token()).type != TT_EOL) {
-                destroy_ast(new_node);
-                return (ast_node_ptr) -1;
-            }
+            return new_node;
+
+        case TT_KEYWORD_NUM:
+        case TT_KEYWORD_STRING:
+        case TT_KEYWORD_Null:
+            new_node = ast_create_node(*current_token, parent_node, NT_DATATYPE);
 
             return new_node;
 
@@ -718,19 +722,20 @@ ast_node_ptr ast_get_term(token_t *current_token, ast_node_ptr parent_node) {
 
 
 
-void ast_expression_node(ast_node_ptr new_node, token_t *current_token, int n_of_children) {
-    new_node->children[n_of_children] = malloc(sizeof(ast_node_ptr));
-    if(new_node->children[n_of_children] == NULL)
+void ast_expression_node(ast_node_ptr new_node, token_t *current_token) {
+    new_node->children = realloc(new_node->children, sizeof(ast_node_ptr)* ++new_node->n_of_children);
+
+    if(new_node->children == NULL)
         ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, new_node, current_token);
 
-    new_node->children[n_of_children] = ast_expression_subtree(current_token, NULL);
-    if(new_node->children[n_of_children] == NULL)
+    new_node->children[new_node->n_of_children - 1] = ast_expression_subtree(current_token, NULL);
+    if(new_node->children[new_node->n_of_children - 1] == NULL)
         ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, new_node, current_token);
 
-    if(new_node->children[n_of_children] == (ast_node_ptr) -1)
+    if(new_node->children[new_node->n_of_children - 1] == (ast_node_ptr) -1) {
         ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, new_node, current_token);
-
-    new_node->children[n_of_children]->parent = new_node;
+    }
+    new_node->children[new_node->n_of_children - 1]->parent = new_node;
 }
 
 
@@ -747,7 +752,6 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
     ast_skip_EOL(current_token);
     bool comma_present = true;
     while(current_token->type != TT_RPAREN){
-
         switch (current_token->type)
         {
             case TT_IDENTIFIER:
@@ -993,7 +997,10 @@ void ast_setter(token_t* current_token, ast_node_ptr setter_node) {
         ast_error(ERROR_INTERNAL, MSG_INT_REALLOC, setter_node, current_token);
     }
 
-    if((*current_token = get_token()).type != TT_RPAREN && (*current_token = get_token()).type != TT_LBRACE)
+    if((*current_token = get_token()).type != TT_RPAREN)
+        ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, setter_node, current_token);
+
+    if((*current_token = get_token()).type != TT_LBRACE)
         ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, setter_node, current_token);
 
     if((*current_token = get_token()).type != TT_EOL)

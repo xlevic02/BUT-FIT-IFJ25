@@ -36,31 +36,32 @@ typedef enum {
     TT_KEYWORD_STATIC,  // static = 15
     TT_KEYWORD_IMPORT,  // import = 16
     TT_KEYWORD_FOR,     // for = 17
-    TT_KEYWORD_NUM,     // num = 18
-    TT_KEYWORD_Null,    // Null = 19
+    TT_KEYWORD_NUM,     // Num = 18
+    TT_KEYWORD_STRING,  // String = 19
+    TT_KEYWORD_Null,    // Null = 20
 
     // Operators
-    TT_ASSIGN,          // = = 20
-    TT_PLUS,            // + = 21
-    TT_MINUS,           // - = 22
-    TT_MUL,             // * = 23
-    TT_DIV,             // / = 24
-    TT_EQ,              // == = 25
-    TT_NEQ,             // != = 26
-    TT_LT,              // < = 27
-    TT_GT,              // > = 28
-    TT_LE,              // <= = 29
-    TT_GE,              // >= = 30
+    TT_ASSIGN,          // = = 21
+    TT_PLUS,            // + = 22
+    TT_MINUS,           // - = 23
+    TT_MUL,             // * = 24
+    TT_DIV,             // / = 25
+    TT_EQ,              // == = 26
+    TT_NEQ,             // != = 27
+    TT_LT,              // < = 28
+    TT_GT,              // > = 29
+    TT_LE,              // <= = 30
+    TT_GE,              // >= = 31
 
     // Symbols
-    TT_LPAREN,          // ( = 31
-    TT_RPAREN,          // ) = 32
-    TT_LBRACE,          // { = 33
-    TT_RBRACE,          // } = 34
-    TT_COMMA,           // , = 35
-    TT_DOT,              // . = 36
+    TT_LPAREN,          // ( = 32
+    TT_RPAREN,          // ) = 33
+    TT_LBRACE,          // { = 34
+    TT_RBRACE,          // } = 35
+    TT_COMMA,           // , = 36
+    TT_DOT,             // . = 37
 
-    TT_ERROR
+    TT_ERROR            // ERROR = 38
 } token_type_t;
 
 typedef struct {

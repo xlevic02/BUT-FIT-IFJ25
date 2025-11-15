@@ -27,10 +27,11 @@ typedef enum {
     NT_BOOL_EXPR,       // Boolean expression    [11]
     NT_AR_EXPR,         // Arithmetic expression [12]
     NT_LITERAL,         // Literal               [13]
-    NT_BUILTIN,         // Builtin function      [14]
-    NT_WHILE,           // While                 [15]
-    NT_WHILE_BODY,      // While body            [16]
-    NT_RETURN           // Return                [17]
+    NT_DATATYPE,        // Datatype              [14]
+    NT_BUILTIN,         // Builtin function      [15]
+    NT_WHILE,           // While                 [16]
+    NT_WHILE_BODY,      // While body            [17]
+    NT_RETURN           // Return                [18]
 }ast_node_type_t;
 
 //structure for an AST node
@@ -66,6 +67,6 @@ void destroy_ast(ast_node_ptr node);
 void free_ast(ast_node_ptr node);
 int ast_operator_eval(ast_node_ptr operator, ast_node_ptr parent_node, ast_node_ptr term);
 void ast_expr_error(ast_node_ptr operator, ast_node_ptr parent_node, ast_node_ptr term, token_t *current_token);
-void ast_expression_node(ast_node_ptr new_node, token_t *current_token, int n_of_children);
+void ast_expression_node(ast_node_ptr new_node, token_t *current_token);
 void ast_getter(token_t* current_token, ast_node_ptr getter_node);
 void ast_setter(token_t* current_token, ast_node_ptr setter_node);
