@@ -331,29 +331,24 @@ token_t get_token() {
                 }
                 break;
 
-            case STATE_STRING: // String literals
-                if (c == '\\') {
-                    state = STATE_STRING_ESCAPE;
-                }
-                if (len == 0) {
-                    if (c == '"') {
-                        // Check for triple quote (multi-line string)
-                        int c2 = getchar();
-                        if (c2 == '"') {
-                            // Enter multi-line string state
-                            state = STATE_STRING_MULTI;
-                            break;
-                        } else if (c == '\\') {
-                            state = STATE_STRING_ESCAPE;
-                        } else {
-                            // Only two quotes, treat as end of string and push back c2
-                            if (c2 != EOF) ungetc(c2, stdin);
-                            buf[len] = '\0';
-                            token_t tok = make_token(TT_STRING, buf);
-                            free(buf);
-                            return tok;
-                        }
+            case STATE_STRING: // String literals  
+                if (len == 0 && c == '"') {
+                    // Check for triple quote (multi-line string)
+                    int c2 = getchar();
+                    if (c2 == '"') {
+                        // Enter multi-line string state
+                        state = STATE_STRING_MULTI;
+                        break;
+                    } else {
+                        // Only two quotes, treat as end of string and push back c2
+                        if (c2 != EOF) ungetc(c2, stdin);
+                        token_t tok = make_token(TT_STRING, "");
+                        free(buf);
+                        return tok;
                     }
+                }
+                if (c == '\\') {
+                    state = STATE_STRING_ESCAPE;              
                 } else if (c == '"') {
                     // End of string
                     buf[len] = '\0';
@@ -410,8 +405,14 @@ token_t get_token() {
                     case 'n': buf_append(&buf, &len, &cap, '\n'); state = STATE_STRING; break;
                     case 't': buf_append(&buf, &len, &cap, '\t'); state = STATE_STRING; break;
                     case 'r': buf_append(&buf, &len, &cap, '\r'); state = STATE_STRING; break;
-                    case '"': buf_append(&buf, &len, &cap, '"');  state = STATE_STRING; break;
+                    case '"': buf_append(&buf, &len, &cap, '\"');  state = STATE_STRING; break;
                     case '\\': buf_append(&buf, &len, &cap, '\\'); state = STATE_STRING; break;
+                    case 'e': buf_append(&buf, &len, &cap, '\e'); state = STATE_STRING; break;
+                    case 'v': buf_append(&buf, &len, &cap, '\v'); state = STATE_STRING; break;
+                    case '0': buf_append(&buf, &len, &cap, '\0'); state = STATE_STRING; break;
+                    case 'a': buf_append(&buf, &len, &cap, '\a'); state = STATE_STRING; break;
+                    case 'b': buf_append(&buf, &len, &cap, '\b'); state = STATE_STRING; break;
+                    case '%': buf_append(&buf, &len, &cap, '\%'); state = STATE_STRING; break;                            
                     case 'x':  // start of hexadecimal escape sequence
                         state = STATE_STRING_HEX;
                         break;
