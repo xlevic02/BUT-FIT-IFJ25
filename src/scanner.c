@@ -72,7 +72,6 @@ token_type_t keyword_type(const char *lexeme) {
     if (strcmp(lexeme, "static") == 0) return TT_KEYWORD_STATIC;
     if (strcmp(lexeme, "import") == 0) return TT_KEYWORD_IMPORT;
     if (strcmp(lexeme, "for") == 0) return TT_KEYWORD_FOR;
-    if (strcmp(lexeme, "num") == 0) return TT_KEYWORD_NUM;
     if (strcmp(lexeme, "Null") == 0) return TT_KEYWORD_Null;
     if (strcmp(lexeme, "Num") == 0) return TT_KEYWORD_NUM;
     if (strcmp(lexeme, "null") == 0) return TT_NULL;
@@ -105,7 +104,6 @@ token_t get_token() {
                 }
 
                 if (c == '\r' || c == '\n') {
-                // normalize all EOL variants
                     if (c == '\r') {
                         int next = getchar();
                         if (next != '\n' && next != EOF)
@@ -113,7 +111,7 @@ token_t get_token() {
                     }
                     token_t tok = make_token(TT_EOL, "\\n");
                     free(buf);
-                    return tok;  // OK to return once per line, ensures clean buffer reset
+                    return tok;  
                 }
 
                 if (isspace(c)) continue; // skip whitespace
@@ -478,7 +476,7 @@ token_t get_token() {
                     ungetc(c, stdin);
                 }
                 state = STATE_START;
-                continue;
+                break;
 
             case STATE_COMMENT_BLOCK: ; // Yes this is has to be here or it cant compile, yes, c is stupid
                 // Skip until closing */ or EOF
@@ -502,7 +500,7 @@ token_t get_token() {
                     }
                 }
                 state = STATE_START;
-                continue;
+                break;
             
             default:
                 // Should never reach here
