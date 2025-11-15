@@ -377,8 +377,29 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
                 *current_token = get_token();
                 break;
-                
 
+
+
+
+
+            case TT_LBRACE:
+                new_node = ast_create_node(*current_token, current_node, NT_BLOCK);
+                if(new_node == NULL)
+                    ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, current_node, current_token);
+
+                if(ast_increase_children(current_node, new_node)) {
+                    free(new_node);
+                    ast_error(ERROR_INTERNAL, MSG_INT_REALLOC, current_node, current_token);
+                }
+
+                if((*current_token = get_token()).type != TT_EOL)
+                    ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, current_node, current_token);
+
+                ast_skip_EOL(current_token);
+
+                ast_regular_node(new_node, current_token);
+
+                break;
 
 
 
