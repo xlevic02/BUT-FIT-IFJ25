@@ -31,7 +31,8 @@ typedef enum {
     NT_BUILTIN,         // Builtin function      [15]
     NT_WHILE,           // While                 [16]
     NT_WHILE_BODY,      // While body            [17]
-    NT_RETURN           // Return                [18]
+    NT_BLOCK,           // Block                 [18]
+    NT_RETURN           // Return                [19]
 }ast_node_type_t;
 
 //structure for an AST node

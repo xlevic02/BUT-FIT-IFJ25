@@ -102,7 +102,7 @@ class Program {
             __d = Ifj.write(valStr)
             __d = Ifj.write("\n")
         }
-/*
+
         // Rozsahy platnosti:
         {  // na miste prikazu muze stat samostatny blok
             var x 
@@ -128,7 +128,7 @@ class Program {
                 __d = Ifj.write(x)  // x = "cervena panda + "
             }
             __d = Ifj.write(x)  // x = 1
-        }*/
+        }
         // __d = Ifj.write(x)  // nelze, zde uz x neexistuje
         __d = Ifj.write("\n")
     }

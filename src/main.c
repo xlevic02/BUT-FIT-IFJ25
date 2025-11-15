@@ -52,6 +52,7 @@ int main(void) {
      */
 
     ast_node_ptr ast_root = create_ast();
+
     
     return 0;
     visualize_ast(ast_root);
