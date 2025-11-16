@@ -1,3 +1,9 @@
+// Implementace generatoru vysledneho kodu IFJcode25
+//generator.h by Marek "xbalism00" Bališ on 11/11/25
+
+#ifndef GENERATOR_H
+#define GENERATOR_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,6 +78,10 @@ char* format_string_for_ifjcode(const char* lexeme);
 //Function to format float for IFJcode25
 char* format_float_for_ifjcode(const char* lexeme);
 
+//Placeholder functions since our semantic analysis is not done yet
+token_type_t generator_get_id_type(char* lexeme, bst_scope_ptr* current_scope);
+token_type_t generator_get_type(ast_node_ptr node, bst_scope_ptr* current_scope);
+
 //Scope, function calling
 void print_call(char* label);
 void print_defvar(char* var_name);
@@ -112,3 +122,5 @@ void print_exit(char* symbol);
 //Debugging instructions
 void print_break();
 void print_dprint(char* symbol);
+
+#endif //GENERATOR_H

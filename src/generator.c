@@ -8,31 +8,33 @@
 #include "error.h"
 
 ////
-// Warning: this generator is working with the old version of ast.c, so there are things that I plan to change. 
-// Just wanted to get this out so you can check this over before the meeting.
-// And if you're asking why I didn't change it alredy when I said it should be easy?
-// Turns out, it isn't. I'll have to rewrite what my generator checks while going through ast and propably merge generate_node and generate_expression which will be fun(not)
-// BUT this SHOULD be able to generate assembler code. I'll be testing it when I rewrite it this friday
+// Warning: this generator is working with the old version of ast.c.
+// BUT this SHOULD be able to generate assembler code.
 ////
 
-//Start of this shitshow of a program, will propably move this into generate_node
+//Start of this shitshow of a program
+//I get the root node and symtable
 int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
     {
         printf(".IFJcode25\n");
         print_jump("$$main\n\n");
+        //I assign roots number of children to int nu_of children
         int num_of_children = root->value.int_value;
         for(int i = 0; i < num_of_children; i++)    
             {
+                //Generate all the functions that are children of root
                 if(root->children[i]->token.type == TT_KEYWORD_STATIC)
                     {
                         generate_node(root->children[i], &symtable);
                     }
             }
+        //Start main
         print_label("$$main");
         printf("CREATEFRAME\n");
         printf("PUSHFRAME\n");
         for(int i = 0; i < num_of_children; i++)
             {
+                //Generate all the other children
                 if(root->children[i]->token.type != TT_KEYWORD_STATIC)
                     {
                         generate_node(root->children[i], &symtable);
@@ -43,6 +45,7 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
         return 0;
     }
 
+//I generate the nodes themselves
 void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
     {
         if(node == NULL)
@@ -85,6 +88,18 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                                 sprintf(parameter_reg, "LF@%%%d", i + 1);
                                 print_move(var_full, parameter_reg);
                             }
+                            int start_index = 0;
+                            if (node->parent && node->parent->token.type == TT_KEYWORD_STATIC)
+                                {
+                                    start_index = 1; 
+                                }
+
+                            for(int i = start_index; i < node->value.int_value; i++)
+                                {
+                                    generate_node(node->children[i], current_scope);
+                                }
+                            bst_decrease_scope(current_scope);
+                            break;
                         }
                         //Then go through the body
                         for(int i = 0; i < node->value.int_value; i++)
@@ -109,7 +124,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         //Then generate the conditions and check if they're true or false
                         generate_expression(node->children[0], current_scope);
                         print_pushs(LITERAL_BOOL, "false", NULL);
-                        print_jumpifeqs("if_else");
+                        print_jumpifeqs(label_else);
                         //Then generate the body
                         generate_node(node->children[1], current_scope);
                         print_jump(label_end);
@@ -119,12 +134,6 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 //For keyword else
                 case TT_KEYWORD_ELSE:
                     {
-                        /*if(label_stack_top < 1)
-                            {
-                            //I don't know if xlevic02 chcecks this so for now I'll leave this here
-                                error(2, MYSSING_TOKEN_ORDER)
-                                return;
-                            }*/
                         //Copy label_end from label_stack
                         char label_end[32];
                         strcpy(label_end, label_stack[label_stack_top--]);
@@ -175,7 +184,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         char* var_name = get_variable_id(*current_scope, node->token.lexeme);
                         char var_full[100];
                         //We add the current frame to it
-                        sprintf(var_full, "%s@%s", get_variable_frame(current_scope, var_name), var_name);
+                        sprintf(var_full, "%s@%s", get_variable_frame(*current_scope, var_name), var_name);
                         //Then define it
                         print_defvar(var_full);
                         break;
@@ -223,14 +232,61 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
             }
         else if(type == TT_IDENTIFIER)
             {
-                print_pushs(VARIABLE, node->token.lexeme, get_variable_frame(*current_scope, node->token.lexeme));
+                //We check if the identifier has any children
+                if(node->children != NULL)
+                    {
+                        //If it does it's a user defined function
+                        printf("CREATEFRAME\n");
+                        for(int i = 0; i < node->value.int_value; i++)
+                            {
+                                generate_expression(node->children[i], current_scope);
+                                char parameter_reg[20];
+                                sprintf(parameter_reg, "TF@%%%d", i + 1);
+                                print_defvar(parameter_reg);
+                                print_pops(parameter_reg);
+                            }
+                        print_call(node->token.lexeme);
+                        print_pushs(VARIABLE, "%retval", "TF");
+                    }
+                else 
+                    {
+                        //If not ve just push the variable
+                        print_pushs(VARIABLE, node->token.lexeme, get_variable_frame(*current_scope, node->token.lexeme));
+                    }
             }
-        //Then there's the plus
+        //Here's assign
+        else if(type == TT_ASSIGN)
+            {
+                //We check if the first child is an identifier, if not then error
+                if (node->children[0]->token.type != TT_IDENTIFIER) 
+                    {
+                        ast_error(ERROR_SEM_OTHER, "Error: Left side of assign is not a variable.\n", node, NULL);
+                        return;
+                    }
+                //We'll get the id and frame, create a string into which we'll pop the result of the second child
+                char *temp_var = get_variable_id(*current_scope, node->children[0]->token.lexeme);
+                char *frame = get_variable_frame(*current_scope, temp_var);
+                char var_full[100];
+                sprintf(var_full, "%s@%s", frame, temp_var);
+                //We'll generate the second child
+                generate_expression(node->children[1], current_scope);
+                //Pop it into the string
+                print_pops(var_full);
+                //And push it back into the stack
+                print_pushs(VARIABLE, temp_var, frame);
+            }
+        //Then there's plus
         else if(type == TT_PLUS)
             {
                 //Here we have to check what the childrens token.type is, so we know if we generate ADDS or CONCAT
-                token_type_t int_float_or_string_0 = node->children[0]->token.type, int_float_or_string_1 = node->children[1]->token.type;
-                if((int_float_or_string_0 == TT_INT && int_float_or_string_1 == TT_INT) || (int_float_or_string_0 == TT_FLOAT && int_float_or_string_1 == TT_FLOAT))
+                //The If here is just a placeholder, since I didn't have access to semantic analysis
+                token_type_t left_type = generator_get_type(node->children[0], current_scope);
+                token_type_t right_type = generator_get_type(node->children[1], current_scope);
+                if (left_type == TT_ERROR || right_type == TT_ERROR) {
+                     ast_error(ERROR_SEM_UNDEF, MSG_SEN_UNDEFINED_VAR, node, NULL);
+                     return;
+                }
+                if(left_type != TT_STRING && right_type != TT_STRING)
                     {
                         generate_expression(node->children[0], current_scope);
                         generate_expression(node->children[1], current_scope);
@@ -238,7 +294,7 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                     }
                 else
                     {
-                        //If we generate CONCAT (god why), we have to create additional strings so that we can POPS the strings in
+                        //If we generate CONCAT (god why), we have to create and define additional strings so that we can POPS the strings in
                         //the stack into them
                         char str1_name[32], str2_name[32], res_name[32];
                         char str1_full[40], str2_full[40], res_full[40];
@@ -275,26 +331,50 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                 generate_expression(node->children[1], current_scope);
                 print_arithmetic(MUL);
             }
-        //In here we first check if we're dividing by zero;
         else if(type == TT_DIV)
             {
-                if(node->children[0]->token.lexeme == 0 || node->children[1]->token.lexeme == 0)
-                    {
-                        //If yes, error
-                        error(57, ERROR_DIVISION_BY_ZERO);
-                    }
-                //Then we have to check if we're dividing ints or floats, because they have different DIV
-                token_type_t int_or_float_0 = node->children[0]->token.type, int_or_float_1 = node->children[1]->token.type;
-                if(int_or_float_0 == TT_FLOAT && int_or_float_1 == TT_FLOAT)
+                //I have to check if we're dividing ints or floats, because they have different DIV
+                //The If here is just a placeholder, since I didn't have access to semantic analysis
+                token_type_t left_type = generator_get_type(node->children[0], current_scope);
+                token_type_t right_type = generator_get_type(node->children[1], current_scope);
+                if (left_type == TT_ERROR || right_type == TT_ERROR) {
+                     ast_error(ERROR_SEM_UNDEF, MSG_SEN_UNDEFINED_VAR, node, NULL);
+                     return;
+                }
+                if(left_type == TT_FLOAT && right_type == TT_FLOAT)
                     {
                         generate_expression(node->children[0], current_scope);
                         generate_expression(node->children[1], current_scope);
+                        char div_zero_check[40];
+                        char div_not_zero[32];
+                        sprintf(div_zero_check, "LF@%%div_check_float$%d", label_counter);
+                        get_unique_label(div_not_zero, "not_zero");
+                        label_counter++;
+                        print_defvar(div_zero_check);
+                        print_pops(div_zero_check);
+                        print_pushs(VARIABLE, div_zero_check, "LF");
+                        print_pushs(LITERAL_FLOAT, "0x0.0p+0", NULL);
+                        print_jumpifneqs(div_not_zero);
+                        print_exit("int@57");
+                        print_label(div_not_zero);
                         print_arithmetic(DIV);
                     }
                 else
                     {
                         generate_expression(node->children[0], current_scope);
                         generate_expression(node->children[1], current_scope);
+                        char div_zero_check[40];
+                        char div_not_zero[32];
+                        sprintf(div_zero_check, "LF@%%div_check_float$%d", label_counter);
+                        get_unique_label(div_not_zero, "not_zero");
+                        label_counter++;
+                        print_defvar(div_zero_check);
+                        print_pops(div_zero_check);
+                        print_pushs(VARIABLE, div_zero_check, "LF");
+                        print_pushs(LITERAL_INT, "0", NULL);
+                        print_jumpifneqs(div_not_zero);
+                        print_exit("int@57");
+                        print_label(div_not_zero);
                         print_arithmetic(IDIV);
                     }
             }
@@ -338,16 +418,17 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                 print_relation(EQ);
                 print_boolean(NOT);
             }
-        //And here's keyword_IFJ, which I'll most likely move to generate_node this, weekend
+        //And here's keyword_IFJ, which are builtin functions
         else if(type == TT_KEYWORD_IFJ)
             {
-                //We basicaly get the tokens lexeme and see what there so we know what to generate
+                //We basicaly get the tokens lexeme and see whats there so we know what to generate
                 char *func_name = node->token.lexeme;
                 if(strcmp(func_name, "write") == 0)
                     {
                         //WRITE
                         for(int i = 0; i < node->value.int_value; i++)
                             {
+                                generate_expression(node->children[i], current_scope);
                                 char temp_var[32];
                                 sprintf(temp_var, "LF@%%temp_write%d", label_counter++);
                                 print_defvar(temp_var);
@@ -376,9 +457,18 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                     }
                 else if(strcmp(func_name, "str") == 0)
                     {
-                        //INT2STR, TODO FLOAT2STR/
-                        generate_expression(node->children[0], current_scope);
-                        print_conversion(INT2STR);
+                        //INT2STR, FLOAT2STR
+                        token_type_t arg_type = generator_get_type(node->children[0], current_scope);
+                        if(arg_type == TT_INT)
+                            {
+                                generate_expression(node->children[0], current_scope);
+                                print_conversion(INT2STR);
+                            }
+                        else
+                            {
+                                generate_expression(node->children[0], current_scope);
+                                print_conversion(FLOAT2STR);
+                            }
                     }
                 else if(strcmp(func_name, "floor") == 0)
                     {
@@ -386,37 +476,97 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                         generate_expression(node->children[0], current_scope);
                         print_conversion(FLOAT2INT);
                     }
-                else if(strcmp(func_name, "lenght") == 0)
+                else if(strcmp(func_name, "length") == 0)
                     {
                         //STRLEN, we basicaly create additional variables to get the string from stack and use strlen
-                        char str_var[32], res_var[32];
-                        sprintf(str_var, "LF@%%len_str%d", label_counter);
-                        sprintf(res_var, "LF@%%len_res%d", label_counter++);
+                        char str_var[32], result_var[32];
+                        sprintf(str_var, "LF@%%strlen_str%d", label_counter);
+                        sprintf(result_var, "LF@%%strlen_result%d", label_counter++);
                         print_defvar(str_var);
-                        print_defvar(res_var);
+                        print_defvar(result_var);
                         generate_expression(node->children[0], current_scope);
                         print_pops(str_var);
-                        print_strlen(res_var, str_var);
-                        print_pushs(VARIABLE, res_var, "LF");
+                        print_strlen(result_var, str_var);
+                        print_pushs(VARIABLE, result_var, "LF");
                     }
                 else if(strcmp(func_name, "substring") == 0)
                     {
-                                //TODO
-                                //Tried to do this, failed spectacularly, will try again after the exam, now I really don't have the brain capacity to do this
+                                //Substring: Created vars to pop the arguments and the final result into
+                                //Created a loop at the end to create the substring by putting the variable at index i into tmp_char and then using concat to add it to result_var
+                                char str_var[32], i_var[32], j_var[32], result_var[32], tmp_char[32];
+                                char loop_start[32], loop_end[32];
+                                sprintf(str_var, "LF@%%substr%d", label_counter);
+                                sprintf(i_var, "LF@%%substr_i%d", label_counter);
+                                sprintf(j_var, "LF@%%substr_j%d", label_counter);
+                                sprintf(result_var, "LF@%%substr_result%d", label_counter);
+                                sprintf(tmp_char, "LF@%%substr%d", label_counter++);
+                                get_unique_label(loop_start, "substr_loop_start");
+                                get_unique_label(loop_end, "substr_loop_end");
+                                print_defvar(str_var);
+                                print_defvar(i_var);
+                                print_defvar(j_var);
+                                print_defvar(result_var);
+                                print_defvar(tmp_char);
+                                generate_expression(node->children[0], current_scope);
+                                generate_expression(node->children[1], current_scope);
+                                generate_expression(node->children[2], current_scope);
+                                print_pops(j_var);
+                                print_pops(i_var);
+                                print_pops(str_var);
+                                print_move(result_var, "string@");
+                                print_label(loop_start);
+                                print_pushs(VARIABLE, i_var, "LF");
+                                print_pushs(VARIABLE, j_var, "LF");
+                                print_relation(LT);
+                                printf("PUSHS bool@false\n");
+                                print_jumpifeqs(loop_end);
+                                print_getchar(tmp_char, str_var, i_var);
+                                print_concat(result_var, result_var, tmp_char);
+                                printf("PUSHS %s\n", i_var);
+                                printf("PUSHS int@1\n");
+                                print_arithmetic(ADD);
+                                print_pops(i_var);
+                                print_jump(loop_start);
+                                print_label(loop_end);
+                                print_pushs(VARIABLE, result_var, "LF");
+
                     }
                 else if(strcmp(func_name, "strcmp") == 0)
                     {
-                        //TODO STRLEN1 - STRLEN2
+                        //Compare s1 with s2, and then pushes either -1, 1 or 0 depending on if s1 is shorter, longer or equal with s2
                         //Almost done, now I'll just have to create some additional variables to help, some jumps
                         // and the labels for those jumps
                         char str1_var[20], str2_var[20];
-                        print_pops(str1_var);
-                        print_strlen(str1_var, node->children[0]->token.lexeme);
+                        char label_str1_lesser[32], label_str1_greater[32], label_strcmp_end[32];
+                        get_unique_label(label_str1_lesser, "strcmp_lesser");
+                        get_unique_label(label_str1_greater, "strcmp_greater");
+                        get_unique_label(label_strcmp_end, "strcmp_end");
+                        sprintf(str1_var, "LF@strcmp_s1%d", label_counter);
+                        sprintf(str2_var, "LF@strcmp_s2%d", label_counter++);
+                        print_defvar(str1_var);
+                        print_defvar(str2_var);
+                        generate_expression(node->children[0], current_scope);
+                        generate_expression(node->children[1], current_scope);
                         print_pops(str2_var);
-                        print_strlen(str2_var, node->children[1]->token.lexeme);
-                        print_pushs(LITERAL_INT, str2_var, NULL);
-                        print_pushs(LITERAL_INT, str1_var, NULL);
-                        print_arithmetic(SUB);
+                        print_pops(str1_var);
+                        print_pushs(VARIABLE, str1_var, "LF");
+                        print_pushs(VARIABLE, str2_var, "LF");
+                        print_relation(LT);
+                        printf("PUSHS bool@true\n");
+                        print_jumpifeqs(label_str1_lesser);
+                        print_pushs(VARIABLE, str1_var, "LF");
+                        print_pushs(VARIABLE, str2_var, "LF");
+                        print_relation(GT);
+                        printf("PUSHS bool@true\n");
+                        print_jumpifeqs(label_str1_greater);
+                        print_pushs(LITERAL_INT, "0", NULL);
+                        print_jump(label_strcmp_end);
+                        print_label(label_str1_lesser);
+                        print_pushs(LITERAL_INT, "-1", NULL);
+                        print_jump(label_strcmp_end);
+                        print_label(label_str1_greater);
+                        print_pushs(LITERAL_INT, "1", NULL);
+                        print_label(label_strcmp_end);
                     }
                 else if(strcmp(func_name, "ord") == 0)
                     {
@@ -431,13 +581,26 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                         generate_expression(node->children[0], current_scope);
                         print_conversion(INT2CHAR);
                     }
-            
+                else
+                    {
+                        //For any other functions
+                        printf("CREATEFRAME\n");
+                        for(int i = 0; i < node->value.int_value; i++)
+                            {
+                                generate_expression(node->children[i], current_scope);
+                                char parameter_reg[20];
+                                sprintf(parameter_reg, "TF@%%%d", i + 1);
+                                print_defvar(parameter_reg);
+                                print_pops(parameter_reg);
+                            }
+                        print_call(func_name);
+                        print_pushs(VARIABLE, "%retval", "TF");
+                    }
             }
             
     }
 
 //Get the frame of the variable
-//Will most likely change this
 char *get_variable_frame(bst_scope_ptr scope, char* var_name)
     {
         (void)var_name;
@@ -452,7 +615,6 @@ char *get_variable_frame(bst_scope_ptr scope, char* var_name)
     }
 
 //Gets the ID
-//Will change this too
 char* get_variable_id(bst_scope_ptr scope, char* lexeme)
     {
         (void)scope;
@@ -497,6 +659,86 @@ char* format_string_for_ifjcode(const char* lexeme)
         return g_string_buffer;
     }
 
+//
+//Here are placeholder function for semantic analysis since it's not complete yet
+//
+
+token_type_t generator_get_id_type(char* lexeme, bst_scope_ptr* current_scope)
+    { 
+        unsigned int key = get_hash(lexeme);
+        bst_node_content_t content = bst_search_scope(*current_scope, key);
+        return content.type;
+    }
+
+token_type_t generator_get_type(ast_node_ptr node, bst_scope_ptr* current_scope)
+    {
+        if(node == NULL)    
+            {
+                return TT_ERROR;
+            }
+        if(node->token.type == TT_INT) 
+            {
+                return TT_INT;
+            }
+        if(node->token.type == TT_FLOAT)
+            {
+                return TT_FLOAT;
+            }
+        if(node->token.type == TT_STRING)
+            {
+                return TT_STRING;
+            }
+        if(node->token.type == TT_KEYWORD_Null)
+            {
+                return TT_KEYWORD_Null;
+            }
+        if(node->token.type == TT_IDENTIFIER)
+            {
+                token_type_t id_type = generator_get_id_type(node->token.lexeme, current_scope);
+                return id_type;
+            }
+        if(node->token.type == TT_PLUS || node->token.type == TT_MINUS || node->token.type == TT_MUL || node->token.type == TT_DIV)
+            {
+                token_type_t left_type = generator_get_type(node->children[0], current_scope);
+                token_type_t right_type = generator_get_type(node->children[1], current_scope);
+                if (left_type == TT_ERROR || right_type == TT_ERROR)
+                    {
+                        return TT_ERROR; 
+                    }
+                else if(node->token.type == TT_PLUS)
+                    {
+                        if(left_type == TT_STRING && right_type == TT_STRING)
+                            {
+                                return TT_STRING;
+                            }
+                    }
+                if(left_type == TT_INT && right_type == TT_INT)
+                    {
+                        return TT_INT;
+                    }
+                else if(left_type == TT_FLOAT && right_type == TT_FLOAT)
+                    {
+                        return TT_FLOAT;
+                    }
+                else 
+                    {
+                        return TT_ERROR;
+                    }
+            }
+        if(node->token.type == TT_ASSIGN)   
+            {
+                return generator_get_type(node->children[1], current_scope);
+            }
+        if(node->token.type == TT_GT || node->token.type == TT_LT || node->token.type == TT_EQ || node->token.type == TT_LE || node->token.type == TT_GE || node->token.type == TT_NEQ)
+            {
+                return TT_INT;
+            }
+        return TT_ERROR;
+    }
+
+//
+//Here are all the print_ functions
+//
 void print_call(char* label)
     {
         printf("CALL %s\n", label);
