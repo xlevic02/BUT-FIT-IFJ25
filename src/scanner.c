@@ -72,10 +72,10 @@ token_type_t keyword_type(const char *lexeme) {
     if (strcmp(lexeme, "static") == 0) return TT_KEYWORD_STATIC;
     if (strcmp(lexeme, "import") == 0) return TT_KEYWORD_IMPORT;
     if (strcmp(lexeme, "for") == 0) return TT_KEYWORD_FOR;
-    if (strcmp(lexeme, "num") == 0) return TT_KEYWORD_NUM;
     if (strcmp(lexeme, "Null") == 0) return TT_KEYWORD_Null;
     if (strcmp(lexeme, "Num") == 0) return TT_KEYWORD_NUM;
     if (strcmp(lexeme, "null") == 0) return TT_NULL;
+    if (strcmp(lexeme, "Str") == 0) return TT_STRING;
     return TT_IDENTIFIER; // not a keyword, return identifier type
 }
 
@@ -104,7 +104,6 @@ token_t get_token() {
                 }
 
                 if (c == '\r' || c == '\n') {
-                // normalize all EOL variants
                     if (c == '\r') {
                         int next = getchar();
                         if (next != '\n' && next != EOF)
@@ -112,7 +111,7 @@ token_t get_token() {
                     }
                     token_t tok = make_token(TT_EOL, "\\n");
                     free(buf);
-                    return tok;  // OK to return once per line, ensures clean buffer reset
+                    return tok;  
                 }
 
                 if (isspace(c)) continue; // skip whitespace
@@ -331,8 +330,8 @@ token_t get_token() {
                 }
                 break;
 
-            case STATE_STRING: // String literals
-                if (c == '"') {
+            case STATE_STRING: // String literals  
+                if (len == 0 && c == '"') {
                     // Check for triple quote (multi-line string)
                     int c2 = getchar();
                     if (c2 == '"') {
@@ -342,13 +341,19 @@ token_t get_token() {
                     } else {
                         // Only two quotes, treat as end of string and push back c2
                         if (c2 != EOF) ungetc(c2, stdin);
-                        buf[len] = '\0';
-                        token_t tok = make_token(TT_STRING, buf);
+                        token_t tok = make_token(TT_STRING, "");
                         free(buf);
                         return tok;
                     }
-                } else if (c == '\\') {
-                    state = STATE_STRING_ESCAPE;
+                }
+                if (c == '\\') {
+                    state = STATE_STRING_ESCAPE;              
+                } else if (c == '"') {
+                    // End of string
+                    buf[len] = '\0';
+                    token_t tok = make_token(TT_STRING, buf);
+                    free(buf);
+                    return tok;
                 } else if (c == EOF) {
                     free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
@@ -396,11 +401,20 @@ token_t get_token() {
                     error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
                 }
                 switch (c) {
-                    case 'n': buf_append(&buf, &len, &cap, '\n'); state = STATE_STRING; break;
-                    case 't': buf_append(&buf, &len, &cap, '\t'); state = STATE_STRING; break;
-                    case 'r': buf_append(&buf, &len, &cap, '\r'); state = STATE_STRING; break;
-                    case '"': buf_append(&buf, &len, &cap, '"');  state = STATE_STRING; break;
+                    case '0': buf_append(&buf, &len, &cap, '\0'); state = STATE_STRING; break;
+                    case '"': buf_append(&buf, &len, &cap, '\"'); state = STATE_STRING; break;
                     case '\\': buf_append(&buf, &len, &cap, '\\'); state = STATE_STRING; break;
+                    case '%': buf_append(&buf, &len, &cap, '%'); state = STATE_STRING; break;
+
+                    case 'a': buf_append(&buf, &len, &cap, '\a'); state = STATE_STRING; break;
+                    case 'b': buf_append(&buf, &len, &cap, '\b'); state = STATE_STRING; break;
+                    case 'e': buf_append(&buf, &len, &cap, 0x1B); state = STATE_STRING; break;
+                    case 'f': buf_append(&buf, &len, &cap, '\f'); state = STATE_STRING; break;
+                    case 'n': buf_append(&buf, &len, &cap, '\n'); state = STATE_STRING; break;
+                    case 'r': buf_append(&buf, &len, &cap, '\r'); state = STATE_STRING; break;
+                    case 't': buf_append(&buf, &len, &cap, '\t'); state = STATE_STRING; break;
+                    case 'v': buf_append(&buf, &len, &cap, '\v'); state = STATE_STRING; break;    
+
                     case 'x':  // start of hexadecimal escape sequence
                         state = STATE_STRING_HEX;
                         break;
@@ -462,7 +476,7 @@ token_t get_token() {
                     ungetc(c, stdin);
                 }
                 state = STATE_START;
-                continue;
+                break;
 
             case STATE_COMMENT_BLOCK: ; // Yes this is has to be here or it cant compile, yes, c is stupid
                 // Skip until closing */ or EOF
@@ -486,7 +500,7 @@ token_t get_token() {
                     }
                 }
                 state = STATE_START;
-                continue;
+                break;
             
             default:
                 // Should never reach here
