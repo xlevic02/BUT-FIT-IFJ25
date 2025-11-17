@@ -192,8 +192,9 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 ast_skip_EOL(current_token);
 
                 //Possible TODO: condition handling
-                if_node->children = malloc(sizeof(ast_node_ptr));
-                if_node->children[0] = ast_expression_node(current_token, 0, if_node->children[0]);
+                //if_node->children = malloc(sizeof(ast_node_ptr));
+                //if_node->children[0] = ast_expression_node(current_token, 0, if_node->children[0]);
+                ast_increase_children(if_node, ast_expression_node(current_token, 0, if_node));
 
                 //Handle closing parenthesis, opening brace and EOL
                 if (current_token->type != TT_RPAREN &&
@@ -583,7 +584,20 @@ ast_node_ptr ast_create_node(token_t token, ast_node_ptr parent, ast_node_type_t
     new_node->parent = parent;
     new_node->children = NULL;
     new_node->node_type = node_type;
-    new_node->token = token;
+
+    // Deep copy the token - allocate new memory for lexeme
+    new_node->token.type = token.type;
+    if (token.lexeme != NULL) {
+        new_node->token.lexeme = malloc(strlen(token.lexeme) + 1);
+        if (new_node->token.lexeme == NULL) {
+            free(new_node);
+            ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, parent, &token);
+        }
+        strcpy(new_node->token.lexeme, token.lexeme);
+    } else {
+        new_node->token.lexeme = NULL;
+    }
+
     new_node->value.int_value = 0;
     new_node->n_of_children = 0;
     return new_node;
@@ -623,6 +637,10 @@ void free_ast(ast_node_ptr node){
             free_ast(node->children[i]);
         }
         free(node->children);
+    }
+    // Free the lexeme string if it exists
+    if (node->token.lexeme != NULL) {
+        free(node->token.lexeme);
     }
     free(node);
 }
