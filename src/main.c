@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include "scanner.h"
 #include "ast.h"
+#include "symtable.h"
+#include "sem_analysis.h"
 
 const char* token_type_to_string(token_type_t type);
 void ast_print_token(token_t token);
@@ -52,8 +54,8 @@ int main(void) {
      */
 
     ast_node_ptr ast_root = create_ast();
+    //bst_scope_ptr global_scope = sem_start_analysis(ast_root); TODO uncomment
 
-    
     return 0;
     visualize_ast(ast_root);
 

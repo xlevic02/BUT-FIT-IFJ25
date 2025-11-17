@@ -1,6 +1,9 @@
 // Implementace prekladace imperativniho jazyka IFJ25
 // AST by Jan Špaček "xspacej00" on 10/02/2025
 
+#ifndef BUT_FIT_IFJ25_AST_H
+#define BUT_FIT_IFJ25_AST_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,12 +44,6 @@ typedef struct ast_node_t{
     ast_node_ptr* children; //pointer to a field of children
     ast_node_type_t node_type;
     token_t token; //token of data
-    union
-    {
-        int int_value; //number of children/
-        float float_value;
-        char* string_value;
-    } value;
     int n_of_children; //number of children
 } ast_node_t;
 
@@ -71,3 +68,5 @@ void ast_expr_error(ast_node_ptr operator, ast_node_ptr parent_node, ast_node_pt
 void ast_expression_node(ast_node_ptr new_node, token_t *current_token);
 void ast_getter(token_t* current_token, ast_node_ptr getter_node);
 void ast_setter(token_t* current_token, ast_node_ptr setter_node);
+
+#endif //BUT_FIT_IFJ25_AST_H

@@ -235,7 +235,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
                 if(current_token->type != TT_IDENTIFIER)
                     ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, current_node, current_token);
 
-                new_node = ast_create_node(*current_token, current_node, NT_ID);
+                new_node = ast_create_node(*current_token, current_node, NT_VAR_DEFINITION);
                 if(new_node == NULL)
                     ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, current_node, current_token);
 
@@ -898,7 +898,6 @@ ast_node_ptr ast_create_node(token_t token, ast_node_ptr parent, ast_node_type_t
     new_node->children = NULL;
     new_node->node_type = node_type;
     new_node->token = token;
-    new_node->value.int_value = 0;
     new_node->n_of_children = 0;
     return new_node;
 }
