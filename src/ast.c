@@ -563,9 +563,11 @@ void free_ast(ast_node_ptr *node){
             free_ast(&(*node)->children[i]);
             (*node)->children[i] = NULL;
         }
-        free(node->children);
+        free((*node)->children);
+        (*node)->children = NULL;
     }
-    free(node);
+    free(*node);
+    *node = NULL;
 }
 
 
