@@ -8,6 +8,7 @@ CFLAGS := -Wall -Wextra -std=c11 -I./src
 SRC_DIR := src
 BUILD_DIR := build
 INPUT_DIR := inputs
+OUTPUT_DIR := output
 
 # Files
 SOURCES := $(wildcard $(SRC_DIR)/*.c)
@@ -22,7 +23,7 @@ $(TARGET): $(OBJECTS) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $^ -o $@
 
 # Compile .c files into .o files
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Create build directory if missing
@@ -34,7 +35,7 @@ run: $(TARGET)
 	@if [ -z "$(FILE)" ]; then \
 		echo "Usage: make run FILE=<filename.wren>"; \
 	else \
-		$(TARGET) < $(INPUT_DIR)/$(FILE); \
+		$(TARGET) < $(INPUT_DIR)/$(FILE) > $(OUTPUT_DIR)/$(FILE:.wren=.out); \
 	fi
 
 # Clean build files

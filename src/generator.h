@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "ast.h"
+#include "symtable.h"
 
 static int label_counter = 0;
 static char label_stack[100][32];
