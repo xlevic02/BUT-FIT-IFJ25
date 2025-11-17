@@ -1,6 +1,9 @@
 // Implementace prekladace imperativniho jazyka IFJ25
 // AST by Jan Špaček "xspacej00" on 10/02/2025
 
+#ifndef AST_H
+#define AST_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -60,3 +63,5 @@ void destroy_ast(ast_node_ptr node);
 void free_ast(ast_node_ptr node);
 const char* token_type_to_string(token_type_t type);
 void ast_print_token(token_t token); // Debugging function to print token information
+
+#endif // AST_H

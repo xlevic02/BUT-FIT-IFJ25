@@ -1,6 +1,10 @@
 // Implementace prekladace imperativniho jazyka IFJ25
 // AST by Jan Špaček "xspacej00" on 10/02/2025
 
+
+#ifndef SYMTABLE_H
+#define SYMTABLE_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -57,3 +61,5 @@ bst_node_ptr bst_balance(bst_node_ptr tree);
 bst_node_ptr bst_rotate_r(bst_node_ptr tree);
 bst_node_ptr bst_rotate_l(bst_node_ptr tree);
 int bst_weight(bst_node_ptr tree);
+
+#endif //SYMTABLE_H

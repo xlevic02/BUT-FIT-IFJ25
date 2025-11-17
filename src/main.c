@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
 #include "scanner.h"
 #include "ast.h"
+#include "generator.h"
+#include "symtable.h"
 
 
 //REMOVE, FOR TESTING PURPOSES ONLY
@@ -49,11 +52,15 @@ int main(void) {
     printf("TOKEN: type=%d, lexeme=\"%s\"\n", tok.type, tok.lexeme);
      */
 
+    bst_scope_ptr current_scope = NULL;
     ast_node_ptr ast_root = create_ast();
 
     visualize_ast(ast_root);
 
+    generate_code(ast_root, current_scope);
+
     destroy_ast(ast_root);
+
 
     return 0;
 }
