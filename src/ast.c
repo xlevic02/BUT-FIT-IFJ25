@@ -551,32 +551,21 @@ void destroy_ast(ast_node_ptr node){
     while(node->parent != NULL){
         node = node->parent;
     }
-    free_ast(node);
+    free_ast(&node);
 }
 
-void free_ast(ast_node_ptr node){
-    if (node == NULL) {
+void free_ast(ast_node_ptr *node){
+    if (*node == NULL) {
         return;
     }
-    if (node->children != NULL){
-        for (int i = 0; i < node->n_of_children; i++){
-            free_ast(node->children[i]);
+    if ((*node)->children != NULL){
+        for (int i = 0; i < (*node)->n_of_children; i++){
+            free_ast(&(*node)->children[i]);
+            (*node)->children[i] = NULL;
         }
         free(node->children);
-        node->children = NULL;
     }
-
-    if(node->token.lexeme != NULL){
-        free(node->token.lexeme);
-        node->token.lexeme = NULL;
-    }
-    // Free the lexeme string if it exists
-    if (node->token.lexeme != NULL) {
-        free(node->token.lexeme);
-    }
-
     free(node);
-    node = NULL;
 }
 
 
