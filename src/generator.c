@@ -12,7 +12,6 @@
 // BUT this SHOULD be able to generate assembler code.
 ////
 
-//Start of this shitshow of a program
 //I get the root node and symtable
 int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
     {
@@ -31,7 +30,6 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
         //Start main
         print_label("$$main");
         printf("CREATEFRAME\n");
-        printf("PUSHFRAME\n");
         for(int i = 0; i < num_of_children; i++)
             {
                 //Generate all the other children
@@ -53,11 +51,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 //If generate_node reached the end of ast, recursively return;
                 return;
             }
+        token_type_t type = node->token.type;
         //Looking at the node's token type
-        switch(node->token.type)
-            {
-                //If it's a function
-                case TT_KEYWORD_STATIC:
+        //If it's a function
+        if(type == TT_KEYWORD_STATIC)
                     {   
                         //We print the label of the function, push the alredy existing frame and go through the body
                         print_label(node->token.lexeme);
@@ -84,10 +81,9 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         bst_decrease_scope(current_scope);
                         printf("POPFRAME\n");
                         printf("RETURN\n");
-                        break;
                     }
                 //The body of a funcion, if/else or while
-                case TT_LBRACE:
+        else if(type == TT_LBRACE)
                     {
                         //Increasing the scope
                         bst_increase_scope(current_scope);
@@ -97,10 +93,9 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                                 generate_node(node->children[i], current_scope);
                             }
                         bst_decrease_scope(current_scope);
-                        break;
                     }
                 //When it's an IF
-                case TT_KEYWORD_IF:
+        else if(type == TT_KEYWORD_IF)
                     {
                         //We get a label for the end and for else
                         char label_end[32];
@@ -112,7 +107,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         label_stack_top++;
                         strcpy(label_stack[label_stack_top], label_end);
                         //Then generate the conditions and check if they're true or false
-                        generate_expression(node->children[0], current_scope);
+                        generate_node(node->children[0], current_scope);
                         print_pushs(LITERAL_BOOL, "false", NULL);
                         print_jumpifeqs(label_else);
                         //Then generate the body
@@ -126,10 +121,9 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         bst_decrease_scope(current_scope);
                         print_jump(label_end);
                         print_label(label_else);
-                        break;
                     }
                 //For keyword else
-                case TT_KEYWORD_ELSE:
+        else if(type == TT_KEYWORD_ELSE)
                     {
                         //Copy label_end from label_stack
                         char label_end[32];
@@ -145,10 +139,9 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                             }
                         bst_decrease_scope(current_scope);
                         print_label(label_end);
-                        break;
                     }
                 //And now for while
-                case TT_KEYWORD_WHILE:
+        else if(type == TT_KEYWORD_WHILE)
                     {
                         //Get label for start and end
                         char w_start[32];
@@ -157,7 +150,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         get_unique_label(w_end, "while_end");
                         //We start the while, generate the conditions AND THEN check if ther're true
                         print_label(w_start);
-                        generate_expression(node->children[0], current_scope);
+                        generate_node(node->children[0], current_scope);
                         print_pushs(LITERAL_BOOL, "false", NULL);
                         print_jumpifeqs(w_end);
                         //If theyr're true we generate the body and jump back to start
@@ -172,24 +165,22 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_jump(w_start);
                         //If not, we end the while
                         print_label(w_end);
-                        break;
                     }
                 //Return
-                case TT_KEYWORD_RETURN:
+        else if(type == TT_KEYWORD_RETURN)
                     {
                         //We get retval and check if the node has any children
                         char retval_reg[20];
                         sprintf(retval_reg, "%s@%%retval", get_variable_frame(*current_scope, "%retval"));
                         if(node->children != NULL && node->children[0] != NULL)
                             {
-                                generate_expression(node->children[0], current_scope);
+                                generate_node(node->children[0], current_scope);
                                 print_pops(retval_reg);
                             }
                         printf("RETURN\n");
-                        break;
                     }
                 //Now for variables
-                case TT_KEYWORD_VAR:
+        else if(type == TT_KEYWORD_VAR)
                     {
                         //We get the variables name
                         char* var_name = get_variable_id(*current_scope, node->token.lexeme);
@@ -198,34 +189,9 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         sprintf(var_full, "%s@%s", get_variable_frame(*current_scope, var_name), var_name);
                         //Then define it
                         print_defvar(var_full);
-                        break;
                     }
-                //For anything else
-                default:
-                    {
-                        if(ast_get_precedence(node->token.type) > 0 || node->token.type == TT_IDENTIFIER || node->token.type == TT_INT)
-                            {
-                                generate_expression(node, current_scope);
-                            }
-                        break;
-                    }
-                
-            }
-    }
-
-//Now to generate the expresions themselves
-void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
-    {
-        if(node == NULL) 
-            {
-                //Recursively return if we've reached the end
-                return;
-            }
-        //Get the tokens type
-        token_type_t type = node->token.type;
-        //Then check what it is
         //The first five ifs are basicaly what to push
-        if(type == TT_INT)
+        else if(type == TT_INT)
             {
                 print_pushs(LITERAL_INT, node->token.lexeme, NULL);
             }
@@ -250,7 +216,7 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                         printf("CREATEFRAME\n");
                         for(int i = 0; i < node->value.int_value; i++)
                             {
-                                generate_expression(node->children[i], current_scope);
+                                generate_node(node->children[i], current_scope);
                                 char parameter_reg[20];
                                 sprintf(parameter_reg, "TF@%%%d", i + 1);
                                 print_defvar(parameter_reg);
@@ -295,7 +261,7 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                         char var_full[100];
                         sprintf(var_full, "%s@%s", frame, temp_var);
                         //We'll generate the second child
-                        generate_expression(node->children[1], current_scope);
+                        generate_node(node->children[1], current_scope);
                         //Pop it into the string
                         print_pops(var_full);
                         //And push it back into the stack
@@ -305,7 +271,7 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                     {
                         //If node->children[0] is a setter
                         printf("CREATEFRAME\n");
-                        generate_expression(node->children[1], current_scope);
+                        generate_node(node->children[1], current_scope);
                         print_defvar("TF@%1");
                         printf("POPS TF@%1\n");
                         printf("PUSHS TF@%1\n");
@@ -325,8 +291,8 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                 }
                 if(left_type != TT_STRING && right_type != TT_STRING)
                     {
-                        generate_expression(node->children[0], current_scope);
-                        generate_expression(node->children[1], current_scope);
+                        generate_node(node->children[0], current_scope);
+                        generate_node(node->children[1], current_scope);
                         print_arithmetic(ADD);
                     }
                 else
@@ -346,8 +312,8 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_defvar(str2_full); 
                         print_defvar(res_full);
                         //THEN we can generate the node's children themselves, and pop them into the additional ones
-                        generate_expression(node->children[0], current_scope);
-                        generate_expression(node->children[1], current_scope);
+                        generate_node(node->children[0], current_scope);
+                        generate_node(node->children[1], current_scope);
                         print_pops(str2_full);
                         print_pops(str1_full);
                         //And now (finally) we print CONCAT, and push the result into the stack
@@ -358,14 +324,14 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
         //Minus and mul should be fine
         else if(type == TT_MINUS)
             {
-                generate_expression(node->children[0], current_scope);
-                generate_expression(node->children[1], current_scope);
+                generate_node(node->children[0], current_scope);
+                generate_node(node->children[1], current_scope);
                 print_arithmetic(SUB);
             }
         else if(type == TT_MUL)
             {
-                generate_expression(node->children[0], current_scope);
-                generate_expression(node->children[1], current_scope);
+                generate_node(node->children[0], current_scope);
+                generate_node(node->children[1], current_scope);
                 print_arithmetic(MUL);
             }
         else if(type == TT_DIV)
@@ -380,8 +346,8 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                 }
                 if(left_type == TT_FLOAT && right_type == TT_FLOAT)
                     {
-                        generate_expression(node->children[0], current_scope);
-                        generate_expression(node->children[1], current_scope);
+                        generate_node(node->children[0], current_scope);
+                        generate_node(node->children[1], current_scope);
                         char div_zero_check[40];
                         char div_not_zero[32];
                         sprintf(div_zero_check, "LF@%%div_check_float$%d", label_counter);
@@ -398,8 +364,8 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                     }
                 else
                     {
-                        generate_expression(node->children[0], current_scope);
-                        generate_expression(node->children[1], current_scope);
+                        generate_node(node->children[0], current_scope);
+                        generate_node(node->children[1], current_scope);
                         char div_zero_check[40];
                         char div_not_zero[32];
                         sprintf(div_zero_check, "LF@%%div_check_float$%d", label_counter);
@@ -418,46 +384,46 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
         //All of relation types (I hope)
         else if(type == TT_GT)
             {
-                generate_expression(node->children[0], current_scope);
-                generate_expression(node->children[1], current_scope);
+                generate_node(node->children[0], current_scope);
+                generate_node(node->children[1], current_scope);
                 print_relation(GT);
             }
         else if(type == TT_LT)
             {
-                generate_expression(node->children[0], current_scope);
-                generate_expression(node->children[1], current_scope);
+                generate_node(node->children[0], current_scope);
+                generate_node(node->children[1], current_scope);
                 print_relation(LT);
             }
         else if(type == TT_EQ)
             {
-                generate_expression(node->children[0], current_scope);
-                generate_expression(node->children[1], current_scope);
+                generate_nodde(node->children[0], current_scope);
+                generate_node(node->children[1], current_scope);
                 print_relation(EQ);
             }
         else if(type == TT_LE)
             {
-                generate_expression(node->children[0], current_scope);
-                generate_expression(node->children[1], current_scope);
+                generate_node(node->children[0], current_scope);
+                generate_node(node->children[1], current_scope);
                 print_relation(GT);
                 print_boolean(NOT);
             }
         else if(type == TT_GE)
             {
-                generate_expression(node->children[0], current_scope);
-                generate_expression(node->children[1], current_scope);
+                generate_node(node->children[0], current_scope);
+                generate_node(node->children[1], current_scope);
                 print_relation(LT);
                 print_boolean(NOT);
             }
         else if(type == TT_NEQ)
             {
-                generate_expression(node->children[0], current_scope);
-                generate_expression(node->children[1], current_scope);
+                generate_node(node->children[0], current_scope);
+                generate_node(node->children[1], current_scope);
                 print_relation(EQ);
                 print_boolean(NOT);
             }
         else if(type == TT_KEYWORD_IS)
             {
-                generate_expression(node->children[0], current_scope);
+                generate_node(node->children[0], current_scope);
                 char tmp_value[40], result_type[40];
                 char label_true[32], label_end[32];
                 sprintf(tmp_value, "LF@%%is_value$%d", label_counter);
@@ -499,7 +465,7 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                         //WRITE
                         for(int i = 0; i < node->value.int_value; i++)
                             {
-                                generate_expression(node->children[i], current_scope);
+                                generate_node(node->children[i], current_scope);
                                 char temp_var[32];
                                 sprintf(temp_var, "LF@%%temp_write%d", label_counter++);
                                 print_defvar(temp_var);
@@ -532,19 +498,19 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                         token_type_t arg_type = generator_get_type(node->children[0], current_scope);
                         if(arg_type == TT_INT)
                             {
-                                generate_expression(node->children[0], current_scope);
+                                generate_node(node->children[0], current_scope);
                                 print_conversion(INT2STR);
                             }
                         else
                             {
-                                generate_expression(node->children[0], current_scope);
+                                generate_node(node->children[0], current_scope);
                                 print_conversion(FLOAT2STR);
                             }
                     }
                 else if(strcmp(func_name, "floor") == 0)
                     {
                         //FLOAT2INT
-                        generate_expression(node->children[0], current_scope);
+                        generate_node(node->children[0], current_scope);
                         print_conversion(FLOAT2INT);
                     }
                 else if(strcmp(func_name, "length") == 0)
@@ -555,7 +521,7 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                         sprintf(result_var, "LF@%%strlen_result%d", label_counter++);
                         print_defvar(str_var);
                         print_defvar(result_var);
-                        generate_expression(node->children[0], current_scope);
+                        generate_node(node->children[0], current_scope);
                         print_pops(str_var);
                         print_strlen(result_var, str_var);
                         print_pushs(VARIABLE, result_var, "LF");
@@ -578,9 +544,9 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                                 print_defvar(j_var);
                                 print_defvar(result_var);
                                 print_defvar(tmp_char);
-                                generate_expression(node->children[0], current_scope);
-                                generate_expression(node->children[1], current_scope);
-                                generate_expression(node->children[2], current_scope);
+                                generate_node(node->children[0], current_scope);
+                                generate_node(node->children[1], current_scope);
+                                generate_node(node->children[2], current_scope);
                                 print_pops(j_var);
                                 print_pops(i_var);
                                 print_pops(str_var);
@@ -616,8 +582,8 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                         sprintf(str2_var, "LF@strcmp_s2%d", label_counter++);
                         print_defvar(str1_var);
                         print_defvar(str2_var);
-                        generate_expression(node->children[0], current_scope);
-                        generate_expression(node->children[1], current_scope);
+                        generate_node(node->children[0], current_scope);
+                        generate_node(node->children[1], current_scope);
                         print_pops(str2_var);
                         print_pops(str1_var);
                         print_pushs(VARIABLE, str1_var, "LF");
@@ -642,14 +608,14 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                 else if(strcmp(func_name, "ord") == 0)
                     {
                         //STRI2INT
-                        generate_expression(node->children[0], current_scope);
-                        generate_expression(node->children[1], current_scope);
+                        generate_node(node->children[0], current_scope);
+                        generate_node(node->children[1], current_scope);
                         print_conversion(STRI2INT);
                     }
                 else if(strcmp(func_name, "chr") == 0)
                     {
                         //INT2CHAR
-                        generate_expression(node->children[0], current_scope);
+                        generate_node(node->children[0], current_scope);
                         print_conversion(INT2CHAR);
                     }
                 else
@@ -658,7 +624,7 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                         printf("CREATEFRAME\n");
                         for(int i = 0; i < node->value.int_value; i++)
                             {
-                                generate_expression(node->children[i], current_scope);
+                                generate_node(node->children[i], current_scope);
                                 char parameter_reg[20];
                                 sprintf(parameter_reg, "TF@%%%d", i + 1);
                                 print_defvar(parameter_reg);
@@ -668,8 +634,18 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_pushs(VARIABLE, "%retval", "TF");
                     }
             }
-            
+            //For anything else
+        else
+            {
+                if(ast_get_precedence(node->token.type) > 0 || node->token.type == TT_IDENTIFIER || node->token.type == TT_INT)
+                    {
+                        generate_node(node, current_scope);
+                    }
+            }
+                
     }
+
+
 
 //Get the frame of the variable
 char *get_variable_frame(bst_scope_ptr scope, char* var_name)

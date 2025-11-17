@@ -59,9 +59,6 @@ typedef enum
 //Recursive function to proccess nodes
 void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope);
 
-//Function to generate code for an expression
-void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope);
-
 //Main function for generating code
 int generate_code(ast_node_ptr root, bst_scope_ptr symtable);
 
