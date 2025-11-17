@@ -476,8 +476,8 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                     }
                 else if(expected_type == TT_KEYWORD_NUM)
                     {
-                        pritnf("JUMPIFEQ %s %s string@int\n", label_true, result_type);
-                        pritnf("JUMPIFEQ %s %s string@float\n", label_true, result_type);
+                        printf("JUMPIFEQ %s %s string@int\n", label_true, result_type);
+                        printf("JUMPIFEQ %s %s string@float\n", label_true, result_type);
                     }
                 else if(expected_type == TT_STRING)
                     {

@@ -97,11 +97,12 @@ int main(void) {
 
     generate_code(ast_root, current_scope);
 
-    free_ast(ast_root);
+    destroy_ast(ast_root);
+    //free_ast(ast_root);
     
     printf(ast_root == NULL ? "AST successfully freed.\n" : "AST freeing failed!\n");
     ast_print_token(ast_root->token);
-    destroy_ast(ast_root);
+    //destroy_ast(ast_root);
 
 
     return 0;
