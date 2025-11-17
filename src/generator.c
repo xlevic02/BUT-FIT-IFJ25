@@ -19,7 +19,7 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
         printf(".IFJcode25\n");
         print_jump("$$main\n\n");
         //I assign roots number of children to int nu_of children
-        int num_of_children = root->value.int_value;
+        int num_of_children = root->n_of_children;
         for(int i = 0; i < num_of_children; i++)    
             {
                 //Generate all the functions that are children of root
@@ -62,7 +62,26 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         //We print the label of the function, push the alredy existing frame and go through the body
                         print_label(node->token.lexeme);
                         printf("PUSHFRAME\n");
-                        generate_node(node->children[1], current_scope);
+                        //Increasing the scope
+                        bst_increase_scope(current_scope);
+                        //If the node's parent is a function
+                        //Get all of the functions parameters and define them
+                        ast_node_ptr parameters = node->children[0];
+                        for(int i = 0; i < parameters->n_of_children; i++)
+                        {
+                            char* var_name = get_variable_id(*current_scope, parameters->children[i]->token.lexeme);
+                            char* frame = get_variable_frame(*current_scope, var_name);
+                            char var_full[100];
+                            sprintf(var_full, "%s@%s", frame, var_name);                                print_defvar(var_full);
+                            char parameter_reg[20];
+                            sprintf(parameter_reg, "LF@%%%d", i + 1);
+                            print_move(var_full, parameter_reg);
+                        }
+                        for(int i = 1; i < node->n_of_children; i++)
+                            {
+                                generate_node(node->children[i], current_scope);
+                            }
+                        bst_decrease_scope(current_scope);
                         printf("POPFRAME\n");
                         printf("RETURN\n");
                         break;
@@ -72,37 +91,8 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                     {
                         //Increasing the scope
                         bst_increase_scope(current_scope);
-                        //If the node's parent is a function
-                        if (node->parent && node->parent->token.type == TT_KEYWORD_STATIC)
-                        {
-                            //Get all of the functions parameters and define them
-                            ast_node_ptr parameters = node->parent->children[0];
-                            for(int i = 0; i < parameters->value.int_value; i++)
-                            {
-                                char* var_name = get_variable_id(*current_scope, parameters->children[i]->token.lexeme);
-                                char* frame = get_variable_frame(*current_scope, var_name);
-                                char var_full[100];
-                                sprintf(var_full, "%s@%s", frame, var_name);
-                                print_defvar(var_full);
-                                char parameter_reg[20];
-                                sprintf(parameter_reg, "LF@%%%d", i + 1);
-                                print_move(var_full, parameter_reg);
-                            }
-                            int start_index = 0;
-                            if (node->parent && node->parent->token.type == TT_KEYWORD_STATIC)
-                                {
-                                    start_index = 1; 
-                                }
-
-                            for(int i = start_index; i < node->value.int_value; i++)
-                                {
-                                    generate_node(node->children[i], current_scope);
-                                }
-                            bst_decrease_scope(current_scope);
-                            break;
-                        }
-                        //Then go through the body
-                        for(int i = 0; i < node->value.int_value; i++)
+                        //Go through the body
+                        for(int i = 0; i < node->n_of_children; i++)
                             {
                                 generate_node(node->children[i], current_scope);
                             }
@@ -126,7 +116,14 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_pushs(LITERAL_BOOL, "false", NULL);
                         print_jumpifeqs(label_else);
                         //Then generate the body
-                        generate_node(node->children[1], current_scope);
+                         //Increasing the scope
+                        bst_increase_scope(current_scope);
+                        //Go through the body
+                        for(int i = 1; i < node->n_of_children; i++)
+                            {
+                                generate_node(node->children[i], current_scope);
+                            }
+                        bst_decrease_scope(current_scope);
                         print_jump(label_end);
                         print_label(label_else);
                         break;
@@ -139,7 +136,14 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         strcpy(label_end, label_stack[label_stack_top--]);
                         label_stack_top--;
                         //And generate the body
-                        generate_node(node->children[0], current_scope);
+                        //Increasing the scope
+                        bst_increase_scope(current_scope);
+                        //Go through the body
+                        for(int i = 1; i < node->n_of_children; i++)
+                            {
+                                generate_node(node->children[i], current_scope);
+                            }
+                        bst_decrease_scope(current_scope);
                         print_label(label_end);
                         break;
                     }
@@ -157,7 +161,14 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_pushs(LITERAL_BOOL, "false", NULL);
                         print_jumpifeqs(w_end);
                         //If theyr're true we generate the body and jump back to start
-                        generate_node(node->children[1], current_scope);
+                        //Increasing the scope
+                        bst_increase_scope(current_scope);
+                        //Go through the body
+                        for(int i = 1; i < node->n_of_children; i++)
+                            {
+                                generate_node(node->children[i], current_scope);
+                            }
+                        bst_decrease_scope(current_scope);
                         print_jump(w_start);
                         //If not, we end the while
                         print_label(w_end);
@@ -250,8 +261,18 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                     }
                 else 
                     {
-                        //If not ve just push the variable
-                        print_pushs(VARIABLE, node->token.lexeme, get_variable_frame(*current_scope, node->token.lexeme));
+                        //Check if it's a getter
+                        token_type_t id_type = generator_get_id_type(node->token.lexeme, current_scope);
+                        if(id_type == TT_KEYWORD_STATIC)
+                            {
+                                print_call(node->token.lexeme);
+                                print_pushs(VARIABLE, "%retval", "TF");
+                            }
+                        else
+                            {
+                                //If not ve just push the variable
+                                print_pushs(VARIABLE, node->token.lexeme, get_variable_frame(*current_scope, node->token.lexeme));
+                            }
                     }
             }
         //Here's assign
@@ -263,17 +284,33 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                         ast_error(ERROR_SEM_OTHER, "Error: Left side of assign is not a variable.\n", node, NULL);
                         return;
                     }
-                //We'll get the id and frame, create a string into which we'll pop the result of the second child
-                char *temp_var = get_variable_id(*current_scope, node->children[0]->token.lexeme);
-                char *frame = get_variable_frame(*current_scope, temp_var);
-                char var_full[100];
-                sprintf(var_full, "%s@%s", frame, temp_var);
-                //We'll generate the second child
-                generate_expression(node->children[1], current_scope);
-                //Pop it into the string
-                print_pops(var_full);
-                //And push it back into the stack
-                print_pushs(VARIABLE, temp_var, frame);
+                char *var_name = node->children[0]->token.lexeme;
+                char setter_name[256];
+                sprintf(setter_name, "%s=", var_name);
+                token_type_t setter_type = generator_get_id_type(setter_name, current_scope);
+                if(setter_type != TT_KEYWORD_STATIC)
+                    {
+                        char *temp_var = get_variable_id(*current_scope, node->children[0]->token.lexeme);
+                        char *frame = get_variable_frame(*current_scope, temp_var);
+                        char var_full[100];
+                        sprintf(var_full, "%s@%s", frame, temp_var);
+                        //We'll generate the second child
+                        generate_expression(node->children[1], current_scope);
+                        //Pop it into the string
+                        print_pops(var_full);
+                        //And push it back into the stack
+                        print_pushs(VARIABLE, temp_var, frame);
+                    }
+                else
+                    {
+                        //If node->children[0] is a setter
+                        printf("CREATEFRAME\n");
+                        generate_expression(node->children[1], current_scope);
+                        print_defvar("TF@%1");
+                        printf("POPS TF@%1\n");
+                        printf("PUSHS TF@%1\n");
+                        print_call(setter_name);
+                    }
             }
         //Then there's plus
         else if(type == TT_PLUS)
@@ -417,6 +454,40 @@ void generate_expression(ast_node_ptr node, bst_scope_ptr *current_scope)
                 generate_expression(node->children[1], current_scope);
                 print_relation(EQ);
                 print_boolean(NOT);
+            }
+        else if(type == TT_KEYWORD_IS)
+            {
+                generate_expression(node->children[0], current_scope);
+                char tmp_value[40], result_type[40];
+                char label_true[32], label_end[32];
+                sprintf(tmp_value, "LF@%%is_value$%d", label_counter);
+                sprintf(result_type, "LF@%%result_type$%d", label_counter);
+                get_unique_label(label_true, "true");
+                get_unique_label(label_end, "end");
+                label_counter++;
+                print_defvar(tmp_value);
+                print_defvar(result_type);
+                print_pops(tmp_value);
+                printf("TYPE %S %S\n", result_type, tmp_value);
+                token_type_t expected_type = node->children[1]->token.type;
+                if(expected_type == TT_KEYWORD_Null || expected_type == TT_NULL)
+                    {
+                        printf("JUMPIFEQ %s %s string@nil\n", label_true, result_type);
+                    }
+                else if(expected_type == TT_KEYWORD_NUM)
+                    {
+                        pritnf("JUMPIFEQ %s %s string@int\n", label_true, result_type);
+                        pritnf("JUMPIFEQ %s %s string@float\n", label_true, result_type);
+                    }
+                else if(expected_type == TT_STRING)
+                    {
+                        printf("JUMPIFEQ %s %s string@string\n", label_true, label_end);
+                    }
+                print_pushs(LITERAL_BOOL, "false", NULL);
+                print_jump(label_end);
+                print_label(label_true);
+                print_pushs(LITERAL_BOOL, "true", NULL);
+                print_label(label_end);
             }
         //And here's keyword_IFJ, which are builtin functions
         else if(type == TT_KEYWORD_IFJ)
@@ -695,6 +766,10 @@ token_type_t generator_get_type(ast_node_ptr node, bst_scope_ptr* current_scope)
         if(node->token.type == TT_IDENTIFIER)
             {
                 token_type_t id_type = generator_get_id_type(node->token.lexeme, current_scope);
+                if(id_type == TT_KEYWORD_STATIC && node->children == NULL)
+                    {
+                        return TT_INT;
+                    }
                 return id_type;
             }
         if(node->token.type == TT_PLUS || node->token.type == TT_MINUS || node->token.type == TT_MUL || node->token.type == TT_DIV)
