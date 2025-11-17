@@ -531,11 +531,20 @@ ast_node_ptr ast_create_node(token_t token, ast_node_ptr parent, ast_node_type_t
 
 
 void ast_increase_children(ast_node_ptr current_node, ast_node_ptr new_node){
-    current_node->children = realloc(current_node->children, sizeof(ast_node_ptr) * ++current_node->n_of_children);
-    if(current_node->children == NULL)
+    if (current_node == NULL || new_node == NULL) return;
+
+    size_t new_count = (size_t)current_node->n_of_children + 1;
+    ast_node_ptr *tmp = realloc(current_node->children, sizeof(ast_node_ptr) * new_count);
+    if (tmp == NULL){
+        /* realloc failed: keep state unchanged, report error */
         ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, current_node->parent, &current_node->token);
-    current_node->children[current_node->n_of_children - 1] = new_node;
-    current_node->children[current_node->n_of_children - 1]->parent = current_node;
+        return; /* ast_error may exit; keep the explicit return */
+    }
+
+    current_node->children = tmp;
+    current_node->children[new_count - 1] = new_node;
+    new_node->parent = current_node;
+    current_node->n_of_children = (int)new_count;
 }
 
 
