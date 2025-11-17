@@ -54,7 +54,7 @@ int main(void) {
     visualize_ast(ast_root);
 
     free_ast(ast_root);
-
+    
     printf(ast_root == NULL ? "AST successfully freed.\n" : "AST freeing failed!\n");
     ast_print_token(ast_root->token);
 

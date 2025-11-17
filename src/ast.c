@@ -268,55 +268,6 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
             case TT_KEYWORD_IFJ:
                 ast_increase_children(current_node, ast_ifj_function_call_node(current_token, current_node));
                 break;
-            /*{ 
-
-                if ((*current_token = get_token()).type != TT_DOT){
-                    ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
-                }  
-
-                *current_token = get_token();
-                ast_skip_EOL(current_token);
-
-                if (current_token->type != TT_IDENTIFIER){
-                    ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
-                }
-
-                ast_node_ptr inherent_function_node = ast_create_node(*current_token, current_node, NT_TODO);
-                inherent_function_node->token.type = TT_KEYWORD_IFJ;
-                ast_increase_children(current_node, inherent_function_node);
-
-
-                *current_token = get_token();
-                if (current_token->type != TT_LPAREN){
-                    ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
-                }
-                *current_token = get_token();
-
-
-                bool comma_present = true;
-                //Argument handling
-                while(current_token->type != TT_RPAREN){
-
-                    if (current_token->type == TT_COMMA){
-                        if (comma_present){
-                            ast_error(2, "Syntax error:\tmultiple commas in inherent function call\n", current_node, current_token);
-                        }
-                        *current_token = get_token();
-                        comma_present = true;
-                    }
-
-                    //Only identifiers, literals and Null are allowed as arguments
-                    if (current_token->type != TT_IDENTIFIER && current_token->type != TT_INT && current_token->type != TT_FLOAT && current_token->type != TT_STRING && current_token->type != TT_KEYWORD_Null){
-                        ast_error(2, "Syntax error:\twrong token in inherent function call\n", current_node, current_token);
-                    }
-                    
-                    ast_increase_children(inherent_function_node, ast_create_node(*current_token, current_node, NT_TODO));
-                    *current_token = get_token();
-                    comma_present = false;
-                }
-
-                *current_token = get_token();
-                break;}*/
 
 
                 //End of a block
@@ -335,31 +286,6 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 //End of a line, continue
             case TT_EOL:
                 break;
-
-
-            /*    //Should not happen
-            case TT_KEYWORD_NUM:
-            case TT_RPAREN:
-            case TT_COMMA:
-            case TT_DOT:
-            case TT_LBRACE:
-            case TT_KEYWORD_ELSE:
-            case TT_KEYWORD_IS:
-            case TT_ASSIGN:
-            case TT_PLUS:
-            case TT_MINUS:
-            case TT_MUL:
-            case TT_DIV:
-            case TT_EQ:
-            case TT_NEQ:
-            case TT_LT:
-            case TT_GT:
-            case TT_LE:
-            case TT_GE:
-            case TT_KEYWORD_CLASS:
-            case TT_KEYWORD_IMPORT:
-            case TT_EOF:
-            case TT_KEYWORD_STATIC:*/
 
                 //should not happen
             default:
@@ -428,7 +354,7 @@ ast_node_ptr ast_ifj_function_call_node(token_t *current_token, ast_node_ptr cur
 
 
 
-//TODO check logic
+//TODO error handling
 //Function to handle expressions with operator precedence
 ast_node_ptr ast_expression_node(token_t *current_token, int min_precedence, ast_node_ptr parent_node){
     
@@ -623,8 +549,16 @@ void free_ast(ast_node_ptr node){
             free_ast(node->children[i]);
         }
         free(node->children);
+        node->children = NULL;
     }
+
+    if(node->token.lexeme != NULL){
+        free(node->token.lexeme);
+        node->token.lexeme = NULL;
+    }
+
     free(node);
+    node = NULL;
 }
 
 
