@@ -47,6 +47,7 @@
 #define MSG_SYN_TOKEN_ORDER "Syntax error:\twrong token order\n"
 #define MSG_SYN_EXPRESSION "Syntax error:\tExpression or literal/numeral wrong\n"
 #define MSG_SYN_WRONG_TOKEN_EXPRESSION "Syntax error:\tWrong token in exppression/numeral\n"
+#define MSG_SYN_BRACE_WRONG "Syntax error:\tWrong brace or parentheses usage\n"
 #define MSG_SYN_MISSING_PROLOG "Syntax error:\tmissing prolog\n"
 #define MSG_SYN_MISSING_MAIN "Syntax error:\tmissing main\n"
 #define MSG_SYN_MISSING_CLASS "Syntax error:\tmissing class\n"

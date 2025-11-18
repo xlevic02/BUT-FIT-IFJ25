@@ -40,7 +40,7 @@ ast_node_ptr create_ast(){
 
     if ((*current_token = get_token()).type != TT_LBRACE){
 
-        ast_error(ERROR_SYNTAX, MSG_SYN_PROGRAM_DECLARATION, root, current_token);
+        ast_error(ERROR_SYNTAX, MSG_SYN_BRACE_WRONG, root, current_token);
     }
 
     if((*current_token = get_token()).type != TT_EOL){
@@ -104,6 +104,11 @@ ast_node_ptr create_ast(){
     } while (((*current_token = get_token()).type != TT_EOF) || (current_token->type != TT_RBRACE));;
 
     if(current_token->type != TT_RBRACE){
+        ast_error(2, MSG_SYN_BRACE_WRONG, root, current_token);
+    }
+    *current_token = get_token();
+    ast_skip_EOL(current_token);
+    if(current_token->type != TT_EOF){
         ast_error(2, MSG_SYN_MISSING_TOKEN, root, current_token);
     }
 
@@ -496,6 +501,8 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
     return parameter_node;
 }
 
+
+//Helper function to skip possible EOL tokens
 void ast_skip_EOL(token_t *current_token){
     while(current_token->type == TT_EOL){
         *current_token = get_token();
