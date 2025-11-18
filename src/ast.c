@@ -136,7 +136,8 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
             case TT_FLOAT:
             case TT_STRING:
             case TT_IDENTIFIER:{
-                ast_increase_children(current_node, ast_expression_node(current_token, 0, current_node));
+                        ast_increase_children(current_node, NULL);
+                        ast_expression_node(current_token, current_node);
 
                 token_type_t control_token = current_node->children[current_node->n_of_children - 1]->token.type;
                 if(control_token == TT_IDENTIFIER || control_token == TT_INT || control_token == TT_FLOAT || control_token == TT_STRING || control_token == TT_LPAREN){
@@ -155,7 +156,8 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 ast_increase_children(current_node, new_node);
                 *current_token = get_token();
                 if(current_token->type != TT_EOL){
-                    ast_increase_children(new_node, ast_expression_node(current_token, 0, new_node));
+                    ast_increase_children(new_node, NULL);
+                    ast_expression_node(current_token, new_node);
 
                 }
 
@@ -193,9 +195,8 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 ast_skip_EOL(current_token);
 
                 //Possible TODO: condition handling
-                //if_node->children = malloc(sizeof(ast_node_ptr));
-                //if_node->children[0] = ast_expression_node(current_token, 0, if_node->children[0]);
-                ast_increase_children(if_node, ast_expression_node(current_token, 0, if_node));
+                ast_increase_children(if_node, NULL);
+                ast_expression_node(current_token, if_node);
 
                 //Handle closing parenthesis, opening brace and EOL
                 if (current_token->type != TT_RPAREN &&
@@ -246,8 +247,10 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                     ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 ast_skip_EOL(current_token);
+                
 
-                ast_increase_children(while_node, ast_expression_node(current_token, 0, while_node));
+                ast_increase_children(while_node, NULL);
+                ast_expression_node(current_token, while_node);
 
                 //Handle closing parenthesis, opening brace and EOL
                 if(current_token->type != TT_LBRACE || (*current_token = get_token()).type != TT_EOL){
@@ -355,23 +358,22 @@ ast_node_ptr ast_ifj_function_call_node(token_t *current_token, ast_node_ptr cur
 }
 
 //Function to handle expressions with operator precedence
-ast_node_ptr ast_expression_node(token_t *current_token, int min_precedence, ast_node_ptr parent_node){
-    ast_node_ptr temp = ast_expression_inner(current_token, min_precedence, parent_node);
+ast_node_ptr ast_expression_node(token_t *current_token, ast_node_ptr parent_node){
+    ast_node_ptr temp = ast_expression_inner(current_token, 0, parent_node, &(parent_node->children[parent_node->n_of_children - 1]));
     if (temp == NULL || temp->token.type == TT_ERROR){
         free_ast(&temp);
         ast_error(2, MSG_SYN_EXPRESSION, parent_node, current_token);
-    } else {
-        return temp;
     }
+    return temp;
 }
 
 
 
 //Helper function to handle expression parsing with operator precedence
-ast_node_ptr ast_expression_inner(token_t *current_token, int min_precedence, ast_node_ptr parent_node){
+ast_node_ptr ast_expression_inner(token_t *current_token, int min_precedence, ast_node_ptr parent_node, ast_node_ptr *upper_pointer){
     
-    ast_node_ptr lhs = parse_primary(current_token, parent_node);
-    if (lhs->token.type == TT_ERROR){
+    ast_node_ptr lhs = parse_primary(current_token, parent_node, upper_pointer);
+    if (lhs == NULL || lhs->token.type == TT_ERROR){
         return lhs;
     }
 
@@ -383,17 +385,14 @@ ast_node_ptr ast_expression_inner(token_t *current_token, int min_precedence, as
         int next_min_prec = precedence + 1;
 
         *current_token = get_token(); // consume operator
+
         ast_node_ptr op_node = ast_create_node(op_token, parent_node, NT_TODO);
-        ast_node_ptr rhs = ast_expression_inner(current_token, next_min_prec, op_node);
-
-        if(rhs->token.type == TT_ERROR){
-            free_ast(&op_node);
-            free_ast(&lhs);
-            return rhs;
-        }
-
+        *upper_pointer = op_node;
         ast_increase_children(op_node, lhs);
-        ast_increase_children(op_node, rhs);
+        lhs->parent = op_node;
+        ast_increase_children(op_node, NULL);
+        ast_expression_inner(current_token, next_min_prec, op_node, &(op_node->children[1]));
+
 
         lhs = op_node;
     }
@@ -402,14 +401,13 @@ ast_node_ptr ast_expression_inner(token_t *current_token, int min_precedence, as
 } 
 
 //Helper function to parse primary expressions
-ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node) {
+ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node, ast_node_ptr *upper_pointer){
     ast_node_ptr node = NULL;
-
-    
 
     switch (current_token->type) {
         case TT_KEYWORD_IFJ:
             node = ast_ifj_function_call_node(current_token, parent_node);
+            *upper_pointer = node;
             break;
         case TT_INT:
         case TT_FLOAT:
@@ -418,11 +416,13 @@ ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node) {
         case TT_KEYWORD_Null:
         case TT_NULL:
             node = ast_create_node(*current_token, parent_node, NT_TODO);
+            *upper_pointer = node;
             *current_token = get_token(); // consume
             break;
             
         case TT_IDENTIFIER:
             node = ast_create_node(*current_token, parent_node, NT_ID);
+            *upper_pointer = node;
             *current_token = get_token(); // consume
             if (current_token->type == TT_LPAREN) {
                 ast_parameter_node(current_token, node);
@@ -432,21 +432,16 @@ ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node) {
 
         case TT_LPAREN:{
             *current_token = get_token(); // consume '('
-            node = ast_expression_inner(current_token, 0, parent_node);
-
-            if(node == NULL){
-                node = ast_create_node(*current_token, parent_node, NT_TODO);
-                node->token.type = TT_ERROR;
-            }
+            node = ast_expression_inner(current_token, 0, parent_node, upper_pointer);
 
             if (current_token->type != TT_RPAREN) {
-                node->token.type = TT_ERROR;
+                ast_error(2, MSG_SYN_TOKEN_ORDER, parent_node, current_token);
             }
             *current_token = get_token(); // consume ')'
             break;}
 
         default:
-            ast_error(2, MSG_SYN_TOKEN_ORDER, parent_node, current_token);
+            ast_error(2, MSG_SYN_WRONG_TOKEN_EXPRESSION, parent_node, current_token);
     }
     
     return node;
@@ -562,20 +557,21 @@ ast_node_ptr ast_create_node(token_t token, ast_node_ptr parent, ast_node_type_t
 
 
 void ast_increase_children(ast_node_ptr current_node, ast_node_ptr new_node){
-    if (current_node == NULL || new_node == NULL) return;
+    if (current_node == NULL) return;
 
     size_t new_count = (size_t)current_node->n_of_children + 1;
     ast_node_ptr *tmp = realloc(current_node->children, sizeof(ast_node_ptr) * new_count);
     if (tmp == NULL){
         /* realloc failed: keep state unchanged, report error */
+        free_ast(&new_node);
         ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, current_node->parent, &current_node->token);
         return; /* ast_error may exit; keep the explicit return */
     }
 
     current_node->children = tmp;
     current_node->children[new_count - 1] = new_node;
-    new_node->parent = current_node;
     current_node->n_of_children = (int)new_count;
+    if(new_node != NULL) new_node->parent = current_node;
 }
 
 
