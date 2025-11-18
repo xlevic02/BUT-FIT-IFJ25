@@ -3,22 +3,57 @@
 
 
 #include "symtable.h"
+#include "scanner.h"
 
 
 //TODO -- add IJF functions to the symbol table upon initialization
 
+/**
+ * @brief Allocates sufficient memory for a copy of the string s, copies the content,
+ * and returns a pointer to the copy.
+ * @param s The null-terminated string to duplicate.
+ * @return A pointer to the newly allocated string, or NULL if memory allocation fails.
+ */
+char *safe_str_copy(const char *s) {
+    if (s == NULL) {
+        return NULL;
+    }
+    
+    // 1. Calculate length and allocate memory (+1 for the null terminator)
+    size_t len = strlen(s) + 1; 
+    char *new_s = (char *)malloc(len);
+
+    if (new_s == NULL) {
+        // Handle allocation failure
+        return NULL; 
+    }
+
+    // 2. Copy the content
+    strcpy(new_s, s);
+
+    return new_s;
+}
 
 //Funciton to declare a variable in the current scope
 int bst_declare_variable(bst_scope_ptr scope, char *name){
-  if (scope == NULL) return 0;
-  if (bst_search_scope(scope, get_hash(name)).type != TT_ERROR){
-    //Variable already declared in this or parent scope
-    return 1;
-  } else{
-    bst_node_content_t new_var = node_content_init(name, TT_ERROR);
-    bst_insert(&scope->tree, get_hash(name), new_var);
-    return 0;
-  }
+    printf("[DEBUG_BST] bst_declare_variable: scope=%p, name='%s'\n", (void*)scope, name);
+    printf("[DEBUG_BST] scope->parent=%p\n", (void*)(scope->parent));
+    fflush(stdout);
+    
+    if (scope == NULL) return 0;
+    
+    unsigned int key = get_hash(name);
+    bst_node_content_t existing = bst_search(scope->tree, key);
+    
+    if (existing.type != TT_ERROR){
+        return 1;
+    } else{
+        bst_node_content_t new_var = node_content_init(name, TT_IDENTIFIER);
+        printf("[DEBUG_BST] Inserting into scope=%p, key=%u\n", (void*)scope, key);
+        fflush(stdout);
+        bst_insert(&scope->tree, key, new_var);
+        return 0;
+    }
 }
 
 int bst_declare_global_variable(bst_scope_ptr scope, char *name){
@@ -30,7 +65,7 @@ int bst_declare_global_variable(bst_scope_ptr scope, char *name){
     //Variable already declared in this or parent scope
     return 1;
   } else{
-    bst_node_content_t new_var = node_content_init(name, TT_ERROR);
+    bst_node_content_t new_var = node_content_init(name, TT_IDENTIFIER);
     bst_insert(&global_scope->tree, get_hash(name), new_var);
     return 0;
   }
@@ -51,10 +86,29 @@ int bst_define_variable(bst_scope_ptr scope, char *name, token_type_t type){
 
 //Support function to search through scopes of the BST
 bst_node_content_t bst_search_scope(bst_scope_ptr scope, unsigned int key){
+    printf("[DEBUG_BST] bst_search_scope: scope=%p, key=%u\n", (void*)scope, key);
+    fflush(stdout);
+    
+    if (scope == NULL) {
+        printf("[DEBUG_BST] bst_search_scope: scope is NULL, returning ERROR\n");
+        fflush(stdout);
+        bst_node_content_t error;
+        error.type = TT_ERROR;
+        return error;
+    }
+
     bst_node_content_t temp = bst_search(scope->tree, key);
+    printf("[DEBUG_BST] bst_search_scope: searched scope=%p, found type=%d\n", 
+           (void*)scope, temp.type);
+    fflush(stdout);
+
     if (temp.type == TT_ERROR){
+        printf("[DEBUG_BST] bst_search_scope: not found, trying parent=%p\n", 
+               (void*)scope->parent);
+        fflush(stdout);
         return bst_search_scope(scope->parent, key);
     }
+    
     return temp;
 }
 
@@ -85,10 +139,19 @@ void bst_decrease_scope(bst_scope_ptr *scope){
 //Support function to create empty node content
 bst_node_content_t node_content_init(char *name, token_type_t type){
     bst_node_content_t node;
-    node.name = name;
+    
+    // 🚨 FIX 1 (Standard C): Use your safe_str_copy function
+    node.name = safe_str_copy(name); 
+    
+    if (node.name == NULL) {
+        // Handle allocation failure if necessary
+        // Perhaps set type to TT_ERROR or return a default error node
+    }
+    
     node.type = type;
     node.args = NULL;
     node.n_of_arguments = -1;
+    
     return node;
 }
 
@@ -122,55 +185,56 @@ unsigned int get_hash(char *str) {
 
 //To insert an element into a BST
 void bst_insert(bst_node_ptr *tree, unsigned int key, bst_node_content_t value){
-  if ((*tree) == NULL) {
+    if ((*tree) == NULL) {
+        (*tree) = malloc(sizeof(bst_node_t));
+        if ((*tree) == NULL)
+            return;
+        (*tree)->key = key;
+        (*tree)->content = value;
+        (*tree)->left = NULL;
+        (*tree)->right = NULL;
+        return;
+    }
 
-    (*tree) = malloc(sizeof(bst_node_t));
-    if ((*tree) == NULL)
-      return;
-    (*tree)->key = key;
-    (*tree)->content = value;
-    (*tree)->left = NULL;
-    (*tree)->right = NULL;
-    return;
-  }
-
-  else if (key == (*tree)->key) {
-    (*tree)->content = value;
-    return;
-  }
+    else if (key == (*tree)->key) {
+        // Handle replacement: If you are replacing content, you must free the old name!
+        free((*tree)->content.name);
+        (*tree)->content = value;
+        return;
+    }
 
 
-  else if ((*tree)->key > key) {
-    bst_insert(&((*tree)->left), key, value);
-    (*tree)->left = bst_balance((*tree)->left);
-  }
+    else if ((*tree)->key > key) {
+        bst_insert(&((*tree)->left), key, value);
+        // (*tree)->left = bst_balance((*tree)->left); // Keep commented out for now!
+    }
 
-  else if ((*tree)->key < key) {
-    bst_insert(&((*tree)->right), key, value);
-    (*tree)->right = bst_balance((*tree)->right);
-  }
+    else if ((*tree)->key < key) {
+        bst_insert(&((*tree)->right), key, value);
+        // (*tree)->right = bst_balance((*tree)->right); // Keep commented out for now!
+    }
 }
 
 //For searching through a BST using a unique key with the return value of the success of the search. Can change the pointer inserted in the last argument to point to the found node's content
 bst_node_content_t bst_search(bst_node_ptr tree, unsigned int key){
+    // 1. Base Case: Not found
     if (tree == NULL) {
         bst_node_content_t error;
-        error.type = TT_ERROR;
+        error.type = TT_ERROR; // Assuming TT_ERROR is 0
         return error;
-    }else if (tree->key == key) {
-        return tree->content;
-    } else {
-        if (tree->key > key) {
-        return bst_search(tree->left, key);
-        }
-        else if (tree->key < key) {
-        return bst_search(tree->right, key);
-        }
-    } 
+    }
 
-    bst_node_content_t error;
-    error.type = TT_ERROR;
-    return error;
+    // 2. Found!
+    if (tree->key == key) {
+        return tree->content;
+    }
+
+    // 3. Recurse left or right (must explicitly return the recursive call result)
+    if (tree->key > key) {
+        return bst_search(tree->left, key);
+    } else { // tree->key < key
+        return bst_search(tree->right, key);
+    }
 }
 
 
@@ -315,13 +379,12 @@ bst_node_ptr bst_rotate_r(bst_node_ptr node){
 
 //To measure the weight of a binary tree's children and return the biggest weight
 int bst_weight(bst_node_ptr tree){
-  if(tree == NULL) return 0;
-  int left = bst_weight(tree->left);
-  int right = bst_weight(tree->right);
-  if(left > right){
-    return left++;
-  }else{
-    return right++;
-  }
-
+    if(tree == NULL) return 0;
+    int left = bst_weight(tree->left);
+    int right = bst_weight(tree->right);
+    if(left > right){
+        return left + 1; // Must be + 1, not post-increment (++)
+    } else {
+        return right + 1; // Must be + 1, not post-increment (++)
+    }
 }

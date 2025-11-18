@@ -57,7 +57,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
         ast_node_type_t ntype = node->node_type;
         //Looking at the node's token type
         //If it's a function
-        printf("YES WE ARE HERE %s %d %d \n", node->token.lexeme, type, node->node_type); // Debugging line
+        //printf("YES WE ARE HERE %s %d %d \n", node->token.lexeme, type, node->node_type); // Debugging line
         if(ntype == NT_FUNC_DECL)
                     {   
                         printf("Generating node %s\n", node->token.lexeme); // Debugging line
