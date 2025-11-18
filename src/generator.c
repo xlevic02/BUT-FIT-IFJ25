@@ -15,6 +15,20 @@
 //I get the root node and symtable
 int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
     {
+        if (symtable == NULL) 
+            {
+                symtable = malloc(sizeof(bst_scope_t));
+                if (symtable == NULL) 
+                    {
+                        ast_error(ERROR_INTERNAL, "Error: Symtable does not exist\n", root, NULL);
+                        return 99;
+                    }
+                symtable->tree = NULL;
+                symtable->parent = NULL;
+                symtable->child = NULL;
+                symtable->n_of_children = 0;
+            }
+
         printf(".IFJcode25\n");
         print_jump("$$main\n\n");
         //I assign roots number of children to int nu_of children
@@ -24,6 +38,8 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
                 //Generate all the functions that are children of root
                 if(root->children[i]->token.type == TT_KEYWORD_STATIC)
                     {
+                        bst_declare_variable(symtable, root->children[i]->token.lexeme);
+                        bst_define_variable(symtable, root->children[i]->token.lexeme, TT_KEYWORD_STATIC);
                         generate_node(root->children[i], &symtable);
                     }
             }
@@ -69,10 +85,13 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                             char* var_name = get_variable_id(*current_scope, parameters->children[i]->token.lexeme);
                             char* frame = get_variable_frame(*current_scope, var_name);
                             char var_full[100];
-                            sprintf(var_full, "%s@%s", frame, var_name);                                print_defvar(var_full);
+                            sprintf(var_full, "%s@%s", frame, var_name);                                
+                            print_defvar(var_full);
                             char parameter_reg[20];
                             sprintf(parameter_reg, "LF@%%%d", i + 1);
                             print_move(var_full, parameter_reg);
+                            bst_declare_variable(*current_scope, parameters->children[i]->token.lexeme);
+                            bst_define_variable(*current_scope, parameters->children[i]->token.lexeme, TT_INT);
                         }
                         for(int i = 1; i < node->n_of_children; i++)
                             {
@@ -189,6 +208,8 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         sprintf(var_full, "%s@%s", get_variable_frame(*current_scope, var_name), var_name);
                         //Then define it
                         print_defvar(var_full);
+                        bst_declare_variable(*current_scope, node->token.lexeme);
+                        bst_define_variable(*current_scope, node->token.lexeme, TT_KEYWORD_Null);
                     }
         //The first five ifs are basicaly what to push
         else if(type == TT_INT)
@@ -266,6 +287,8 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_pops(var_full);
                         //And push it back into the stack
                         print_pushs(VARIABLE, temp_var, frame);
+                        token_type_t new_type = generator_get_type(node->children[1], current_scope);
+                        bst_define_variable(*current_scope, var_name, new_type);
                     }
                 else
                     {
@@ -713,8 +736,16 @@ char* format_string_for_ifjcode(const char* lexeme)
 token_type_t generator_get_id_type(char* lexeme, bst_scope_ptr* current_scope)
     { 
         unsigned int key = get_hash(lexeme);
-        bst_node_content_t content = bst_search_scope(*current_scope, key);
-        return content.type;
+        bst_scope_ptr tmp_scope = *current_scope;
+        while (tmp_scope != NULL) 
+            {
+                bst_node_content_t content = bst_search(tmp_scope->tree, key);
+                if (content.type != TT_ERROR) {
+                    return content.type;
+                }
+                tmp_scope = tmp_scope->parent;
+            }
+        return TT_ERROR;
     }
 
 token_type_t generator_get_type(ast_node_ptr node, bst_scope_ptr* current_scope)
