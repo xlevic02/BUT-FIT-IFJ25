@@ -632,7 +632,7 @@ const char* token_type_to_string(token_type_t type) {
 }
 
 
-// Debugging function to print token information
+// Debugging function to print token information DO NOT CALL THIS WHEN AST IS FREED
 void ast_print_token(token_t token){
     printf("Token type: %s, lexeme: %s\n", token_type_to_string(token.type), token.lexeme);
 }

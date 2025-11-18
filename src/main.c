@@ -95,15 +95,15 @@ int main(void) {
 
     visualize_ast(ast_root);
 
-    generate_code(ast_root, current_scope);
+    //generate_code(ast_root, current_scope);
 
-    destroy_ast(ast_root);
-    //free_ast(ast_root);
+    //destroy_ast(ast_root);
+    free_ast(&ast_root);
     
     visualize_ast(ast_root);
-
+    fflush(stdout);
     printf(ast_root == NULL ? "AST successfully freed.\n" : "AST freeing failed!\n");
-    ast_print_token(ast_root->token);
+    //ast_print_token(ast_root->token);
     //destroy_ast(ast_root);
 
 
