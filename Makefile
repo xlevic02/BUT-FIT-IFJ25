@@ -35,6 +35,7 @@ run: $(TARGET)
 	@if [ -z "$(FILE)" ]; then \
 		echo "Usage: make run FILE=<filename.wren>"; \
 	else \
+		rm -f $(OUTPUT_DIR)/$(FILE:.wren=.out); \
 		$(TARGET) < $(INPUT_DIR)/$(FILE) > $(OUTPUT_DIR)/$(FILE:.wren=.out); \
 	fi
 

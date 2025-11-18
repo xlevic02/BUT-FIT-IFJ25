@@ -3,9 +3,11 @@
 
 #include "generator.h"
 //#include "ast.h"
+#include "ast.h"
 #include "scanner.h"
 //#include "symtable.h"
 #include "error.h"
+#include <stdio.h>
 
 ////
 // Warning: this generator is working with the old version of ast.c.
@@ -22,8 +24,9 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
         for(int i = 0; i < num_of_children; i++)    
             {
                 //Generate all the functions that are children of root
-                if(root->children[i]->token.type == TT_KEYWORD_STATIC)
+                if(root->children[i]->node_type == NT_FUNC_DECL)
                     {
+                        printf("Entering Generate Node\n"); // Debugging line
                         generate_node(root->children[i], &symtable);
                     }
             }
@@ -33,8 +36,7 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
         for(int i = 0; i < num_of_children; i++)
             {
                 //Generate all the other children
-                if(root->children[i]->token.type != TT_KEYWORD_STATIC)
-                    {
+                if(root->children[i]->node_type == NT_FUNC_DECL){
                         generate_node(root->children[i], &symtable);
                     }
             }
@@ -52,10 +54,14 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 return;
             }
         token_type_t type = node->token.type;
+        ast_node_type_t ntype = node->node_type;
         //Looking at the node's token type
         //If it's a function
-        if(type == TT_KEYWORD_STATIC)
+        printf("YES WE ARE HERE %s %d %d \n", node->token.lexeme, type, node->node_type); // Debugging line
+        if(ntype == NT_FUNC_DECL)
                     {   
+                        printf("Generating node %s\n", node->token.lexeme); // Debugging line
+                        fflush(stdout); // Ensure output is flushed
                         //We print the label of the function, push the alredy existing frame and go through the body
                         print_label(node->token.lexeme);
                         printf("PUSHFRAME\n");
@@ -63,6 +69,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         bst_increase_scope(current_scope);
                         //If the node's parent is a function
                         //Get all of the functions parameters and define them
+                        fflush(stdout); // Ensure output is flushed
                         ast_node_ptr parameters = node->children[0];
                         for(int i = 0; i < parameters->n_of_children; i++)
                         {
@@ -78,9 +85,11 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                             {
                                 generate_node(node->children[i], current_scope);
                             }
+                        fflush(stdout); // Doesnt get here
                         bst_decrease_scope(current_scope);
                         printf("POPFRAME\n");
                         printf("RETURN\n");
+                        fflush(stdout);
                     }
                 //The body of a funcion, if/else or while
         else if(type == TT_LBRACE)
@@ -396,7 +405,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
             }
         else if(type == TT_EQ)
             {
-                generate_nodde(node->children[0], current_scope);
+                generate_node(node->children[0], current_scope);
                 generate_node(node->children[1], current_scope);
                 print_relation(EQ);
             }
