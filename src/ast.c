@@ -69,6 +69,7 @@ ast_node_ptr create_ast(){
 
 
         ast_node_ptr new_node = ast_create_node(*current_token, root, NT_FUNC_DECL);
+        new_node->token.type = TT_KEYWORD_STATIC;
         ast_increase_children(root, new_node);
 
         bool is_setter = false;
