@@ -357,7 +357,8 @@ ast_node_ptr ast_ifj_function_call_node(token_t *current_token, ast_node_ptr cur
 //Function to handle expressions with operator precedence
 ast_node_ptr ast_expression_node(token_t *current_token, int min_precedence, ast_node_ptr parent_node){
     ast_node_ptr temp = ast_expression_inner(current_token, min_precedence, parent_node);
-    if (temp == NULL){
+    if (temp == NULL || temp->token.type == TT_ERROR){
+        free_ast(&temp);
         ast_error(2, MSG_SYN_EXPRESSION, parent_node, current_token);
     } else {
         return temp;
@@ -370,6 +371,9 @@ ast_node_ptr ast_expression_node(token_t *current_token, int min_precedence, ast
 ast_node_ptr ast_expression_inner(token_t *current_token, int min_precedence, ast_node_ptr parent_node){
     
     ast_node_ptr lhs = parse_primary(current_token, parent_node);
+    if (lhs->token.type == TT_ERROR){
+        return lhs;
+    }
 
     while (ast_get_precedence(current_token->type) != -1 &&
            ast_get_precedence(current_token->type) >= min_precedence) {
@@ -382,10 +386,18 @@ ast_node_ptr ast_expression_inner(token_t *current_token, int min_precedence, as
         ast_node_ptr op_node = ast_create_node(op_token, parent_node, NT_TODO);
         ast_node_ptr rhs = ast_expression_inner(current_token, next_min_prec, op_node);
 
+        if(rhs->token.type == TT_ERROR){
+            free_ast(&op_node);
+            free_ast(&lhs);
+            return rhs;
+        }
+
         ast_increase_children(op_node, lhs);
         ast_increase_children(op_node, rhs);
+
         lhs = op_node;
     }
+
     return lhs;
 } 
 
@@ -421,14 +433,20 @@ ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node) {
         case TT_LPAREN:{
             *current_token = get_token(); // consume '('
             node = ast_expression_inner(current_token, 0, parent_node);
+
+            if(node == NULL){
+                node = ast_create_node(*current_token, parent_node, NT_TODO);
+                node->token.type = TT_ERROR;
+            }
+
             if (current_token->type != TT_RPAREN) {
-                ast_error(2, MSG_SYN_MISSING_TOKEN, node, current_token);
+                node->token.type = TT_ERROR;
             }
             *current_token = get_token(); // consume ')'
             break;}
 
         default:
-            ast_error(2, MSG_SYN_TOKEN_ORDER, node, current_token);
+            ast_error(2, MSG_SYN_TOKEN_ORDER, parent_node, current_token);
     }
     
     return node;
@@ -449,6 +467,10 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
     do{
         switch (current_token->type)
         {
+        case TT_INT:
+        case TT_FLOAT:
+        case TT_STRING:
+        case TT_KEYWORD_Null:
         case TT_IDENTIFIER:
             if(!comma_present){
                 ast_error(ERROR_SYNTAX, "Syntax error:\tmissing comma in parameters\n", parent_node, current_token);
