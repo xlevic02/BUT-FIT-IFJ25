@@ -49,6 +49,7 @@ struct ast_node_t{
 
 ast_node_ptr create_ast();
 ast_node_ptr ast_expression_node(token_t *current_token, int min_precedence, ast_node_ptr parent_node);
+ast_node_ptr ast_expression_inner(token_t *current_token, int min_precedence, ast_node_ptr parent_node);
 ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node);
 ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr parent, token_t *current_token, int n_of_children);
 ast_node_ptr ast_create_node(token_t token, ast_node_ptr parent, ast_node_type_t node_type);

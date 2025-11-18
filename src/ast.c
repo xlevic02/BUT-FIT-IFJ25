@@ -354,11 +354,20 @@ ast_node_ptr ast_ifj_function_call_node(token_t *current_token, ast_node_ptr cur
     return inherent_function_node;
 }
 
-
-
-//TODO error handling
 //Function to handle expressions with operator precedence
 ast_node_ptr ast_expression_node(token_t *current_token, int min_precedence, ast_node_ptr parent_node){
+    ast_node_ptr temp = ast_expression_inner(current_token, min_precedence, parent_node);
+    if (temp == NULL){
+        ast_error(2, MSG_SYN_EXPRESSION, parent_node, current_token);
+    } else {
+        return temp;
+    }
+}
+
+
+
+//Helper function to handle expression parsing with operator precedence
+ast_node_ptr ast_expression_inner(token_t *current_token, int min_precedence, ast_node_ptr parent_node){
     
     ast_node_ptr lhs = parse_primary(current_token, parent_node);
 
@@ -371,7 +380,7 @@ ast_node_ptr ast_expression_node(token_t *current_token, int min_precedence, ast
 
         *current_token = get_token(); // consume operator
         ast_node_ptr op_node = ast_create_node(op_token, parent_node, NT_TODO);
-        ast_node_ptr rhs = ast_expression_node(current_token, next_min_prec, op_node);
+        ast_node_ptr rhs = ast_expression_inner(current_token, next_min_prec, op_node);
 
         ast_increase_children(op_node, lhs);
         ast_increase_children(op_node, rhs);
@@ -411,7 +420,7 @@ ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node) {
 
         case TT_LPAREN:{
             *current_token = get_token(); // consume '('
-            node = ast_expression_node(current_token, 0, parent_node);
+            node = ast_expression_inner(current_token, 0, parent_node);
             if (current_token->type != TT_RPAREN) {
                 ast_error(2, MSG_SYN_MISSING_TOKEN, node, current_token);
             }
@@ -421,7 +430,6 @@ ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node) {
         default:
             ast_error(2, MSG_SYN_TOKEN_ORDER, node, current_token);
     }
-
     
     return node;
 }
