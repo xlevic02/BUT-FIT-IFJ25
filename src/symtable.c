@@ -36,8 +36,8 @@ char *safe_str_copy(const char *s) {
 
 //Funciton to declare a variable in the current scope
 int bst_declare_variable(bst_scope_ptr scope, char *name){
-    printf("[DEBUG_BST] bst_declare_variable: scope=%p, name='%s'\n", (void*)scope, name);
-    printf("[DEBUG_BST] scope->parent=%p\n", (void*)(scope->parent));
+//    printf("[DEBUG_BST] bst_declare_variable: scope=%p, name='%s'\n", (void*)scope, name);
+//    printf("[DEBUG_BST] scope->parent=%p\n", (void*)(scope->parent));
     fflush(stdout);
     
     if (scope == NULL) return 0;
@@ -49,7 +49,7 @@ int bst_declare_variable(bst_scope_ptr scope, char *name){
         return 1;
     } else{
         bst_node_content_t new_var = node_content_init(name, TT_IDENTIFIER);
-        printf("[DEBUG_BST] Inserting into scope=%p, key=%u\n", (void*)scope, key);
+//        printf("[DEBUG_BST] Inserting into scope=%p, key=%u\n", (void*)scope, key);
         fflush(stdout);
         bst_insert(&scope->tree, key, new_var);
         return 0;
@@ -86,11 +86,11 @@ int bst_define_variable(bst_scope_ptr scope, char *name, token_type_t type){
 
 //Support function to search through scopes of the BST
 bst_node_content_t bst_search_scope(bst_scope_ptr scope, unsigned int key){
-    printf("[DEBUG_BST] bst_search_scope: scope=%p, key=%u\n", (void*)scope, key);
+//    printf("[DEBUG_BST] bst_search_scope: scope=%p, key=%u\n", (void*)scope, key);
     fflush(stdout);
     
     if (scope == NULL) {
-        printf("[DEBUG_BST] bst_search_scope: scope is NULL, returning ERROR\n");
+  //      printf("[DEBUG_BST] bst_search_scope: scope is NULL, returning ERROR\n");
         fflush(stdout);
         bst_node_content_t error;
         error.type = TT_ERROR;
@@ -98,13 +98,13 @@ bst_node_content_t bst_search_scope(bst_scope_ptr scope, unsigned int key){
     }
 
     bst_node_content_t temp = bst_search(scope->tree, key);
-    printf("[DEBUG_BST] bst_search_scope: searched scope=%p, found type=%d\n", 
-           (void*)scope, temp.type);
+    //printf("[DEBUG_BST] bst_search_scope: searched scope=%p, found type=%d\n", 
+    //       (void*)scope, temp.type);
     fflush(stdout);
 
     if (temp.type == TT_ERROR){
-        printf("[DEBUG_BST] bst_search_scope: not found, trying parent=%p\n", 
-               (void*)scope->parent);
+      //  printf("[DEBUG_BST] bst_search_scope: not found, trying parent=%p\n", 
+      //         (void*)scope->parent);
         fflush(stdout);
         return bst_search_scope(scope->parent, key);
     }
@@ -136,7 +136,7 @@ void bst_generator_step_in(bst_scope_ptr *scope) {
 
     // Safety check: Do we have children to enter?
     if (parent->visit_idx >= parent->n_of_children) {
-        fprintf(stderr, "Error: Generator tried to enter a non-existent scope. Sync error!\n");
+      //  fprintf(stderr, "Error: Generator tried to enter a non-existent scope. Sync error!\n");
         return; 
     }
 
