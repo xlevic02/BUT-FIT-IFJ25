@@ -205,7 +205,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 ast_increase_children(if_node, NULL);
                 ast_expression_node(current_token, if_node);
 
-                printf("token after expr: %d\n", current_token->type); // Debugging line
+                //printf("token after expr: %d\n", current_token->type); // Debugging line
                 //Handle closing parenthesis, opening brace and EOL
                 if (current_token->type != TT_RPAREN ||
                     (*current_token = get_token()).type != TT_LBRACE ||
