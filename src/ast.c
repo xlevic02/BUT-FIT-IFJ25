@@ -277,6 +277,8 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
                 ast_expression_node(new_node, current_token);
 
+                if(current_token->type != TT_RPAREN)
+                    ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, current_node, current_token);
 
                 //Handle opening brace and EOL
                 if((*current_token = get_token()).type != TT_LBRACE)
@@ -356,6 +358,10 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
                 ast_skip_EOL(current_token);
 
                 ast_expression_node(new_node, current_token);
+
+                if(current_token->type != TT_RPAREN)
+                    ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, current_node, current_token);
+
 
                 //Handle opening brace and EOL
                 if((*current_token = get_token()).type != TT_LBRACE)
@@ -535,7 +541,7 @@ ast_node_ptr ast_expression_subtree(token_t *current_token, ast_node_ptr parent_
                     return term;
                 }
 
-                if(term->n_of_children != NT_DATATYPE) {
+                if(term->node_type != NT_DATATYPE) {
                     destroy_ast(operator);
                     return (ast_node_ptr) -2;
                 }
@@ -545,6 +551,8 @@ ast_node_ptr ast_expression_subtree(token_t *current_token, ast_node_ptr parent_
                     destroy_ast(operator);
                     return NULL;
                 }
+
+                *current_token = get_token();
 
                 return operator;
 
@@ -796,7 +804,7 @@ ast_node_ptr ast_get_term(token_t *current_token, ast_node_ptr parent_node) {
 
 
 void ast_expression_node(ast_node_ptr new_node, token_t *current_token) {
-    new_node->children = realloc(new_node->children, sizeof(ast_node_ptr)* ++new_node->n_of_children);
+    new_node->children = realloc(new_node->children, sizeof(ast_node_ptr) * ++new_node->n_of_children);
 
     if(new_node->children == NULL)
         ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, new_node, current_token);
