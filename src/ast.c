@@ -197,16 +197,19 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 if (current_token->type != TT_LPAREN){
                     ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
+                *current_token = get_token();
+
                 ast_skip_EOL(current_token);
 
                 //Possible TODO: condition handling
                 ast_increase_children(if_node, NULL);
                 ast_expression_node(current_token, if_node);
 
+                printf("token after expr: %d\n", current_token->type); // Debugging line
                 //Handle closing parenthesis, opening brace and EOL
-                if (current_token->type != TT_RPAREN &&
-                    current_token->type != TT_LBRACE &&
-                    current_token->type != TT_EOL) {
+                if (current_token->type != TT_RPAREN ||
+                    (*current_token = get_token()).type != TT_LBRACE ||
+                    (*current_token = get_token()).type != TT_EOL) {
                     ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 *current_token = get_token();
@@ -225,7 +228,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 ast_increase_children(current_node, else_node);
 
                 //Handle opening brace and EOL
-                if ((*current_token = get_token()).type != TT_LBRACE && (*current_token = get_token()).type != TT_EOL){
+                if ((*current_token = get_token()).type != TT_LBRACE || (*current_token = get_token()).type != TT_EOL){
                     ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 *current_token = get_token();
@@ -381,7 +384,7 @@ ast_node_ptr ast_expression_inner(token_t *current_token, int min_precedence, as
     if (lhs == NULL || lhs->token.type == TT_ERROR){
         return lhs;
     }
-
+    
     while (ast_get_precedence(current_token->type) != -1 &&
            ast_get_precedence(current_token->type) >= min_precedence) {
             
@@ -401,7 +404,6 @@ ast_node_ptr ast_expression_inner(token_t *current_token, int min_precedence, as
 
         lhs = op_node;
     }
-
     return lhs;
 } 
 
