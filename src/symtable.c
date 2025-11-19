@@ -129,6 +129,27 @@ void bst_increase_scope(bst_scope_ptr *scope){
   (*scope) = new_scope;
 }
 
+void bst_generator_step_in(bst_scope_ptr *scope) {
+    if (scope == NULL || *scope == NULL) return;
+
+    bst_scope_ptr parent = *scope;
+
+    // Safety check: Do we have children to enter?
+    if (parent->visit_idx >= parent->n_of_children) {
+        fprintf(stderr, "Error: Generator tried to enter a non-existent scope. Sync error!\n");
+        return; 
+    }
+
+    // 1. Select the next child based on the index
+    bst_scope_ptr next_child = parent->child[parent->visit_idx];
+
+    // 2. Increment the index so the next time we are here (e.g., next IF block), 
+    //    we enter the next sibling.
+    parent->visit_idx++;
+
+    // 3. Update the current scope pointer to the child
+    *scope = next_child;
+}
 
 //Support funtion to decrease the scope of the BST
 void bst_decrease_scope(bst_scope_ptr *scope){

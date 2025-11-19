@@ -66,7 +66,8 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_label(node->token.lexeme);
                         printf("PUSHFRAME\n");
                         //Increasing the scope
-                        bst_increase_scope(current_scope);
+                        //bst_increase_scope(current_scope);
+                        bst_generator_step_in(current_scope);
                         //If the node's parent is a function
                         //Get all of the functions parameters and define them
                         fflush(stdout); // Ensure output is flushed
@@ -95,7 +96,8 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
         else if(type == TT_LBRACE)
                     {
                         //Increasing the scope
-                        bst_increase_scope(current_scope);
+                        //bst_increase_scope(current_scope);
+                        bst_generator_step_in(current_scope);
                         //Go through the body
                         for(int i = 0; i < node->n_of_children; i++)
                             {
@@ -121,7 +123,8 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_jumpifeqs(label_else);
                         //Then generate the body
                          //Increasing the scope
-                        bst_increase_scope(current_scope);
+                        //bst_increase_scope(current_scope);
+                        bst_generator_step_in(current_scope);
                         //Go through the body
                         for(int i = 1; i < node->n_of_children; i++)
                             {
@@ -140,7 +143,8 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         label_stack_top--;
                         //And generate the body
                         //Increasing the scope
-                        bst_increase_scope(current_scope);
+                        //bst_increase_scope(current_scope);
+                        bst_generator_step_in(current_scope);
                         //Go through the body
                         for(int i = 1; i < node->n_of_children; i++)
                             {
@@ -164,7 +168,8 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_jumpifeqs(w_end);
                         //If theyr're true we generate the body and jump back to start
                         //Increasing the scope
-                        bst_increase_scope(current_scope);
+                        //bst_increase_scope(current_scope);
+                        bst_generator_step_in(current_scope);
                         //Go through the body
                         for(int i = 1; i < node->n_of_children; i++)
                             {

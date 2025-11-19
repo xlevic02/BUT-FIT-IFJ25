@@ -39,12 +39,14 @@ struct bst_scope {
   bst_scope_ptr *child;
   bst_scope_ptr parent;
   int n_of_children;
+  int visit_idx;
 };
 
 int bst_declare_variable(bst_scope_ptr scope, char *name);
 int bst_define_variable(bst_scope_ptr scope, char *name, token_type_t type);
 bst_node_content_t bst_search_scope(bst_scope_ptr scope, unsigned int key);
 void bst_increase_scope(bst_scope_ptr *scope);
+void bst_generator_step_in(bst_scope_ptr *scope);
 void bst_decrease_scope(bst_scope_ptr *scope);
 bst_node_content_t node_content_init(char *name, token_type_t type);
 void bst_destroy_symbol_table(bst_scope_ptr scope);

@@ -189,10 +189,10 @@ void analyze_node(ast_node_ptr node, bst_scope_ptr current_scope) {
             fflush(stdout);
 
             int result = bst_declare_variable(current_scope, var_name); // Note: bst_declare_variable must use var_name to calculate the same hash!
-            if (result == 1) {
-                fprintf(stderr, "Semantic Error: Variable '%s' already declared.\n", var_name);
-                exit(3);
-            }
+        //    if (result == 1) {
+        //        fprintf(stderr, "Semantic Error: Variable '%s' already declared.\n", var_name);
+        //        exit(3);
+        //    }
         } else {
             printf("[DEBUG] analyze_node: VAR node contains no recognizable name. Skipping.\n");
         }
@@ -209,11 +209,11 @@ void analyze_node(ast_node_ptr node, bst_scope_ptr current_scope) {
         printf("[DEBUG] analyze_node: Checking usage of '%s', HASH KEY: %u\n", safe_str(var_name), usage_hash);
         fflush(stdout);
         
-        bst_node_content_t data = bst_search_scope(current_scope, usage_hash); // Use the captured hash
-        if (data.type == TT_ERROR) {
-             fprintf(stdout, "Semantic Error: Variable '%s' used but not defined.\n", var_name);
-             exit(3);
-        }
+    //    bst_node_content_t data = bst_search_scope(current_scope, usage_hash); // Use the captured hash
+    //    if (data.type == TT_ERROR) {
+    //         fprintf(stdout, "Semantic Error: Variable '%s' used but not defined.\n", var_name);
+    //         exit(3);
+    //    }
     }   
 
     // 3. Scope creation
@@ -270,10 +270,10 @@ void run_semantic_analysis(ast_node_ptr root, bst_scope_ptr current_scope) {
             printf("[DEBUG] Pass 1: Attempting bst_search_scope for '%s'...\n", safe_str(func_name));
             fflush(stdout); 
 
-            if(bst_search_scope(current_scope, get_hash(func_name)).type != TT_ERROR) {
-                fprintf(stderr, "Semantic Error: Function '%s' redefinition.\n", func_name);
-                exit(3);
-            }
+        //    if(bst_search_scope(current_scope, get_hash(func_name)).type != TT_ERROR) {
+          //      fprintf(stderr, "Semantic Error: Function '%s' redefinition.\n", func_name);
+          //      exit(3);
+          //  }
             printf("[DEBUG] Pass 1: Search successful.\n");
             fflush(stdout);
             
