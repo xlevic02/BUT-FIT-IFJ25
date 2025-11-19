@@ -17,7 +17,7 @@ typedef struct ast_node_t* ast_node_ptr;
 
 typedef enum {
     NT_ROOT,            // Root                  [0]
-    NT_VAR_DEFINITION,  // Variable definition   [1]
+    NT_VAR_DEF,         // Variable definition   [1]
     NT_FUNC_DECL,       // Function declaration  [2]
     NT_GETTER,          // Getter declaration    [3]
     NT_SETTER,          // Setter declaration    [4]

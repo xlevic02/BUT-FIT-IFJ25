@@ -46,16 +46,18 @@
 #define MSG_SYN_MISSING_IDENTIFIER "Syntax error:\tmissing identifier\n"
 #define MSG_SYN_TOKEN_ORDER "Syntax error:\twrong token order\n"
 #define MSG_SYN_MISSING_PROLOG "Syntax error:\tmissing prolog\n"
-#define MSG_SYN_MISSING_MAIN "Syntax error:\tmissing main\n"
+#define MSG_SYN_MISSING_MAIN "Syntax error:\tmissing main()\n"
 #define MSG_SYN_MISSING_CLASS "Syntax error:\tmissing class\n"
 #define MSG_SYN_PROGRAM_DECLARATION "Syntax error:\tincorrect Program declaration\n"
+#define MSG_SYM_NOT_BUILTIN "Syntax error:\tunknown builtin function\n"
 
 // Semantic error
-#define MSG_SEM_UNDEFINED_VAR "Semantic error:\tuse of undefined variable/function\n"
-#define MSG_SEM_REDEFINING "Semantic error:\tredefining variable/function\n"
-#define MSG_SEM_INCOMPATIBLE "Semantic error:\twrong type of variable input into a function\n"
+#define MSG_SEM_UNDEF "Semantic error:\tuse of undefined variable/function\n"
+#define MSG_SEM_REDEF "Semantic error:\tredefining variable/function\n"
+#define MSG_SEM_INCOMPATIBLE "Semantic error:\tincompatible data types in expression\n"
 #define MSG_SEM_RETURN "Semantic error:\tmissing return expression or not an expression in return\n"
 #define MSG_SEM_EXPECTED_EXPR "Semantic error:\tinvalid token in expression\n"
+#define MSG_SEM_PARAM_NUM_OR_TYPE "Semantic error:\twrong number of parameters or wrong types of parameters in builtin function\n"
 
 // Internal error
 #define MSG_INT_MALLOC "Internal error:\tfailed to allocate memory\n"

@@ -5,103 +5,39 @@
 #include "symtable.h"
 
 
-//TODO -- add IJF functions to the symbol table upon initialization
-
-
 //Function to define a variable in the current scope
 int bst_define_variable(bst_scope_ptr scope, ast_node_ptr ast_node) {
     bst_node_content_t content = node_content_init(ast_node);
     unsigned int key = get_hash(ast_node);
-    if(key == 0)
+    if (key == 0)
         return ERROR_INTERNAL;
 
-
-    if(content.type == NT_FUNC_DECL) {
-        content.n_of_arguments = ast_node->n_of_children;
-        content.args = malloc(sizeof(token_type_t) * content.n_of_arguments);
-        if(content.args == NULL)
+    if(content.type == NT_VAR_DEF) {
+        content.value_tree = malloc(sizeof(bst_value_node_t));
+        if (content.value_tree == NULL)
             return ERROR_INTERNAL;
 
-        for(int i = 0; i < ast_node->n_of_children; i++)
-            content.args[i] = ast_node->children[i]->token.type;
-    } else {
-        content.n_of_arguments = 1;
-        content.args = malloc(sizeof(token_type_t));
-        if(content.args == NULL)
-            return ERROR_INTERNAL;
-
-        content.args[0] = TT_NULL;
+        content.value_tree->parent = NULL;
+        content.value_tree->children = NULL;
+        content.value_tree->value = TT_NULL;
     }
 
 
-    if(scope->tree != NULL)
-        if((bst_search(scope->tree, key)) != NULL)
+    if (scope->tree != NULL)
+        if ((bst_search(scope->tree, key)) != NULL) {
+            free(content.value_tree);
             return ERROR_SEM_REDEF;
+        }
 
 
-    if(bst_insert(&scope->tree, key, content))
+    if (bst_insert(&scope->tree, key, content)) {
+        free(content.value_tree);
         return ERROR_INTERNAL;
-
+    }
 
     return 0;
 }
 
-int bst_define_global_variable(bst_scope_ptr scope, char *name) {
-    bst_scope_ptr global_scope = scope;
-    while (global_scope->parent != NULL) {
-        global_scope = global_scope->parent;
-    }
-    if (bst_search_scope(global_scope, get_hash(name)).type != TT_ERROR) {
-        //Variable already defined in this or parent scope
-        return 1;
-    } else {
-        bst_node_content_t new_var = node_content_init(name, TT_ERROR);
-        if (bst_insert(&global_scope->tree, get_hash(name), new_var) == ERROR_INTERNAL)
-            return ERROR_INTERNAL;
-
-        return 0;
-    }
-}
-
-//Main function to declare a variable type
-int bst_declare_variable(bst_scope_ptr scope, ast_node_ptr variable_node, ast_node_ptr expr_node) {
-    unsigned int key = get_hash(variable_node);
-    if(key == 0)
-        return ERROR_INTERNAL;
-
-    bst_node_ptr old_node = bst_search(scope->tree, key);
-    if(old_node == NULL)
-        return ERROR_SEM_UNDEF;
-
-
-    old_node->content.args = realloc(old_node->content.args, sizeof(token_type_t) * ++old_node->content.n_of_arguments);
-    if(old_node->content.args == NULL)
-        return ERROR_INTERNAL;
-
-
-    switch(expr_node->node_type) {
-        case NT_BOOL_EXPR:
-            return ERROR_SEM_OTHER;
-
-        case NT_AR_EXPR:
-    }
-
-    old_node->content.args[old_node->content.n_of_arguments - 1] = bst_eval_expr(expr_node);
-
-
-    return 0;
-}
-
-token_type_t bst_eval_expr(ast_node_ptr expr_node) {
-    switch(expr_node->node_type) {
-        case NT_BOOL_EXPR:
-            break;
-
-        NT_AR_EXPR:
-
-
-    }
-}
 
 
 /*
@@ -131,6 +67,7 @@ int bst_increase_scope(bst_scope_ptr *scope) {
     new_scope->parent = (*scope);
     new_scope->children = NULL;
     new_scope->n_of_children = 0;
+    new_scope->key = 0;
 
     if ((*scope) != NULL) {
         (*scope)->n_of_children++;
@@ -140,17 +77,63 @@ int bst_increase_scope(bst_scope_ptr *scope) {
             return ERROR_INTERNAL;
         }
 
+        if(bst_increase_var_reach((*scope)->tree))
+            return ERROR_INTERNAL;
+
         (*scope)->children[(*scope)->n_of_children - 1] = new_scope;
+
+
     } else
         (*scope) = new_scope;
 
     return 0;
 }
 
+int bst_increase_var_reach(bst_node_ptr scope_tree) {
+    if(scope_tree == NULL)
+        return 0;
+
+    if(bst_increase_var_reach(scope_tree->left))
+        return ERROR_INTERNAL;
+
+    if(bst_increase_var_reach(scope_tree->right))
+        return ERROR_INTERNAL;
+
+    int n_of_children = ++scope_tree->content.value_tree->n_of_children;
+    bst_value_node_ptr value_tree = scope_tree->content.value_tree;
+
+    scope_tree->content.value_tree->children = realloc(value_tree->children, sizeof(bst_value_node_ptr) * n_of_children);
+    if(scope_tree->content.value_tree->children == NULL)
+        return ERROR_INTERNAL;
+
+    value_tree = scope_tree->content.value_tree;
+    value_tree->children[n_of_children - 1] = malloc(sizeof(bst_value_node_t));
+    if(value_tree->children[n_of_children - 1] == NULL)
+        return ERROR_INTERNAL;
+
+    value_tree->children[n_of_children - 1]->parent = value_tree;
+    value_tree->children[n_of_children - 1]->children = NULL;
+    value_tree->children[n_of_children - 1]->n_of_children = 0;
+    value_tree->children[n_of_children - 1]->current_index = -1;
+    value_tree->children[n_of_children - 1]->value = value_tree->value;
+
+    value_tree->current_index = n_of_children - 1;
+    scope_tree->content.value_tree = value_tree->children[n_of_children - 1];
+
+    return 0;
+}
+
 
 //Support function to decrease the scope of the BST
-void bst_decrease_scope(bst_scope_ptr *scope) {
-    (*scope) = (*scope)->parent;
+void bst_decrease_scope(bst_node_ptr tree_node) {
+    if(tree_node == NULL)
+        return;
+
+    bst_decrease_scope(tree_node->left);
+    bst_decrease_scope(tree_node->right);
+
+    if(tree_node->content.value_tree->parent != NULL)
+        tree_node->content.value_tree = tree_node->content.value_tree->parent;
 }
 
 
@@ -159,8 +142,7 @@ bst_node_content_t node_content_init(ast_node_ptr ast_node) {
     bst_node_content_t node;
     node.name = ast_node->token.lexeme;
     node.type = ast_node->node_type;
-    node.args = NULL;
-    node.n_of_arguments = -1;
+    node.value_tree = NULL;
     return node;
 }
 
@@ -170,51 +152,81 @@ void bst_destroy_symbol_table(bst_scope_ptr scope) {
     while (scope->parent != NULL) {
         scope = scope->parent;
     }
+
     bst_free_scope(scope);
 }
 
 //To completely free the symbol table
 void bst_free_scope(bst_scope_ptr scope) {
     for (int i = 0; i < scope->n_of_children; i++) {
-        bst_free_scope(scope->child[i]);
+        bst_free_scope(scope->children[i]);
     }
+
     bst_dispose(&scope->tree);
     free(scope);
 }
 
 //To return an unsigned int key to the BST from ast_node
-//TODO check if correct
 unsigned int get_hash(ast_node_ptr ast_node) {
-    char* name = ast_node->token.lexeme;
-    int arg_count = ast_node->children[0]->n_of_children;
-    char* buffer = NULL;
+    char *name = ast_node->token.lexeme;
+    int arg_count;
+    char *buffer = NULL;
     unsigned int hash = 0;
     int size;
 
-    if (is_func(ast_node)) {
+    if (is_func(ast_node) &&
+        ast_node->node_type != NT_GETTER &&
+        ast_node->node_type != NT_SETTER &&
+        ast_node->node_type != NT_BUILTIN) {
         size = strlen(name) + 17; // strlen(func:%s:%d) + '\0'
         buffer = malloc(sizeof(char) * size);
-        if(buffer == NULL)
+        if (buffer == NULL)
             return 0;
+
+        arg_count = ast_node->children[0]->n_of_children;
 
         // function key: func:name:paramcount
         snprintf(buffer, sizeof(char) * size, "func:%s:%d", name, arg_count);
+
     } else {
-        size = strlen(name) + 4; //strlen(var:%s) + '\0'
+        if (ast_node->node_type == NT_BUILTIN) {
+            size = strlen(name) + 9; //strlen(builtin:%s) + '\0'
+            buffer = malloc(sizeof(char) * size);
+            if (buffer == NULL)
+                return 0;
+
+            snprintf(buffer, sizeof(char) * size, "builtin:%s", name);
+        }
+
+        size = strlen(name) + 5; //strlen(var:%s) + '\0'
         buffer = malloc(sizeof(char) * size);
-        if(buffer == NULL)
+        if (buffer == NULL)
             return 0;
 
         // variable key: var:name
         snprintf(buffer, sizeof(char) * size, "var:%s", name);
     }
 
-    for(char* p; *p; p++)
-        hash = (hash * 31) + *p;
+    while (*buffer) {
+        hash = (hash * 31) + *buffer;
+        buffer++;
+    }
+
 
     free(buffer);
 
     return hash;
+}
+
+unsigned int small_hash(char *str) {
+    unsigned int key;
+
+    while (*str) {
+        key = (key * 31) + *str;
+        str++;
+    }
+
+    return key;
 }
 
 
@@ -243,6 +255,8 @@ int bst_insert(bst_node_ptr *tree, unsigned int key, bst_node_content_t value) {
     }
 }
 
+
+
 //For searching through a BST using a unique key with the return value of the success of the search. Can change the pointer inserted in the last argument to point to the found node's content
 bst_node_ptr bst_search(bst_node_ptr tree, unsigned int key) {
     if (tree == NULL) {
@@ -259,31 +273,6 @@ bst_node_ptr bst_search(bst_node_ptr tree, unsigned int key) {
 }
 
 
-//For searching for a node pointer (not content) through a BST
-bst_node_ptr bst_node_search_ptr(bst_node_ptr tree, unsigned int key) {
-    if (tree == NULL) {
-        return NULL;
-    } else if (tree->key == key) {
-        return tree;
-    } else {
-        if (tree->key > key) {
-            return bst_node_search_ptr(tree->left, key);
-        } else if (tree->key < key) {
-            return bst_node_search_ptr(tree->right, key);
-        }
-    }
-
-    return NULL;
-}
-
-bst_node_ptr bst_node_scope_search_ptr(bst_scope_ptr scope, unsigned int key) {
-    bst_node_ptr temp = bst_node_search_ptr(scope->tree, key);
-    if (temp == NULL) {
-        return bst_node_scope_search_ptr(scope->parent, key);
-    }
-    return temp;
-}
-
 
 //A helping function to replace a node by its rightmost child
 void bst_replace_by_rightmost(bst_node_ptr target, bst_node_ptr *tree) {
@@ -299,45 +288,7 @@ void bst_replace_by_rightmost(bst_node_ptr target, bst_node_ptr *tree) {
     }
 }
 
-//To delete a specific node out of a BST using its key
-void bst_delete(bst_node_ptr *tree, unsigned int key) {
-    if (*tree == NULL) {
-        return;
-    }
 
-    if ((*tree)->key < key) {
-        bst_delete(&((*tree)->left), key);
-    } else if ((*tree)->key > key) {
-        bst_delete(&((*tree)->right), key);
-    }
-
-    if ((*tree)->key == key) {
-
-        if ((*tree)->left == NULL && (*tree)->right == NULL) {
-            free((*tree)->content.args);
-            free(*tree);
-            *tree = NULL;
-            return;
-        }
-
-        if ((*tree)->left == NULL && (*tree)->right != NULL) {
-            bst_node_ptr temp = (*tree)->right;
-            free((*tree)->content.args);
-            free(*tree);
-            *tree = temp;
-            return;
-        } else if ((*tree)->right == NULL && (*tree)->left != NULL) {
-            bst_node_ptr temp = (*tree)->left;
-            free((*tree)->content.args);
-            free(*tree);
-            *tree = temp;
-            return;
-        } else if ((*tree)->right != NULL && (*tree)->left != NULL) {
-            bst_replace_by_rightmost(*tree, &(*tree)->left);
-            return;
-        }
-    }
-}
 
 //To free and dispose of a whole BST
 void bst_dispose(bst_node_ptr *tree) {
@@ -351,12 +302,21 @@ void bst_dispose(bst_node_ptr *tree) {
     if ((*tree)->right != NULL)
         bst_dispose(&((*tree)->right));
 
-    if ((*tree)->left == NULL && (*tree)->right == NULL) {
-        if ((*tree)->content.args != NULL) free((*tree)->content.args);
-        free((*tree)->content.name);
-        free(*tree);
-    }
+    bst_value_node_ptr value_tree = (*tree)->content.value_tree;
+    while(value_tree->parent != NULL)
+        value_tree = value_tree->parent;
+
+    bst_free_content(value_tree);
+    free(*tree);
     *tree = NULL;
+}
+
+void bst_free_content(bst_value_node_ptr value_tree) {
+    for(int i = 0; i < value_tree->n_of_children; i++)
+        bst_free_content(value_tree->children[i]);
+
+    free(value_tree->children);
+    free(value_tree);
 }
 
 //To return a pointer to a balanced BST based on the weight of its branches
@@ -401,7 +361,7 @@ int bst_weight(bst_node_ptr tree) {
 }
 
 bool is_func(ast_node_ptr ast_node) {
-    if(ast_node->n_of_children)
+    if (ast_node->n_of_children)
         return true;
     else
         return false;
