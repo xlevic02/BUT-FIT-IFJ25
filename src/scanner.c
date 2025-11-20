@@ -45,6 +45,59 @@ token_t make_token(token_type_t type, const char *lexeme) {
     return t;
 }
 
+// Helper function for trimming multi-line string lexemes
+void trim_multiline_string(char *buf, size_t *len){
+    if (len == 0) return;
+    size_t start = 0;
+    size_t i = 0;
+
+    while (i < *len && (buf[i] == ' ' || buf[i] == '\t')) {
+        i++;
+    }
+    if (i < *len && (buf[i] == '\n' || buf[i] == '\r')) {
+        start = i + 1;
+        if (buf[i] == '\r' && start < *len && buf[start] == '\n') {
+            start++;  
+        }
+    }
+    
+    int end = *len - 1;
+    int last_newline = -1;
+    
+    for (int j = end; j >= 0; j--) {
+        if (buf[j] == '\n' || buf[j] == '\r') {
+            last_newline = j;
+            break;
+        }
+    }
+    
+    if (last_newline >= 0) {
+        bool only_whitespace = true;
+        for (int j = last_newline + 1; j <= end; j++) {
+            if (buf[j] != ' ' && buf[j] != '\t') {
+                only_whitespace = false;
+                break;
+            }
+        }
+        
+        if (only_whitespace) {
+            end = last_newline - 1;
+            if (end >= 0 && buf[end] == '\r') {
+                end--;
+            }
+        }
+    }
+    
+    if (start <= (size_t)(end + 1)) {
+        size_t new_len = end - start + 1;
+        memmove(buf, buf + start, new_len);
+        buf[new_len] = '\0';
+        *len = new_len;
+    } else {
+        buf[0] = '\0';
+    }
+}
+
 // Helper function to append a character to a dynamic buffer, resizing if necessary
 void buf_append(char **buf, size_t *len, size_t *cap, char c) {
     if (*len + 1 >= *cap) {
@@ -367,7 +420,7 @@ token_t get_token() {
                     free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
                 }
-                
+
                 if (c == '"') {
                     int c2 = getchar();
                     if (c2 == '"') {
@@ -375,6 +428,7 @@ token_t get_token() {
                         if (c3 == '"') {
                             // End of multi-line string
                             buf[len] = '\0';
+                            trim_multiline_string(buf,&len);
                             token_t tok = make_token(TT_STRING, buf);
                             free(buf);
                             return tok;
