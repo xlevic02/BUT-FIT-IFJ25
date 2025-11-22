@@ -410,6 +410,12 @@ token_t get_token() {
                 } else if (c == EOF) {
                     free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
+                } else if (c == '\n' || c == '\r') {
+                    free(buf);
+                    error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
+                } else if (c >= 0 && c <= 31 && c != '\t') {
+                    free(buf);
+                    error(ERROR_LEXICAL, MSG_LEX_PROHIBITED_CHAR);
                 } else {
                     buf_append(&buf, &len, &cap, c);
                 }
@@ -500,6 +506,10 @@ token_t get_token() {
                     // convert the hex string to actual character
                     unsigned int value;
                     sscanf(hex_digits, "%2x", &value);
+                    if (value > 0x7F) {
+                        free(buf);
+                        error(ERROR_LEXICAL, MSG_LEX_INVALID_ESCAPE);
+                    }
                     buf_append(&buf, &len, &cap, (char)value);
 
                     if (c != EOF) ungetc(c, stdin);
