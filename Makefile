@@ -22,7 +22,7 @@ $(TARGET): $(OBJECTS) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $^ -o $@
 
 # Compile .c files into .o files
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Create build directory if missing

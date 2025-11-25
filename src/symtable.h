@@ -93,4 +93,6 @@ int bst_increase_var_reach(bst_node_ptr scope_tree);
 
 void bst_free_content(bst_value_node_ptr value_tree);
 
+bst_node_ptr bst_declare_variable(bst_node_ptr var_def_node, token_type_t value);
+
 #endif //BUT_FIT_IFJ25_SYMTABLE_H

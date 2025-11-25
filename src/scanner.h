@@ -25,46 +25,47 @@ typedef enum {
     TT_RUNNING_NUM,     // running number = 6
     TT_STRING,          // string = 7
     TT_RUNNING_STRING,  // running string = 8
-    TT_BOOL,            // boolean = 9
+    TT_RUNNING_UNDEF,   // running undefined = 9
+    TT_BOOL,            // boolean = 10
 
     // Keywords defined by language
-    TT_KEYWORD_CLASS,   // class = 10
-    TT_KEYWORD_IF,      // if = 11
-    TT_KEYWORD_ELSE,    // else = 12
-    TT_KEYWORD_IS,      // is = 13
-    TT_KEYWORD_RETURN,  // return = 14
-    TT_KEYWORD_VAR,     // var = 15
-    TT_KEYWORD_WHILE,   // while = 16
-    TT_KEYWORD_IFJ,     // Ifj = 17
-    TT_KEYWORD_STATIC,  // static = 18
-    TT_KEYWORD_IMPORT,  // import = 19
-    TT_KEYWORD_FOR,     // for = 20
-    TT_KEYWORD_NUM,     // Num = 21
-    TT_KEYWORD_STRING,  // String = 22
-    TT_KEYWORD_Null,    // Null = 23
+    TT_KEYWORD_CLASS,   // class = 11
+    TT_KEYWORD_IF,      // if = 12
+    TT_KEYWORD_ELSE,    // else = 13
+    TT_KEYWORD_IS,      // is = 14
+    TT_KEYWORD_RETURN,  // return = 15
+    TT_KEYWORD_VAR,     // var = 16
+    TT_KEYWORD_WHILE,   // while = 17
+    TT_KEYWORD_IFJ,     // Ifj = 18
+    TT_KEYWORD_STATIC,  // static = 19
+    TT_KEYWORD_IMPORT,  // import = 20
+    TT_KEYWORD_FOR,     // for = 21
+    TT_KEYWORD_NUM,     // Num = 22
+    TT_KEYWORD_STRING,  // String = 23
+    TT_KEYWORD_Null,    // Null = 24
 
     // Operators
-    TT_ASSIGN,          // = = 24
-    TT_PLUS,            // + = 25
-    TT_MINUS,           // - = 26
-    TT_MUL,             // * = 27
-    TT_DIV,             // / = 28
-    TT_EQ,              // == = 29
-    TT_NEQ,             // != = 30
-    TT_LT,              // < = 31
-    TT_GT,              // > = 32
-    TT_LE,              // <= = 33
-    TT_GE,              // >= = 34
+    TT_ASSIGN,          // = = 25
+    TT_PLUS,            // + = 26
+    TT_MINUS,           // - = 27
+    TT_MUL,             // * = 28
+    TT_DIV,             // / = 29
+    TT_EQ,              // == = 30
+    TT_NEQ,             // != = 31
+    TT_LT,              // < = 32
+    TT_GT,              // > = 33
+    TT_LE,              // <= = 34
+    TT_GE,              // >= = 35
 
     // Symbols
-    TT_LPAREN,          // ( = 35
-    TT_RPAREN,          // ) = 36
-    TT_LBRACE,          // { = 37
-    TT_RBRACE,          // } = 38
-    TT_COMMA,           // , = 39
-    TT_DOT,             // . = 40
+    TT_LPAREN,          // ( = 36
+    TT_RPAREN,          // ) = 37
+    TT_LBRACE,          // { = 38
+    TT_RBRACE,          // } = 39
+    TT_COMMA,           // , = 40
+    TT_DOT,             // . = 41
 
-    TT_ERROR            // ERROR = 41
+    TT_ERROR            // ERROR = 42
 } token_type_t;
 
 typedef struct {
