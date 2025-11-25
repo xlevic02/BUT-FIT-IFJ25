@@ -78,7 +78,8 @@ class Program {
         myValue = getAnswer(valueFromUser)  // zavola pretizenou funkci getAnswer(arg)
         if (myValue == null) {
             __d = Ifj.write("ODPOVED NENI!\n")
-            return  // konec programu
+            // konec programu; return musi v zakladnim zadani vyraz urcujici navratovou hodnotu
+            return null
         } else {
             if (myValue is Null) {
                 // tato podminka je semanticky ekvivalentni podmince myValue == null,
