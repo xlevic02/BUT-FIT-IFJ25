@@ -71,7 +71,6 @@ ast_node_ptr create_ast(){
         new_node->token.type = TT_KEYWORD_STATIC;
         ast_increase_children(root, new_node);
 
-        bool has_arguments = true;
         bool is_setter = false;
         if ((*current_token = get_token()).type == TT_ASSIGN){
             is_setter = true;
@@ -88,7 +87,6 @@ ast_node_ptr create_ast(){
         }else if(current_token->type != TT_LBRACE){
             ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, root, current_token);
         }else{
-            has_arguments = false;
             new_node->node_type = NT_GETTER;
         }
         //TODO handle getters/setters, potentially by a specific first node?
@@ -98,8 +96,11 @@ ast_node_ptr create_ast(){
             ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, root, current_token);
         }
 
-
-        ast_regular_node(new_node, root, current_token, has_arguments ? 1 : 0);
+        ast_node_ptr body_node = ast_create_node(*current_token, new_node, NT_BLOCK);
+        body_node->token.type = TT_LBRACE;
+        body_node->token.lexeme = "Block";
+        ast_increase_children(new_node, body_node);
+        ast_regular_node(body_node, new_node, current_token, 0);
         
     } while (((*current_token = get_token()).type != TT_EOF) || (current_token->type != TT_RBRACE));;
 
@@ -214,7 +215,11 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 *current_token = get_token();
 
                 //Handle if body
-                ast_regular_node(if_node, current_node, current_token, 1);
+                ast_node_ptr if_body_node = ast_create_node(*current_token, if_node, NT_IF_BODY);
+                if_body_node->token.type = TT_LBRACE;
+                if_body_node->token.lexeme = "Block";
+                ast_increase_children(if_node, if_body_node);
+                ast_regular_node(if_body_node, if_node, current_token, 0);
 
                 *current_token = get_token();
 
@@ -224,7 +229,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 }
 
                 ast_node_ptr else_node = ast_create_node(*current_token, current_node, NT_ELSE_BODY);
-                ast_increase_children(current_node, else_node);
+                ast_increase_children(if_node, else_node);
 
                 //Handle opening brace and EOL
                 if ((*current_token = get_token()).type != TT_LBRACE || (*current_token = get_token()).type != TT_EOL){
@@ -265,7 +270,11 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 }
 
                 //Handle while body
-                ast_regular_node(while_node, current_node, current_token, 1);
+                ast_node_ptr while_body_node = ast_create_node(*current_token, while_node, NT_WHILE_BODY);
+                while_body_node->token.type = TT_LBRACE;
+                while_body_node->token.lexeme = "Block";
+                ast_increase_children(while_node, while_body_node);
+                ast_regular_node(while_body_node, while_node, current_token, 0);
 
                 *current_token = get_token();
                 break;}
