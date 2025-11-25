@@ -16,18 +16,26 @@ typedef struct ast_node_t* ast_node_ptr;
 
 
 typedef enum {
-    NT_ROOT,            // Root                 [0]
-    NT_FUNC_DECL,       // Function declaration [1]
-    NT_PARAM,           // Parameters           [2]
-    NT_ID,              // Identifier           [3]
-    NT_VAR_DECL,        // Variable declaration [4]
-    NT_IF,              // If statement         [5]
-    NT_ELSE,            // Else                 [6]
-    NT_BIN_OP,          // Binary operator      [7]
-    NT_LITERAL,         // Literal              [8]
-    NT_BUILTIN,         // Builtin function     [9]
-    NT_RETURN,           // Return               [10]
-    NT_TODO //
+    NT_ROOT,            // Root                  [0]
+    NT_VAR_DEF,         // Variable definition   [1]
+    NT_FUNC_DECL,       // Function declaration  [2]
+    NT_GETTER,          // Getter declaration    [3]
+    NT_SETTER,          // Setter declaration    [4]
+    NT_PARAM,           // Parameters            [5]
+    NT_ID,              // Identifier            [6]
+    NT_ASSIGN,          // Variable declaration  [7]
+    NT_IF_STATEMENT,    // If statement          [8]
+    NT_IF_BODY,         // If body               [9]
+    NT_ELSE_BODY,       // Else body             [10]
+    NT_BOOL_EXPR,       // Boolean expression    [11]
+    NT_AR_EXPR,         // Arithmetic expression [12]
+    NT_LITERAL,         // Literal               [13]
+    NT_DATATYPE,        // Datatype              [14]
+    NT_BUILTIN,         // Builtin function      [15]
+    NT_WHILE,           // While                 [16]
+    NT_WHILE_BODY,      // While body            [17]
+    NT_BLOCK,           // Block                 [18]
+    NT_RETURN           // Return                [19]
 }ast_node_type_t;
 
 //structure for an AST node
