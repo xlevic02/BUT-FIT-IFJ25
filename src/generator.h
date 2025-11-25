@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "ast.h"
+#include "symtable.h"
 
 static int label_counter = 0;
 static char label_stack[100][32];
@@ -60,11 +62,11 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope);
 //Main function for generating code
 int generate_code(ast_node_ptr root, bst_scope_ptr symtable);
 
-//Function for getting the name of a variable
-char* get_variable_id(bst_scope_ptr scope, char* lexeme);
+//Checks the frame type
+bool global_check(const char* var_name);
 
 //Funkction to get a frame for a variable from symtable
-char* get_variable_frame(bst_scope_ptr scope, char* var_name);
+const char* get_variable_frame(const char* var_name);
 
 //Creates a unique label for if, else, while
 void get_unique_label(char* buffer, const char* prefix);
@@ -74,10 +76,6 @@ char* format_string_for_ifjcode(const char* lexeme);
 
 //Function to format float for IFJcode25
 char* format_float_for_ifjcode(const char* lexeme);
-
-//Placeholder functions since our semantic analysis is not done yet
-token_type_t generator_get_id_type(char* lexeme, bst_scope_ptr* current_scope);
-token_type_t generator_get_type(ast_node_ptr node, bst_scope_ptr* current_scope);
 
 //Scope, function calling
 void print_call(char* label);
