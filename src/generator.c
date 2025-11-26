@@ -2,12 +2,7 @@
 //generator.c by Marek "xbalism00" Bališ on 11/11/25
 
 #include "generator.h"
-//#include "ast.h"
-#include "ast.h"
-#include "scanner.h"
-//#include "symtable.h"
-#include "error.h"
-#include <stdio.h>
+
 
 ////
 // This SHOULD be able to generate assembler code.

@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include "ast.h"
 #include "symtable.h"
+#include "scanner.h"
+#include "error.h"
 
 typedef struct var_node {
     char *original_id;
