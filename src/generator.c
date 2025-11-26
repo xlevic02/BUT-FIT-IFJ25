@@ -10,9 +10,14 @@
 #include <stdio.h>
 
 ////
-// Warning: this generator is working with the old version of ast.c.
-// BUT this SHOULD be able to generate assembler code.
+// This SHOULD be able to generate assembler code.
 ////
+
+static int label_counter = 0;
+static char label_stack[100][32];
+static int label_stack_top = -1;
+static scope_node *stack = NULL;
+static int var_counter = 0;
 
 //I get the root node and symtable
 int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
@@ -54,7 +59,12 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
         //Generating main
         if(main)
             {
-                generate_node(main->children[0], &symtable);
+                stack_push(main);
+                if(main->n_of_children > 1)
+                    {
+                        generate_node(main->children[1], &symtable);
+                    }
+                stack_pop();
             }
         printf("POPFRAME\n");
         print_exit("int@0");
@@ -81,43 +91,55 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                             {
                                 return;
                             }
-                        printf("Generating node %s\n", node->token.lexeme); // Debugging line
-                        fflush(stdout); // Ensure output is flushed
+                        //printf("Generating node %s\n", node->token.lexeme); // Debugging line
+                        //fflush(stdout); // Ensure output is flushed
                         //We print the label of the function, push the alredy existing frame and go through the body
                         print_label(node->token.lexeme);
                         printf("PUSHFRAME\n");
-                        printf("DEFVAR LF%%retval\n");
+                        printf("DEFVAR LF@%%retval\n");
                         printf("MOVE LF@%%retval nil@nil\n");
+                        stack_push(node);
                         //Increasing the scope
                         //bst_increase_scope(current_scope);
                         //bst_generator_step_in(current_scope);
                         //If the node's parent is a function
                         //Get all of the functions parameters and define them
-                        fflush(stdout); // Ensure output is flushed
+                        //fflush(stdout); // Ensure output is flushed
                         ast_node_ptr parameters = node->children[0];
                         if(parameters && parameters->node_type == NT_PARAM)
                             {
                                 for(int i = 0; i < parameters->n_of_children; i++)
                                     {
                                         char *parameter_name = parameters->children[i]->token.lexeme;
-                                        printf("DEFVAR LF@%s\n", parameter_name);
-                                        printf("MOVE LF@%s LF%%%d \n", parameter_name, i + 1);
+                                        char *unique = stack_register_var(parameter_name, parameters->children[i]);
+                                        printf("DEFVAR LF@%s\n", unique);
+                                        printf("MOVE LF@%s LF@%%%d \n", unique, i + 1);
                                     }
                             }
                         generate_node(node->children[1], current_scope);
-                        fflush(stdout); // Doesnt get here
+                        //fflush(stdout); // Doesnt get here
                         //bst_decrease_scope(current_scope);
+                        stack_pop();
                         printf("POPFRAME\n");
                         printf("RETURN\n\n");
-                        fflush(stdout);
+                        //fflush(stdout);
                     }
                 //The body of a funcion, if/else or while
         else if(type == TT_LBRACE || ntype == NT_BLOCK)
                     {
+                        bool is_function_block = (node->parent && node->parent->node_type == NT_FUNC_DECL);
                         //Go through the body
+                        if(is_function_block == false)
+                            {
+                                stack_push(node);
+                            }
                         for(int i = 0; i < node->n_of_children; i++)
                             {
                                 generate_node(node->children[i], current_scope);
+                            }
+                        if(is_function_block == false)
+                            {
+                                stack_pop();
                             }
                     }
                 //When it's an IF
@@ -204,6 +226,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                             }
                         else
                             {
+                                char *unique = stack_register_var(var_name, node);
                                 printf("DEFVAR LF@%s\n", var_name);
                                 printf("MOVE LF@%s nil@nil\n", var_name);
                             }
@@ -241,7 +264,9 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
         else if(type == TT_IDENTIFIER)
             {
                 char* var_name = node->token.lexeme;
-                printf("PUSHS %s@%s\n", get_variable_frame(var_name), var_name);
+                char operand[128];
+                stack_resolve_operand(operand, var_name);
+                printf("PUSHS %s\n", operand); 
             }
         //Here's assign
         else if(type == TT_ASSIGN)
@@ -249,9 +274,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 generate_node(node->children[1], current_scope);
                 ast_node_ptr target = node->children[0];
                 char* var_name = target->token.lexeme;                              
-                const char *frame = get_variable_frame(var_name);               
-                printf("POPS %s@%s\n", frame, var_name);               
-                printf("PUSHS %s@%s\n", frame, var_name);
+                char operand[128];
+                stack_resolve_operand(operand, var_name);              
+                print_pops(operand);
+                printf("PUSHS %s\n", operand);
             }
         //Then there's plus
         else if(type == TT_PLUS)
@@ -396,7 +422,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                             {
                                 generate_node(node->children[i], current_scope);
                                 printf("POPS GF@%%tmp_op1\n");
-                                printf("WRITE GF%%tmp_op1\n");
+                                printf("WRITE GF@%%tmp_op1\n");
                             }
                         print_pushs(LITERAL_NULL, "nil", NULL);
                     }
@@ -603,6 +629,94 @@ char* format_string_for_ifjcode(const char* lexeme)
         }
         *buf_ptr = '\0';
         return g_string_buffer;
+    }
+
+//
+//Here I created a shadow stack to help me move through scopes
+//
+
+//Creates a new scope to push into the stack
+void stack_push(ast_node_ptr node)
+    {
+        scope_node *new_scope = malloc(sizeof(scope_node));
+        if (!new_scope) 
+            {
+                ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
+            }
+        new_scope->vars = NULL;
+        new_scope->parent = stack;
+        stack = new_scope;
+    }
+
+//Removes the scope from stack frees the memory
+void stack_pop() 
+    {
+        if (stack) 
+            {
+                scope_node *top = stack;
+                stack = stack->parent;               
+                var_node *current = top->vars;
+                while (current) 
+                    {
+                        var_node *next = current->next;
+                        free(current->new_id);
+                        free(current);
+                        current = next;
+                    }
+                free(top);
+            }
+    }
+
+//Adds variable to current scope and gives it a unique name
+char* stack_register_var(char *var_name, ast_node_ptr node) 
+    {
+        if (stack == NULL) return NULL;
+
+        var_node *var = malloc(sizeof(var_node));
+        if (var == NULL)
+            {
+                ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
+            }
+        
+        var->original_id = var_name;
+        // Allocate space for unique name: name$123
+        var->new_id = malloc(strlen(var_name) + 16);
+        if (var->new_id == NULL)
+            {
+                free(var);
+                ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
+            }
+        
+        sprintf(var->new_id, "%s$%d", var_name, var_counter++);
+        
+        // Add to the list
+        var->next = stack->vars;
+        stack->vars = var;
+        
+        return var->new_id;
+    }
+
+//Helper function for getting the correct operand
+void stack_resolve_operand(char *buffer, char *var_name) 
+    {
+        // Try to find variable in local scopes (Shadowing)
+        scope_node *iter = stack;
+        while (iter != NULL)
+            {
+                var_node *var = iter->vars;
+                while (var != NULL)
+                    {
+                        if (strcmp(var->original_id, var_name) == 0)
+                            {
+                                sprintf(buffer, "LF@%s", var->new_id);
+                                return;
+                            }
+                        var = var->next;
+                    }
+                iter = iter->parent;
+            }
+        // If not found locally, it must be global
+        sprintf(buffer, "GF@%s", var_name);
     }
 
 //
