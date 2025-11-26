@@ -1,5 +1,6 @@
 // Implementace prekladace imperativniho jazyka IFJ25
-// AST by Jan Špaček "xspacej00" on 10/18/2025
+// Symtable by Jan Špaček "xspacej00" on 10/18/2025
+//             Jan Frantisek "xlevic02" Levicek on 11/18/2025
 
 
 #include "symtable.h"
@@ -12,15 +13,17 @@ int bst_define_variable(bst_scope_ptr scope, ast_node_ptr ast_node) {
     if (key == 0)
         return ERROR_INTERNAL;
 
-    if(content.type == NT_VAR_DEF) {
-        content.value_tree = malloc(sizeof(bst_value_node_t));
-        if (content.value_tree == NULL)
-            return ERROR_INTERNAL;
+    content.value_tree = malloc(sizeof(bst_value_node_t));
+    if (content.value_tree == NULL)
+        return ERROR_INTERNAL;
 
-        content.value_tree->parent = NULL;
-        content.value_tree->children = NULL;
+    content.value_tree->parent = NULL;
+    content.value_tree->children = NULL;
+
+    if(content.type == NT_VAR_DEF)
         content.value_tree->value = TT_NULL;
-    }
+    else
+        content.value_tree->value = TT_ERROR;
 
 
     if (scope->tree != NULL)
@@ -39,22 +42,30 @@ int bst_define_variable(bst_scope_ptr scope, ast_node_ptr ast_node) {
 }
 
 
+bst_node_ptr bst_declare_variable(bst_node_ptr var_def_node, token_type_t value) {
+    bst_value_node_ptr new_value = var_def_node->content.value_tree->parent;
 
-/*
-//Support function to search through scopes of the BST
-bst_node_content_t bst_search_scope(bst_scope_ptr scope, unsigned int key) {
-    bst_node_content_t temp = node_content_init(NULL, TT_ERROR);
+    new_value->children = realloc(var_def_node->content.value_tree->parent->children,
+                                 sizeof(bst_value_node_ptr) * ++new_value->n_of_children);
+    if(new_value->children == NULL)
+        return (bst_node_ptr) -1;
 
-    if (scope == NULL)
-        return temp;
+    new_value->children[new_value->n_of_children - 1] = malloc(sizeof(bst_value_node_t));
+    if(new_value->children[new_value->n_of_children - 1] == NULL)
+        return (bst_node_ptr) -1;
 
-    temp = bst_search(scope->tree, key);
-    if (temp.type == TT_ERROR) {
-        return bst_search_scope(scope->parent, key);
-    }
-    return temp;
+    new_value->children[new_value->n_of_children - 1]->parent = new_value;
+    new_value->children[new_value->n_of_children - 1]->children = NULL;
+    new_value->children[new_value->n_of_children - 1]->n_of_children = 0;
+    new_value->children[new_value->n_of_children - 1]->current_index = -1;
+    new_value->current_index = new_value->n_of_children - 1;
+
+    var_def_node->content.value_tree = new_value->children[new_value->n_of_children - 1];
+    var_def_node->content.value_tree->value = value;
+
+    return var_def_node;
 }
-*/
+
 
 //Support function to increase the scope of the BST
 int bst_increase_scope(bst_scope_ptr *scope) {
@@ -132,7 +143,8 @@ void bst_decrease_scope(bst_node_ptr tree_node) {
     bst_decrease_scope(tree_node->left);
     bst_decrease_scope(tree_node->right);
 
-    if(tree_node->content.value_tree->parent != NULL)
+    if (tree_node->content.value_tree != NULL &&
+        tree_node->content.value_tree->parent != NULL)
         tree_node->content.value_tree = tree_node->content.value_tree->parent;
 }
 

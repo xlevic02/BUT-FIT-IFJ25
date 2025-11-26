@@ -54,7 +54,9 @@ int main(void) {
      */
 
     ast_node_ptr ast_root = create_ast();
-    //bst_scope_ptr global_scope = sem_start_analysis(ast_root); TODO uncomment
+    printf("ast ok\n");
+    bst_scope_ptr global_scope = sem_start_analysis(ast_root);
+    printf("symtable ok\n");
 
     return 0;
     visualize_ast(ast_root);
