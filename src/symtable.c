@@ -18,7 +18,7 @@ int bst_define_variable(bst_scope_ptr scope, ast_node_ptr ast_node) {
         if ((bst_search(scope->tree, key)) != NULL)
             return ERROR_SEM_REDEF;
 
-printf("sym def var malloc\n");
+//printf("sym def var malloc\n");
     content.value_tree = malloc(sizeof(bst_value_node_t));
     if (content.value_tree == NULL)
         return ERROR_INTERNAL;
@@ -39,14 +39,14 @@ printf("sym def var malloc\n");
         free(content.value_tree);
         return ERROR_INTERNAL;
     }
-    printf("outside of insert\n");
+    //printf("outside of insert\n");
 
     return 0;
 }
 
 
 bst_node_ptr bst_declare_variable(bst_node_ptr var_def_node, token_type_t value) {
-    printf("decl var: node=%p, value_tree=%p, parent=%p, n_children=%d\n",
+    //printf("decl var: node=%p, value_tree=%p, parent=%p, n_children=%d\n",
            (void*)var_def_node,
            (void*)var_def_node->content.value_tree,
            (void*)(var_def_node->content.value_tree ?
@@ -65,7 +65,7 @@ bst_node_ptr bst_declare_variable(bst_node_ptr var_def_node, token_type_t value)
 
     bst_value_node_ptr agg = root;
 
-    printf("decl var symtable realloc\n");
+    //printf("decl var symtable realloc\n");
     bst_value_node_ptr *new_children =
             realloc(agg->children, sizeof(bst_value_node_ptr) * (agg->n_of_children + 1));
     if (new_children == NULL)
@@ -73,7 +73,7 @@ bst_node_ptr bst_declare_variable(bst_node_ptr var_def_node, token_type_t value)
 
     agg->children = new_children;
 
-    printf("sym decl var malloc\n");
+    //printf("sym decl var malloc\n");
     bst_value_node_ptr child = malloc(sizeof(bst_value_node_t));
     if (child == NULL)
         return (bst_node_ptr) -1;
@@ -91,7 +91,7 @@ bst_node_ptr bst_declare_variable(bst_node_ptr var_def_node, token_type_t value)
     // "aktuální hodnota" = právě vytvořený child
     var_def_node->content.value_tree = child;
 
-    printf("end of decl var\n");
+    //printf("end of decl var\n");
     return var_def_node;
 
 
@@ -127,7 +127,7 @@ bst_node_ptr bst_declare_variable(bst_node_ptr var_def_node, token_type_t value)
 
 //Support function to increase the scope of the BST
 int bst_increase_scope(bst_scope_ptr *scope) {
-    printf("sym incr scope malloc\n");
+    //printf("sym incr scope malloc\n");
     bst_scope_ptr new_scope = malloc(sizeof(bst_scope_t));
     if (new_scope == NULL)
         return ERROR_INTERNAL;
@@ -141,7 +141,7 @@ int bst_increase_scope(bst_scope_ptr *scope) {
 
     if ((*scope) != NULL) {
         (*scope)->n_of_children++;
-        printf("incr scope symtable realloc\n");
+        //printf("incr scope symtable realloc\n");
         (*scope)->children = realloc((*scope)->children, sizeof(bst_scope_ptr) * (*scope)->n_of_children);
         if ((*scope)->children == NULL) {
             free(new_scope);
@@ -157,7 +157,7 @@ int bst_increase_scope(bst_scope_ptr *scope) {
     } else
         (*scope) = new_scope;
 
-    printf("end of incr scope\n");
+    //printf("end of incr scope\n");
     return 0;
 }
 
@@ -176,12 +176,12 @@ int bst_increase_var_reach(bst_node_ptr scope_tree) {
 
     // TODO: slop start
     if (value_tree == NULL) {
-        fprintf(stderr, "ERROR: NULL value_tree at key %u\n", scope_tree->key);
+        //fprintf(stderr, "ERROR: NULL value_tree at key %u\n", scope_tree->key);
         exit(1);
     }
 
     if (value_tree->n_of_children < 0 || value_tree->n_of_children > 1000000) {
-        fprintf(stderr, "ERROR: corrupted n_of_children=%d at key %u\n",
+        //fprintf(stderr, "ERROR: corrupted n_of_children=%d at key %u\n",
                 value_tree->n_of_children, scope_tree->key);
         exit(1);
     }
@@ -189,19 +189,19 @@ int bst_increase_var_reach(bst_node_ptr scope_tree) {
     int old_n = value_tree->n_of_children;
     int n_of_children = old_n + 1;
 
-    printf("sym realloc\n");
+    //printf("sym realloc\n");
     void *tmp = realloc(value_tree->children,
                         sizeof(bst_value_node_ptr) * n_of_children);
     if (!tmp) {
-        fprintf(stderr, "ERROR: realloc failed at key %u (n=%d)\n",
+        //fprintf(stderr, "ERROR: realloc failed at key %u (n=%d)\n",
                 scope_tree->key, n_of_children);
         exit(1);
     }
     value_tree->children = tmp;
-    printf("sym var reach malloc\n");
+    //printf("sym var reach malloc\n");
     bst_value_node_ptr child = malloc(sizeof(bst_value_node_t));
     if (!child) {
-        fprintf(stderr, "ERROR: malloc failed at key %u\n", scope_tree->key);
+        //fprintf(stderr, "ERROR: malloc failed at key %u\n", scope_tree->key);
         exit(1);
     }
 
@@ -305,7 +305,7 @@ unsigned int get_hash(ast_node_ptr ast_node) {
         ast_node->node_type != NT_SETTER &&
         ast_node->node_type != NT_BUILTIN) {
         size = strlen(name) + 17; // strlen(func:%s:%d) + '\0'
-        printf("sym hash malloc\n");
+        //printf("sym hash malloc\n");
         buffer = malloc(sizeof(char) * size);
         if (buffer == NULL)
             return 0;
@@ -332,7 +332,7 @@ unsigned int get_hash(ast_node_ptr ast_node) {
             }
         }
 
-        printf("sym hash malloc\n");
+        //printf("sym hash malloc\n");
         buffer = malloc(sizeof(char) * size);
         if (buffer == NULL)
             return 0;
@@ -342,13 +342,13 @@ unsigned int get_hash(ast_node_ptr ast_node) {
 
 
     char* tmp = buffer;
-    printf("end of hash\n");
+    //printf("end of hash\n");
     while (*buffer) {
         hash = (hash * 31) + *buffer;
         buffer++;
     }
 
-printf("get hash: %s\n", tmp);
+//printf("get hash: %s\n", tmp);
     free(tmp);
     return hash;
 }
@@ -371,8 +371,8 @@ int bst_insert(bst_node_ptr *tree, unsigned int key, bst_node_content_t value) {
     //       (void*)tree, (void*)(*tree), key, (void*)value.name);
     if ((*tree) == NULL) {
 
-        printf("sym insert malloc\n");
-        printf("%s\n", value.name);
+        //printf("sym insert malloc\n");
+        //printf("%s\n", value.name);
         (*tree) = malloc(sizeof(bst_node_t));
         if ((*tree) == NULL)
             return ERROR_INTERNAL;
