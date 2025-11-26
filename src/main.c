@@ -64,10 +64,10 @@ int main(void) {
      */
 
     ast_node_ptr ast_root = create_ast();
-    visualize_ast(ast_root);
+    //visualize_ast(ast_root);
 
     bst_scope_ptr global_scope = sem_start_analysis(ast_root);
-    printf("symtable ok\n");
+    //printf("symtable ok\n");
 
     return 0;
     visualize_ast(ast_root);
