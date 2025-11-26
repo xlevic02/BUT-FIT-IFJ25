@@ -41,7 +41,7 @@ token_t make_token(token_type_t type, const char *lexeme) {
     } else {
         t.lexeme = NULL;
     }
-//printf("token: %s\t%d\n", t.lexeme, t.type);      TODO: test printf
+//printf("token: %s\t%d\n", t.lexeme, t.type);     // TODO: test printf
     return t;
 }
 

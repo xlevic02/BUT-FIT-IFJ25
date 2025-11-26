@@ -101,6 +101,8 @@ ast_node_ptr create_ast(){
                 if(new_node->children == NULL)
                     ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, new_node, current_token);
 
+                new_node->n_of_children = 2;
+
                 new_node->children[0] = ast_parameter_node(current_token, new_node);
 
                 if(new_node->children[0] == NULL)
@@ -154,53 +156,46 @@ ast_node_ptr create_ast(){
 void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
     ast_node_ptr new_node = NULL;
     ast_node_ptr tmp_node = NULL;
-    token_t* tmp_tok = NULL;
+    token_t tmp_tok;
 
     //Main loop to handle all constructs inside a block
     while(current_token->type != TT_EOF){
         switch(current_token->type){
             //Assign
             case TT_IDENTIFIER:
-                tmp_tok = current_token;
+                tmp_tok = *current_token;
                 *current_token = get_token();
 
-                if(current_token->type != TT_ASSIGN) {
-                    free(tmp_tok);
+                if(current_token->type != TT_ASSIGN)
                     ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, current_node, current_token);
-                }
+
 
                 new_node = ast_create_node(*current_token, current_node, NT_ASSIGN);
-                if(new_node == NULL) {
-                    free(tmp_tok);
+                if(new_node == NULL)
                     ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, new_node, current_token);
-                }
+
 
                 if(ast_increase_children(current_node, new_node)) {
-                    free(tmp_tok);
                     free(new_node);
                     ast_error(ERROR_INTERNAL, MSG_INT_REALLOC, current_node, current_token);
                 }
 
 
-                tmp_node = ast_create_node(*tmp_tok, new_node, NT_ID);
-                if(tmp_node == NULL) {
-                    free(tmp_tok);
+                tmp_node = ast_create_node(tmp_tok, new_node, NT_ID);
+                if(tmp_node == NULL)
                     ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, current_node, current_token);
-                }
+
 
                 if(ast_increase_children(new_node, tmp_node)) {
-                    free(tmp_tok);
                     free(tmp_node);
                     ast_error(ERROR_INTERNAL, MSG_INT_REALLOC, current_node, current_token);
                 }
 
-                free(tmp_tok);
 
                 *current_token = get_token();
                 ast_skip_EOL(current_token);
 
                 ast_expression_node(new_node, current_token);
-                //*current_token = get_token();
                 break;
 
 
@@ -307,11 +302,11 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
                     break; 
                 }
 
-                tmp_node = ast_create_node(*current_token, current_node, NT_ELSE_BODY);
+                tmp_node = ast_create_node(*current_token, new_node, NT_ELSE_BODY);
                 if(tmp_node == NULL)
                     ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, new_node, current_token);
 
-                if(ast_increase_children(current_node, tmp_node)) {
+                if(ast_increase_children(new_node, tmp_node)) {
                     free(tmp_node);
                     ast_error(ERROR_INTERNAL, MSG_INT_REALLOC, new_node, current_token);
                 }
@@ -997,7 +992,7 @@ void destroy_ast(ast_node_ptr node){
 void free_ast(ast_node_ptr node){
     if (node == NULL || node == (ast_node_ptr) -1) return;
     if (node->children != NULL){
-        for (int i = 0; node->children[i] != NULL; i++){
+        for (int i = 0; i < node->n_of_children; i++){
             free_ast(node->children[i]);
         }
         free(node->children);
