@@ -69,8 +69,6 @@ int bst_insert(bst_node_ptr *tree, unsigned int key, bst_node_content_t value);
 
 bst_node_ptr bst_search(bst_node_ptr tree, unsigned int key);
 
-//bst_node_ptr bst_node_search_ptr(bst_node_ptr tree, unsigned int key);
-//bst_node_ptr bst_node_scope_search_ptr(bst_scope_ptr scope, unsigned int key);
 void bst_replace_by_rightmost(bst_node_ptr target, bst_node_ptr *tree);
 
 void bst_delete(bst_node_ptr *tree, unsigned int key);

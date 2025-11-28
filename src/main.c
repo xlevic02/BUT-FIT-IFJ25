@@ -6,6 +6,7 @@
 #include "symtable.h"
 #include "sem_analysis.h"
 
+const char* ast_node_type_to_string(ast_node_type_t type);
 const char* token_type_to_string(token_type_t type);
 void ast_print_token(token_t token);
 
@@ -18,22 +19,31 @@ void print_ast_branch(const ast_node_ptr node, const char *prefix, int is_last) 
     printf("%s", prefix);
     printf(is_last ? "└── " : "├── ");
 
-    // Print node content
-    printf("%s", token_type_to_string(node->token.type));
-    if (node->token.lexeme)
-        printf(" ('%s')", node->token.lexeme);
+    // Print AST node type
+    printf("%s", ast_node_type_to_string(node->node_type));
+
+    // Print token as optional metadata
+    if (node->token.lexeme && node->token.lexeme[0] != '\0') {
+        printf("  token('%s', %s)",
+               node->token.lexeme,
+               token_type_to_string(node->token.type)
+        );
+    }
 
     printf("\n");
 
-    // Prepare new prefix for children
+    // Prepare indentation for children
     char new_prefix[512];
-    snprintf(new_prefix, sizeof(new_prefix), "%s%s", prefix, is_last ? "    " : "│   ");
+    snprintf(new_prefix, sizeof(new_prefix),
+             "%s%s", prefix, is_last ? "    " : "│   ");
 
     // Recursively print children
     for (int i = 0; i < node->n_of_children; i++) {
-        print_ast_branch(node->children[i], new_prefix, i == node->n_of_children - 1);
+        print_ast_branch(node->children[i], new_prefix,
+                         i == node->n_of_children - 1);
     }
 }
+
 
 // --- Entry function ---
 void visualize_ast(const ast_node_ptr root) {
@@ -54,7 +64,8 @@ int main(void) {
      */
 
     ast_node_ptr ast_root = create_ast();
-    printf("ast ok\n");
+    visualize_ast(ast_root);
+
     bst_scope_ptr global_scope = sem_start_analysis(ast_root);
     printf("symtable ok\n");
 
@@ -72,6 +83,33 @@ int main(void) {
 void ast_print_token(token_t token){
     printf("Token type: %s, lexeme: %s\n", token_type_to_string(token.type), token.lexeme);
 }
+
+const char* ast_node_type_to_string(ast_node_type_t type) {
+    switch (type) {
+        case NT_ROOT: return "NT_ROOT";
+        case NT_VAR_DEF: return "NT_VAR_DEF";
+        case NT_FUNC_DECL: return "NT_FUNC_DECL";
+        case NT_GETTER: return "NT_GETTER";
+        case NT_SETTER: return "NT_SETTER";
+        case NT_PARAM: return "NT_PARAM";
+        case NT_ID: return "NT_ID";
+        case NT_ASSIGN: return "NT_ASSIGN";
+        case NT_IF_STATEMENT: return "NT_IF_STATEMENT";
+        case NT_IF_BODY: return "NT_IF_BODY";
+        case NT_ELSE_BODY: return "NT_ELSE_BODY";
+        case NT_BOOL_EXPR: return "NT_BOOL_EXPR";
+        case NT_AR_EXPR: return "NT_AR_EXPR";
+        case NT_LITERAL: return "NT_LITERAL";
+        case NT_DATATYPE: return "NT_DATATYPE";
+        case NT_BUILTIN: return "NT_BUILTIN";
+        case NT_WHILE: return "NT_WHILE";
+        case NT_WHILE_BODY: return "NT_WHILE_BODY";
+        case NT_BLOCK: return "NT_BLOCK";
+        case NT_RETURN: return "NT_RETURN";
+        default: return "UNKNOWN_NODE";
+    }
+}
+
 
 const char* token_type_to_string(token_type_t type) {
     switch (type) {
@@ -122,5 +160,3 @@ const char* token_type_to_string(token_type_t type) {
         default: return "UNKNOWN_TOKEN";
     }
 }
-
-
