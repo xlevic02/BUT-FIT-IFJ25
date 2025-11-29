@@ -14,14 +14,16 @@
 ////
 
 static int label_counter = 0;
-static char label_stack[100][32];
-static int label_stack_top = -1;
 static scope_node *stack = NULL;
 static int var_counter = 0;
 
 //I get the root node and symtable
 int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
     {
+        if(root == NULL)    
+            {
+                return 0;
+            }
         printf(".IFJcode25\n");
         printf("DEFVAR GF@%%tmp_op1\n");
         printf("DEFVAR GF@%%tmp_op2\n");
@@ -30,12 +32,20 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
         print_jump("$$main\n");
         //I assign roots number of children to int nu_of children
         int num_of_children = root->n_of_children;
+        if(num_of_children > 0 && root->children == NULL)
+            {
+                return 0;
+            }
         for(int i = 0; i < num_of_children; i++)    
             {
+                if(root->children[i] == NULL)
+                    {
+                        ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, root, NULL);
+                    }
                 //Generate all the functions that are children of root
                 if(root->children[i]->node_type == NT_FUNC_DECL)
                     {
-                        if(strcmp(root->children[i]->token.lexeme, "main") != 0)
+                        if(root->children[i]->token.lexeme && strcmp(root->children[i]->token.lexeme, "main") != 0)
                             {
                                 printf("Entering Generate Node\n"); // Debugging line
                                 generate_node(root->children[i], &symtable);
@@ -60,7 +70,7 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
         if(main)
             {
                 stack_push(main);
-                if(main->n_of_children > 1)
+                if(main->n_of_children > 1 && main->children != NULL && main->children[1] != NULL)
                     {
                         generate_node(main->children[1], &symtable);
                     }
@@ -91,6 +101,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                             {
                                 return;
                             }
+                        if(node->token.lexeme == NULL)
+                            {
+                                ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
+                            }
                         //printf("Generating node %s\n", node->token.lexeme); // Debugging line
                         //fflush(stdout); // Ensure output is flushed
                         //We print the label of the function, push the alredy existing frame and go through the body
@@ -105,18 +119,24 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         //If the node's parent is a function
                         //Get all of the functions parameters and define them
                         //fflush(stdout); // Ensure output is flushed
-                        ast_node_ptr parameters = node->children[0];
-                        if(parameters && parameters->node_type == NT_PARAM)
+                        if(node->n_of_children && node->children != NULL)
                             {
-                                for(int i = 0; i < parameters->n_of_children; i++)
+                                ast_node_ptr parameters = node->children[0];
+                                if(parameters && parameters->node_type == NT_PARAM)
                                     {
-                                        char *parameter_name = parameters->children[i]->token.lexeme;
-                                        char *unique = stack_register_var(parameter_name, parameters->children[i]);
-                                        printf("DEFVAR LF@%s\n", unique);
-                                        printf("MOVE LF@%s LF@%%%d \n", unique, i + 1);
+                                        for(int i = 0; i < parameters->n_of_children; i++)
+                                            {
+                                                char *parameter_name = parameters->children[i]->token.lexeme;
+                                                char *unique = stack_register_var(parameter_name, parameters->children[i]);
+                                                printf("DEFVAR LF@%s\n", unique);
+                                                printf("MOVE LF@%s LF@%%%d \n", unique, i + 1);
+                                            }
                                     }
                             }
-                        generate_node(node->children[1], current_scope);
+                        if(node->n_of_children > 1)
+                            {
+                                generate_node(node->children[1], current_scope);
+                            }
                         //fflush(stdout); // Doesnt get here
                         //bst_decrease_scope(current_scope);
                         stack_pop();
@@ -133,9 +153,12 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                             {
                                 stack_push(node);
                             }
-                        for(int i = 0; i < node->n_of_children; i++)
+                        if(node->children != NULL)
                             {
-                                generate_node(node->children[i], current_scope);
+                                for(int i = 0; i < node->n_of_children; i++)
+                                    {
+                                        generate_node(node->children[i], current_scope);
+                                    }
                             }
                         if(is_function_block == false)
                             {
@@ -150,6 +173,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         char label_else[64];
                         get_unique_label(label_end, "if_end");
                         get_unique_label(label_else, "if_else");
+                        if(node->n_of_children < 2 || node->children == NULL)
+                            {
+                                ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                            }
                         //Then generate the conditions and check if they're true or false
                         generate_node(node->children[0], current_scope);
                         printf("POPS GF@%%tmp_res\n");
@@ -177,6 +204,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         char w_end[64];
                         get_unique_label(w_start, "while_start");
                         get_unique_label(w_end, "while_end");
+                        if(node->n_of_children < 2 || node->children == NULL)
+                            {
+                                ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                            }
                         //We start the while, generate the conditions AND THEN check if ther're true
                         print_label(w_start);
                         generate_node(node->children[0], current_scope);
@@ -211,13 +242,17 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                     {
                         //We get the variables name
                         char* var_name = NULL;
-                        if(node->n_of_children > 0)
+                        if(node->n_of_children > 0 && node->children != NULL && node->children[0] != NULL)
                             {
                                 var_name = node->children[0]->token.lexeme;
                             }
                         else
                             {
                                 var_name = node->token.lexeme;
+                            }
+                        if(var_name == NULL)
+                            {
+                                ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
                             }
                         if(global_check(var_name))
                             {
@@ -227,8 +262,8 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         else
                             {
                                 char *unique = stack_register_var(var_name, node);
-                                printf("DEFVAR LF@%s\n", var_name);
-                                printf("MOVE LF@%s nil@nil\n", var_name);
+                                printf("DEFVAR LF@%s\n", unique);
+                                printf("MOVE LF@%s nil@nil\n", unique);
                             }
                     }
         //The first five ifs are basicaly what to push
@@ -250,6 +285,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
             }
         else if(type == TT_IDENTIFIER && node->n_of_children > 0)
             {
+                if(node->token.lexeme == NULL)
+                    {
+                        ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
+                    }
                 char* func_name = node->token.lexeme;
                 printf("CREATEFRAME\n");
                 for(int i = 0; i < node->n_of_children; i++) 
@@ -263,18 +302,28 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
             }
         else if(type == TT_IDENTIFIER)
             {
+                if(node->token.lexeme == NULL)
+                    {
+                        ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
+                    }
                 char* var_name = node->token.lexeme;
                 char operand[128];
+                operand[0] = '\0';
                 stack_resolve_operand(operand, var_name);
                 printf("PUSHS %s\n", operand); 
             }
         //Here's assign
         else if(type == TT_ASSIGN)
             {
+                if(node->n_of_children < 2 || node->children == NULL)
+                    {
+                        ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                    }
                 generate_node(node->children[1], current_scope);
                 ast_node_ptr target = node->children[0];
                 char* var_name = target->token.lexeme;                              
                 char operand[128];
+                operand[0] = '\0';
                 stack_resolve_operand(operand, var_name);              
                 print_pops(operand);
                 printf("PUSHS %s\n", operand);
@@ -415,6 +464,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
             {
                 //We basicaly get the tokens lexeme and see whats there so we know what to generate
                 char *func_name = node->token.lexeme;
+                if(func_name == NULL)
+                    {
+                        ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
+                    }
                 if(strcmp(func_name, "write") == 0)
                     {
                         //WRITE
@@ -441,6 +494,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 else if(strcmp(func_name, "str") == 0)
                     {
                         //INT2STR, FLOAT2STR
+                        if(node->n_of_children < 1)
+                            {
+                                ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                            }
                         generate_node(node->children[0], current_scope);
                         printf("POPS GF@%%tmp_op1\n");
                         printf("TYPE GF@%%tmp_type GF@%%tmp_op1\n");
@@ -464,12 +521,20 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 else if(strcmp(func_name, "floor") == 0)
                     {
                         //FLOAT2INT
+                        if(node->n_of_children < 1)
+                            {
+                                ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                            }
                         generate_node(node->children[0], current_scope);
                         print_conversion(FLOAT2INT);
                     }
                 else if(strcmp(func_name, "length") == 0)
                     {
                         //STRLEN
+                        if(node->n_of_children < 1)
+                            {
+                                ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                            }
                         generate_node(node->children[0], current_scope);
                         printf("POPS GF@%%tmp_op1\n");
                         printf("STRLEN GF@%%tmp_res GF@%%tmp_op1\n");
@@ -479,6 +544,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                     {
                                 //Substring: Created vars to pop the arguments and the final result into
                                 //Created a loop at the end to create the substring by putting the variable at index i into tmp_char and then using concat to add it to result_var
+                                if(node->n_of_children < 3)
+                                    {
+                                        ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                                    }
                                 char str_var[32], i_var[32], j_var[32], result_var[32], tmp_char[32];
                                 char loop_start[32], loop_end[32];
                                 sprintf(str_var, "LF@%%substr%d", label_counter);
@@ -531,6 +600,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         //Compare s1 with s2, and then pushes either -1, 1 or 0 depending on if s1 is shorter, longer or equal with s2
                         //Almost done, now I'll just have to create some additional variables to help, some jumps
                         // and the labels for those jumps
+                        if(node->n_of_children < 2)
+                            {
+                                ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                            }
                         char label_str1_lesser[32], label_str1_greater[32], label_strcmp_end[32];
                         get_unique_label(label_str1_lesser, "strcmp_lesser");
                         get_unique_label(label_str1_greater, "strcmp_greater");
@@ -555,6 +628,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 else if(strcmp(func_name, "ord") == 0)
                     {
                         //STRI2INT
+                        if(node->n_of_children < 2)
+                            {
+                                ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                            }
                         generate_node(node->children[0], current_scope);
                         generate_node(node->children[1], current_scope);
                         print_conversion(STRI2INT);
@@ -562,6 +639,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 else if(strcmp(func_name, "chr") == 0)
                     {
                         //INT2CHAR
+                        if(node->n_of_children < 1)
+                            {
+                                ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                            }
                         generate_node(node->children[0], current_scope);
                         print_conversion(INT2CHAR);
                     }
@@ -602,6 +683,10 @@ void get_unique_label(char* buffer, const char* prefix)
 //Formats float for the final code
 char* format_float_for_ifjcode(const char* lexeme)
     {
+        if(lexeme == NULL)
+            {
+                return "0x0p+0";
+            } 
         static char g_float_buffer[100];
         sprintf(g_float_buffer, "%a", strtod(lexeme, NULL));
         return g_float_buffer;
@@ -610,13 +695,21 @@ char* format_float_for_ifjcode(const char* lexeme)
 //Formats string for final code
 char* format_string_for_ifjcode(const char* lexeme)
     {
-        static char g_string_buffer[1024];
+        if(lexeme == NULL)
+            {
+                return "";
+            }
+        static char g_string_buffer[10000];
         char* buf_ptr = g_string_buffer;
         int lexeme_len = strlen(lexeme);
-        for (int i = 0; i < lexeme_len; i++)
+        if(lexeme_len > 2000) 
+            {
+                lexeme_len = 2000;
+            }
+        for(int i = 0; i < lexeme_len; i++)
         {
             unsigned char c = lexeme[i];
-            if (c <= 32 || c == 35 || c == 92) 
+            if(c <= 32 || c == 35 || c == 92) 
             {
                 sprintf(buf_ptr, "\\%03d", (int)c);
                 buf_ptr += 4;
@@ -639,9 +732,16 @@ char* format_string_for_ifjcode(const char* lexeme)
 void stack_push(ast_node_ptr node)
     {
         scope_node *new_scope = malloc(sizeof(scope_node));
-        if (!new_scope) 
+        if (new_scope == NULL) 
             {
-                ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
+                if(node)
+                    {
+                        ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
+                    }
+                else
+                    {
+                        exit(ERROR_GEN_INTERNAL);
+                    }
             }
         new_scope->vars = NULL;
         new_scope->parent = stack;
@@ -656,10 +756,13 @@ void stack_pop()
                 scope_node *top = stack;
                 stack = stack->parent;               
                 var_node *current = top->vars;
-                while (current) 
+                while (current != NULL) 
                     {
                         var_node *next = current->next;
-                        free(current->new_id);
+                        if(current->new_id)
+                            {
+                                free(current->new_id);
+                            }
                         free(current);
                         current = next;
                     }
@@ -670,6 +773,7 @@ void stack_pop()
 //Adds variable to current scope and gives it a unique name
 char* stack_register_var(char *var_name, ast_node_ptr node) 
     {
+        if(var_name == NULL) return NULL;
         if (stack == NULL) return NULL;
 
         var_node *var = malloc(sizeof(var_node));
@@ -680,7 +784,7 @@ char* stack_register_var(char *var_name, ast_node_ptr node)
         
         var->original_id = var_name;
         // Allocate space for unique name: name$123
-        var->new_id = malloc(strlen(var_name) + 16);
+        var->new_id = malloc(strlen(var_name) + 32);
         if (var->new_id == NULL)
             {
                 free(var);
@@ -699,6 +803,14 @@ char* stack_register_var(char *var_name, ast_node_ptr node)
 //Helper function for getting the correct operand
 void stack_resolve_operand(char *buffer, char *var_name) 
     {
+        if(var_name == NULL)
+            {
+                if(buffer) 
+                    {
+                        buffer[0] = '\0';
+                    }
+                return;
+            }
         // Try to find variable in local scopes (Shadowing)
         scope_node *iter = stack;
         while (iter != NULL)
@@ -739,6 +851,10 @@ void print_move( char* destination , char* source)
 
 void print_pushs(SYM_TYPE type, char* value, char* frame)
     {
+        if(value == NULL && type != LITERAL_NULL)
+            {
+                return;
+            }
         switch(type)
             {
                 case VARIABLE:
