@@ -70,14 +70,15 @@ int main(void) {
     printf("symtable ok\n");
 
     return 0;
-    visualize_ast(ast_root);
+    //visualize_ast(ast_root);
 
-    free_ast(ast_root);
+    //free_ast(ast_root);
+    //bst_destroy_symbol_table(global_scope);
 
-    printf(ast_root == NULL ? "AST successfully freed.\n" : "AST freeing failed!\n");
-    ast_print_token(ast_root->token);
+    //printf(ast_root == NULL ? "AST successfully freed.\n" : "AST freeing failed!\n");
+    //ast_print_token(ast_root->token);
 
-    return 0;
+    //return 0;
 }
 
 void ast_print_token(token_t token){

@@ -87,7 +87,7 @@ bool is_func(ast_node_ptr ast_node);
 
 unsigned int small_hash(char* str);
 
-int bst_increase_var_reach(bst_node_ptr scope_tree);
+int bst_increase_var_reach(bst_node_ptr scope_tree, bst_value_node_ptr *value_tree);
 
 void bst_free_content(bst_value_node_ptr value_tree);
 
