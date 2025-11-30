@@ -392,7 +392,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 print_jump(label_end);     
                 print_label(label_concat);
                 printf("CONCAT GF@%%tmp_res GF@%%tmp_op1 GF@%%tmp_op2\n");
-                pprint_pushs(VARIABLE, "%tmp_res", "GF");              
+                print_pushs(VARIABLE, "%tmp_res", "GF");              
                 print_label(label_end);
             }
         //Minus and mul should be fine
@@ -915,7 +915,7 @@ void stack_resolve_id(char *buffer, char *var_name)
                                 return;
                             }
                         //Move on to the next
-                        var->next;
+                        var = var->next;
                     }
             }
         //If I don't find it in the stack, I give it the GF@ prefix
