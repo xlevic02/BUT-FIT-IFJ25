@@ -5,6 +5,7 @@
 #include "ast.h"
 #include "symtable.h"
 #include "sem_analysis.h"
+#include "generator.h"
 
 const char* ast_node_type_to_string(ast_node_type_t type);
 const char* token_type_to_string(token_type_t type);
@@ -64,18 +65,19 @@ int main(void) {
      */
 
     ast_node_ptr ast_root = create_ast();
-    visualize_ast(ast_root);
+    //visualize_ast(ast_root);
 
     bst_scope_ptr global_scope = sem_start_analysis(ast_root);
-    printf("symtable ok\n");
+    generate_code(ast_root, global_scope);
+    //printf("symtable ok\n");
 
-    return 0;
-    visualize_ast(ast_root);
+    //return 0;
+    //visualize_ast(ast_root);
 
     free_ast(ast_root);
 
-    printf(ast_root == NULL ? "AST successfully freed.\n" : "AST freeing failed!\n");
-    ast_print_token(ast_root->token);
+    //printf(ast_root == NULL ? "AST successfully freed.\n" : "AST freeing failed!\n");
+    //ast_print_token(ast_root->token);
 
     return 0;
 }

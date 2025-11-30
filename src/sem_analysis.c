@@ -25,7 +25,7 @@ bst_scope_ptr sem_start_analysis(ast_node_ptr root) {
                 ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, root, NULL);
 
             case ERROR_SEM_REDEF:
-                printf("redef error\n");
+                //printf("redef error\n");
                 bst_free_scope(global);
                 ast_error(ERROR_SEM_REDEF, MSG_SEM_REDEF, root, NULL);
                 exit(ERROR_SEM_REDEF);
@@ -63,7 +63,7 @@ bst_scope_ptr sem_start_analysis(ast_node_ptr root) {
 void sem_func_declare(ast_node_ptr func_node, bst_scope_ptr global) {
     if (func_node == NULL) {
         bst_free_scope(global);
-        fprintf(stderr, "func decl\n");
+        //fprintf(stderr, "func decl\n");
         ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, NULL, NULL);
     }
 
@@ -144,8 +144,8 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
                                 break;
 
                             bst_destroy_symbol_table(scope);
-                            fprintf(stderr,"block eval\n");
-                            fprintf(stderr,"%s\n", block_node->children[i]->children[0]->token.lexeme);
+                            //fprintf(stderr,"block eval\n");
+                            //fprintf(stderr,"%s\n", block_node->children[i]->children[0]->token.lexeme);
                             ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, block_node, NULL);
                         } else {
                             if (bst_define_variable(scope, block_node->children[i]->children[0])) {
@@ -154,7 +154,7 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
                             }
 
                             def_node = bst_search(scope->tree, key);
-                            printf("1\n");
+                            //printf("1\n");
                             break;
                         }
 
@@ -165,27 +165,27 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
                 }
 
                 scope = old_scope;
-                printf("2\n");
+                //printf("2\n");
                 if (def_node->content.type == NT_SETTER) {
-                    printf("eval 1\n");
+                    //printf("eval 1\n");
                     sem_func_eval(scope, block_node->children[i]->children[0],
                                   sem_expr_type_eval(scope, block_node->children[i]->children[1]));
 
                     break;
                 }
-                printf("3\n");
-                printf("eval 2\n");
+                //printf("3\n");
+                //printf("eval 2\n");
                 token_type_t rhs_type = sem_expr_type_eval(scope, block_node->children[i]->children[1]);
                 def_node = bst_declare_variable(def_node, rhs_type);
                 if (def_node == (bst_node_ptr) -1) {
                     bst_destroy_symbol_table(scope);
                     ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, block_node, NULL);
                 }
-                printf("4\n");
+                //printf("4\n");
                 break;
 
             case NT_IF_STATEMENT:
-                printf("eval 3\n");
+                //printf("eval 3\n");
                 sem_expr_type_eval(scope, block_node->children[i]->children[0]);
 
                 if (bst_increase_scope(&scope)) {
@@ -215,7 +215,7 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
                 break;
 
             case NT_WHILE:
-                printf("eval 4\n");
+                //printf("eval 4\n");
                 sem_expr_type_eval(scope, block_node->children[i]->children[0]);
 
                 if (bst_increase_scope(&scope)) {
@@ -262,11 +262,11 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
 
                 if (func_node->content.value_tree->value == TT_ERROR) {
                     new_node = func_node->content.value_tree;
-                    printf("sem malloc\n");
+                    //printf("sem malloc\n");
                     new_node->children = malloc(sizeof(bst_value_node_ptr) * ++new_node->n_of_children);
                 } else {
                     new_node = func_node->content.value_tree->parent;
-                    printf("sem realloc\n");
+                    //printf("sem realloc\n");
                     new_node->children = realloc(func_node->content.value_tree->parent->children,
                                                  sizeof(bst_value_node_ptr) * ++new_node->n_of_children);
                 }
@@ -276,7 +276,7 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
                     ast_error(ERROR_INTERNAL, MSG_INT_REALLOC, block_node, NULL);
                 }
 
-                printf("sem malloc\n");
+                //printf("sem malloc\n");
                 new_node->children[new_node->n_of_children - 1] = malloc(sizeof(bst_value_node_t));
                 if (new_node->children[new_node->n_of_children - 1] == NULL) {
                     bst_destroy_symbol_table(scope);
@@ -292,7 +292,7 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
                         func_node->content.value_tree->parent->n_of_children - 1;
 
                 if (block_node->children[i]->n_of_children != 0) {
-                    printf("eval 5\n");
+                    //printf("eval 5\n");
                     func_node->content.value_tree->value = sem_expr_type_eval(scope,
                                                                               block_node->children[i]->children[1]);
                 } else
@@ -354,9 +354,9 @@ token_type_t sem_expr_type_eval(bst_scope_ptr scope, ast_node_ptr expr_node) {
                                     return sem_func_eval(old_scope, expr_node, TT_ERROR);
                                 }
 
-                            printf("%s\n", expr_node->token.lexeme);
+                            //printf("%s\n", expr_node->token.lexeme);
                             bst_free_scope(global);
-                            fprintf(stderr,"expr eval 0\n");
+                            //fprintf(stderr,"expr eval 0\n");
                             ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, expr_node, NULL);
                         } else
                             return TT_NULL;
@@ -378,7 +378,7 @@ token_type_t sem_expr_type_eval(bst_scope_ptr scope, ast_node_ptr expr_node) {
             term = bst_search(global->tree, key);
             if (term == NULL) {
                 bst_free_scope(global);
-                fprintf(stderr,"expr eval 1\n");
+                //fprintf(stderr,"expr eval 1\n");
                 ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, expr_node, NULL);
             }
 
@@ -395,9 +395,9 @@ token_type_t sem_expr_type_eval(bst_scope_ptr scope, ast_node_ptr expr_node) {
                 return sem_eval_builtin(scope, expr_node);
             }
 
-            printf("expr eval 6\n");
+            //printf("expr eval 6\n");
             left = sem_expr_type_eval(scope, expr_node->children[0]);
-            printf("expr eval 7\n");
+            //printf("expr eval 7\n");
             right = sem_expr_type_eval(scope, expr_node->children[1]);
 
             if (expr_node->node_type == NT_BOOL_EXPR) {
@@ -501,7 +501,7 @@ token_type_t sem_func_eval(bst_scope_ptr param_origin_scope, ast_node_ptr func_c
         while (func_scope->key != key) {
             if (++i >= func_scope->parent->n_of_children) {
                 bst_destroy_symbol_table(func_scope);
-                fprintf(stderr,"func eval1\n");
+                //fprintf(stderr,"func eval1\n");
                 ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, func_call_node, NULL);
             } else
                 func_scope = func_scope->parent->children[i];
@@ -533,7 +533,7 @@ token_type_t sem_func_eval(bst_scope_ptr param_origin_scope, ast_node_ptr func_c
                 while (param_node == NULL) {
                     if (param_origin_scope->parent == NULL) {
                         bst_destroy_symbol_table(func_scope);
-                        fprintf(stderr,"func eval2\n");
+                        //fprintf(stderr,"func eval2\n");
                         ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, func_call_node, NULL);
                     }
 
@@ -566,7 +566,7 @@ token_type_t sem_func_eval(bst_scope_ptr param_origin_scope, ast_node_ptr func_c
         while (func_scope->key != key) {
             if (++i >= func_scope->parent->n_of_children) {
                 bst_destroy_symbol_table(func_scope);
-                printf("new undef\n");
+                //printf("new undef\n");
                 ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, func_call_node, NULL);
             } else
                 func_scope = func_scope->parent->children[i];
@@ -607,14 +607,14 @@ token_type_t sem_func_eval(bst_scope_ptr param_origin_scope, ast_node_ptr func_c
     if (func_def_node->content.value_tree->value == TT_ERROR) {
         bst_value_node_ptr new_node = func_def_node->content.value_tree;
 
-        printf("sem malloc\n");
+        //printf("sem malloc\n");
         new_node->children = malloc(sizeof(bst_value_node_ptr) * ++new_node->n_of_children);
         if (new_node->children == NULL) {
             bst_destroy_symbol_table(func_scope);
             ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, func_call_node, NULL);
         }
 
-        printf("sem malloc\n");
+        //printf("sem malloc\n");
         new_node->children[new_node->n_of_children - 1] = malloc(sizeof(bst_value_node_t));
         if (new_node->children[new_node->n_of_children - 1] == NULL) {
             bst_destroy_symbol_table(func_scope);
@@ -684,7 +684,7 @@ token_type_t sem_func_eval(bst_scope_ptr param_origin_scope, ast_node_ptr func_c
             func_def_node->content.value_tree->parent->n_of_children--;
         }
 
-        printf("sem realloc\n");
+        //printf("sem realloc\n");
         func_def_node->content.value_tree->parent->children = realloc(
                 func_def_node->content.value_tree->parent->children,
                 sizeof(bst_value_node_ptr) * ++n_of_children);
@@ -705,7 +705,7 @@ token_type_t sem_func_eval(bst_scope_ptr param_origin_scope, ast_node_ptr func_c
 
 // evaluates correctness of parameters and returns return datatype of builtin function
 token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
-    printf("there\n");
+    //printf("there\n");
     unsigned int key;
     ast_node_ptr builtin_id = builtin_node->children[0];
     ast_node_ptr param_node = builtin_node->children[1];
@@ -745,7 +745,7 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
 
 
                         bst_destroy_symbol_table(scope);
-                        fprintf(stderr,"builtin eval1\n%s\n",param_node->children[0]->token.lexeme);
+                        //fprintf(stderr,"builtin eval1\n%s\n",param_node->children[0]->token.lexeme);
                         ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, builtin_node, NULL);
                     }
 
@@ -778,7 +778,7 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
             while (arg == NULL) {
                 if (scope->parent == NULL) {
                     bst_destroy_symbol_table(scope);
-                    printf("builtin eval2\n");
+                    //printf("builtin eval2\n");
                     ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, builtin_node, NULL);
                 }
 
@@ -815,7 +815,7 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
             while (arg == NULL) {
                 if (scope->parent == NULL) {
                     bst_destroy_symbol_table(scope);
-                    printf("builtin eval3\n");
+                    //printf("builtin eval3\n");
                     ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, builtin_node, NULL);
                 }
 
@@ -852,7 +852,7 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
                 while (arg == NULL) {
                     if (scope->parent == NULL) {
                         bst_destroy_symbol_table(scope);
-                        printf("builtin eval4\n");
+                        //printf("builtin eval4\n");
                         ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, builtin_node, NULL);
                     }
 
@@ -902,7 +902,7 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
                 while (arg == NULL) {
                     if (scope->parent == NULL) {
                         bst_destroy_symbol_table(scope);
-                        printf("builtin eval5\n");
+                        //printf("builtin eval5\n");
                         ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, builtin_node, NULL);
                     }
 
@@ -942,7 +942,7 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
                 while (arg == NULL) {
                     if (scope->parent == NULL) {
                         bst_destroy_symbol_table(scope);
-                        printf("builtin eval6\n");
+                        //printf("builtin eval6\n");
                         ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, builtin_node, NULL);
                     }
 
@@ -991,7 +991,7 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
             while (arg == NULL) {
                 if (scope->parent == NULL) {
                     bst_destroy_symbol_table(scope);
-                    printf("builtin eval7\n");
+                    //printf("builtin eval7\n");
                     ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, builtin_node, NULL);
                 }
 
