@@ -13,15 +13,16 @@
 #include "scanner.h"
 #include "error.h"
 
+#define MAX_STACK_SIZE 100
 typedef struct var_node {
     char *original_id;
     char *new_id; 
     struct var_node *next;
 } var_node;
-typedef struct scope_node {
-    var_node *vars;
-    struct scope_node *parent;
-} scope_node;
+typedef struct scope_stack {
+    var_node *arr[MAX_STACK_SIZE];
+    int top;
+} scope_stack;
 typedef enum 
     {
         VARIABLE,
@@ -86,10 +87,11 @@ char* format_string_for_ifjcode(const char* lexeme);
 char* format_float_for_ifjcode(const char* lexeme);
 
 //Shadow stack functions
+void stack_init();
 void stack_push(ast_node_ptr node);
 void stack_pop();
 char* stack_register_var(char *var_name, ast_node_ptr node);
-void stack_resolve_operand(char *buffer, char *var_name);
+void stack_resolve_id(char *buffer, char *var_name);
 
 //Scope, function calling
 void print_call(char* label);
