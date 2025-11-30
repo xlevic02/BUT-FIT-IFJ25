@@ -23,12 +23,13 @@ typedef enum {
 }builtin_type_t;
 
 bst_scope_ptr sem_start_analysis(ast_node_ptr root);
-void sem_func_declare(ast_node_ptr func_node, bst_scope_ptr parent_scope);
+void sem_func_declare(bst_scope_ptr global, ast_node_ptr func_decl_node);
 void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node);
 token_type_t sem_expr_type_eval(bst_scope_ptr scope, ast_node_ptr expr_node);
-ast_node_ptr sem_find_func(ast_node_ptr func_id);
+ast_node_ptr sem_find_func(ast_node_ptr func_id, ast_node_type_t looking_for);
 token_type_t sem_func_eval(bst_scope_ptr param_origin_scope, ast_node_ptr func_call_node, token_type_t setter_param);
 token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node);
+token_type_t check_getter(bst_scope_ptr scope, ast_node_ptr root, ast_node_ptr getter_call);
 
 
 #endif //BUT_FIT_IFJ25_SEM_ANALYSIS_H

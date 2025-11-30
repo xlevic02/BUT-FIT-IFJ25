@@ -10,7 +10,7 @@
 #define ERROR_LEXICAL 1                        // lexical error
 #define ERROR_SYNTAX 2                         // syntax error
 #define ERROR_SEM_UNDEF 3                      // semantic error: undefined function or variable
-#define ERROR_SEM_REDEF 4                      // semantic error: redefinition of function or variable; assigning value to unmodifiable variable
+#define ERROR_SEM_REDEF 4                      // semantic error: redefinition of function or variable
 #define ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE 5   // static semantic error: wrong number of parameters; wrong type of parameters in built-in function
 #define ERROR_SEM_STATIC_COMPATIBILITY 6       // static semantic error: compatibility error in arithmetic, string or relational expression
 #define ERROR_SEM_OTHER 10                     // other semantic error
@@ -58,6 +58,7 @@
 #define MSG_SEM_RETURN "Semantic error:\tmissing return expression or not an expression in return\n"
 #define MSG_SEM_EXPECTED_EXPR "Semantic error:\tinvalid token in expression\n"
 #define MSG_SEM_PARAM_NUM_OR_TYPE "Semantic error:\twrong number of parameters or wrong types of parameters in builtin function\n"
+#define MSG_SEM_BOOL_IN_VAR "Semantic error:\tboolean value assigned to var\n"
 
 // Internal error
 #define MSG_INT_MALLOC "Internal error:\tfailed to allocate memory\n"

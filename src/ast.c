@@ -1037,8 +1037,13 @@ void ast_getter(token_t* current_token, ast_node_ptr getter_node) {
 
     ast_node_ptr block_node = ast_create_node(*current_token, getter_node, NT_BLOCK);
 
+    if(ast_increase_children(getter_node, block_node)) {
+        free(block_node);
+        ast_error(ERROR_INTERNAL, MSG_INT_REALLOC, getter_node, current_token);
+    }
+
     *current_token = get_token();
-    ast_regular_node(getter_node, current_token);
+    ast_regular_node(block_node, current_token);
 
     if(current_token->type != TT_EOL)
         ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, getter_node, current_token);
@@ -1089,6 +1094,11 @@ void ast_setter(token_t* current_token, ast_node_ptr setter_node) {
         ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, setter_node, current_token);
 
     ast_regular_node(new_node, current_token);
+
+    if(ast_increase_children(setter_node, new_node)) {
+        free(new_node);
+        ast_error(ERROR_INTERNAL, MSG_INT_REALLOC, setter_node, current_token);
+    }
 
     if((*current_token = get_token()).type != TT_EOL)
         ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, setter_node, current_token);
