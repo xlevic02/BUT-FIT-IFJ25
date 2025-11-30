@@ -1,4 +1,4 @@
-// Implementace generatoru vysledneho kodu IFJcode25
+//Implementace generatoru vysledneho kodu IFJcode25
 //generator.c by Marek "xbalism00" Bališ on 11/11/25
 
 #include "generator.h"
@@ -14,7 +14,7 @@
 ////
 
 static int label_counter = 0;
-static scope_node *stack = NULL;
+static scope_stack stack;
 static int var_counter = 0;
 
 //I get the root node and symtable
@@ -24,6 +24,7 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
             {
                 return 0;
             }
+        stack_init();
         printf(".IFJcode25\n");
         print_defvar("GF@%%tmp_op1");
         print_defvar("GF@%%tmp_op2");
@@ -329,11 +330,14 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
                     }
                 char* var_name = node->token.lexeme;
+                //Create buffer operand
                 char operand[128];
                 memset(operand, 0, 128);
-                stack_resolve_operand(operand, var_name);
+                //Call resolve id to get the frame, id of var and var_name into operand
+                stack_resolve_id(operand, var_name);
                 if(operand[0] != '\0')
                     {
+                        //Push operand 
                         printf("PUSHS %s\n", operand); 
                     }
             }
@@ -348,10 +352,12 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 //Else generate the second child, create target and give it the first child, then pop the result of the second child into the first, and then push the first
                 generate_node(node->children[1], current_scope);
                 ast_node_ptr target = node->children[0];
-                char* var_name = target->token.lexeme;                              
+                char* var_name = target->token.lexeme;  
+                //Create buffer operand                      
                 char operand[128];
                 memset(operand, 0, 128);
-                stack_resolve_operand(operand, var_name);              
+                //Call resolve id to get the frame, id of var and var_name into operand
+                stack_resolve_id(operand, var_name);              
                 if(operand[0] != '\0')
                     {
                         print_pops(operand);
@@ -797,11 +803,16 @@ char* format_string_for_ifjcode(const char* lexeme)
 //Here I created a shadow stack to help me move through scopes
 //
 
-//Creates a new scope to push into the stack
+//Initializes shadow stack
+void stack_init()
+    {
+        stack.top = -1;
+    }
+
+//Creates a new frame for the stack
 void stack_push(ast_node_ptr node)
     {
-        scope_node *new_scope = malloc(sizeof(scope_node));
-        if (new_scope == NULL) 
+        if(stack.top >= MAX_STACK_SIZE - 1)
             {
                 if(node)
                     {
@@ -812,20 +823,20 @@ void stack_push(ast_node_ptr node)
                         exit(ERROR_GEN_INTERNAL);
                     }
             }
-        new_scope->vars = NULL;
-        new_scope->parent = stack;
-        stack = new_scope;
+        //I move the stack top and initializes an empty array
+        stack.top++;
+        stack.arr[stack.top] = NULL;
     }
 
-//Removes the scope from stack frees the memory
+//Removes the scope from stack
 void stack_pop() 
     {
-        if (stack) 
+        //If the top isn't empty
+        if(stack.top != -1)
             {
-                scope_node *top = stack;
-                stack = stack->parent;               
-                var_node *current = top->vars;
-                while (current != NULL) 
+                //I'll free all variables from the array
+                var_node *current = stack.arr[stack.top];
+                while(current != NULL)
                     {
                         var_node *next = current->next;
                         if(current->new_id)
@@ -835,68 +846,79 @@ void stack_pop()
                         free(current);
                         current = next;
                     }
-                free(top);
+                //Then move the top back
+                stack.arr[stack.top] = NULL;
+                stack.top--;
             }
     }
 
-//Adds variable to current scope and gives it a unique name
+//Adds variable to current scope and gives it a unique id
 char* stack_register_var(char *var_name, ast_node_ptr node) 
     {
-        if(var_name == NULL) return NULL;
-        if (stack == NULL) return NULL;
-
+        if(var_name == NULL) 
+            {
+                return NULL;
+            }
+        if (stack.top == -1) 
+            {
+                return NULL;
+            }
+        //I create new var_node vae and allocate memory for it
         var_node *var = malloc(sizeof(var_node));
         if (var == NULL)
             {
                 ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
             }
-        
+        //Then I place var_name into var->original_id
         var->original_id = var_name;
-        // Allocate space for unique name: name$123
+        //Then allocate space for new id
         var->new_id = malloc(strlen(var_name) + 32);
         if (var->new_id == NULL)
             {
                 free(var);
                 ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
             }
-        
+        //Then place into new_id var_name and var_counter
         sprintf(var->new_id, "%s$%d", var_name, var_counter++);
         
-        // Add to the list
-        var->next = stack->vars;
-        stack->vars = var;
+        //Then make the pointer next point at previous the stack top, then place var into stack top.
+        var->next = stack.arr[stack.top];
+        stack.arr[stack.top] = var;
         
         return var->new_id;
     }
 
 //Helper function for getting the correct operand
-void stack_resolve_operand(char *buffer, char *var_name) 
+void stack_resolve_id(char *buffer, char *var_name) 
     {
-        if(var_name == NULL)
+        if(buffer == NULL)
             {
-                if(buffer) 
-                    {
-                        buffer[0] = '\0';
-                    }
                 return;
             }
-        // Try to find variable in local scopes (Shadowing)
-        scope_node *iter = stack;
-        while (iter != NULL)
+        if(var_name == NULL)
             {
-                var_node *var = iter->vars;
-                while (var != NULL)
+                buffer[0] = '\0';
+                return;
+            }
+        //I go from the top of the stack to the bottom
+        for(int i = stack.top; i >= 0; i--)
+            {
+                //Create temporary var_node var and give it the current stack top.
+                var_node *var = stack.arr[i];
+                while(var != NULL)
                     {
-                        if (strcmp(var->original_id, var_name) == 0)
+                        //If the original_id is not null and the original_id is var_name
+                        if(var->original_id != NULL && strcmp(var->original_id, var_name) == 0)
                             {
+                                //Give it the LF@ prefix
                                 sprintf(buffer, "LF@%s", var->new_id);
                                 return;
                             }
-                        var = var->next;
+                        //Move on to the next
+                        var->next;
                     }
-                iter = iter->parent;
             }
-        // If not found locally, it must be global
+        //If I don't find it in the stack, I give it the GF@ prefix
         sprintf(buffer, "GF@%s", var_name);
     }
 
