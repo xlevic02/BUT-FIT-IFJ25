@@ -110,7 +110,7 @@ void print_boolean(BOOLEAN boolean);
 void print_conversion(CONVERSION conversion);
 
 //In-Out instructions
-void print_read(char* type, char* var);
+void print_read(char* var, char* type);
 void print_write(char* symbol);
 
 //String instructions
