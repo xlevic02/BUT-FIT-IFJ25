@@ -296,7 +296,7 @@ token_t get_token() {
                 if (isdigit(c)) {
                     buf_append(&buf, &len, &cap, c);
                 }
-                else if (c == 'x' || c == 'X') {
+                else if (c == 'x') { // 0X is invalid based on wren
                     // Hexadecimal literal
                     if (len == 1 && buf[0] == '0') {
                         buf_append(&buf, &len, &cap, c);
@@ -306,7 +306,7 @@ token_t get_token() {
                                 buf_append(&buf, &len, &cap, c);
                             } 
                             else if (len <= 2) {  
-                                // “0x” or “0X” with nothing after it → invalid
+                                // “0x” with nothing after it -> invalid
                                 free(buf);
                                 error(ERROR_LEXICAL, MSG_LEX_INVALID_NUMBER);
                             } else {
@@ -318,7 +318,7 @@ token_t get_token() {
                             }
                         }
                     } else {
-                        // 'x' or 'X' not preceded by '0', treat as end of integer
+                        // 'x' not preceded by '0', treat as end of integer
                         buf[len] = '\0';
                         if (c != EOF) ungetc(c, stdin);
                         token_t tok = make_token(TT_INT, buf);
@@ -575,4 +575,12 @@ token_t get_token() {
         }
     }
 }
-    
+
+void free_token(token_t *tok) {
+    if (tok == NULL) return;
+
+    if (tok->lexeme != NULL) {
+        free(tok->lexeme);
+        tok->lexeme = NULL;
+    }
+}
