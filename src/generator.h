@@ -74,6 +74,9 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable);
 //Checks the frame type
 bool global_check(const char* var_name);
 
+//Recursive function to search and define all global variables
+void generate_globals(bst_node_ptr symtable);
+
 //Funkction to get a frame for a variable from symtable
 const char* get_variable_frame(const char* var_name);
 
@@ -85,6 +88,9 @@ char* format_string_for_ifjcode(const char* lexeme);
 
 //Function to format float for IFJcode25
 char* format_float_for_ifjcode(const char* lexeme);
+
+//Function to check if the node is a regular function, getter or setter
+int get_function_type(char* func_name, int parameter_count);
 
 //Shadow stack functions
 void stack_init();

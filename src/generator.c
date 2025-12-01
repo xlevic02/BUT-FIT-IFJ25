@@ -11,6 +11,7 @@
 static int label_counter = 0;
 static scope_stack stack;
 static int var_counter = 0;
+static ast_node_ptr root_node = NULL; 
 
 //I get the root node and symtable
 int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
@@ -19,12 +20,19 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
             {
                 return 0;
             }
+        root_node = root;
         stack_init();
         printf(".IFJcode25\n");
+        //Here I define some helper global vars
         print_defvar("GF@tmp_op1");
         print_defvar("GF@tmp_op2");
         print_defvar("GF@tmp_res");
         print_defvar("GF@tmp_type");
+        //Generate all the global variables in symtable
+        if (symtable != NULL && symtable->tree != NULL)
+            {
+                generate_globals(symtable->tree);
+            }
         print_jump("$$main");
         //I assign roots number of children to int nu_of children
         int num_of_children = root->n_of_children;
@@ -39,7 +47,8 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
                         ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, root, NULL);
                     }
                 //Generate all the functions that are children of root
-                if(root->children[i]->node_type == NT_FUNC_DECL)
+                ast_node_type_t ntype = root->children[i]->node_type;
+                if(ntype == NT_FUNC_DECL || ntype == NT_GETTER || ntype == NT_SETTER)
                     {
                         if(root->children[i]->token.lexeme && strcmp(root->children[i]->token.lexeme, "main") != 0)
                             {
@@ -133,7 +142,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                                                         sprintf(helper_buff, "LF@%s", unique);
                                                         print_defvar(helper_buff);
                                                         char source_buff[32];
-                                                        sprintf(source_buff, "LF@%%%d", i + 1);
+                                                        sprintf(source_buff, "LF@par%d", i + 1);
                                                         print_move(helper_buff, source_buff);
                                                     }
                                             }
@@ -148,10 +157,64 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         stack_pop();
                         //fflush(stdout);
                     }
-                //The body of a funcion, if/else or while
-        else if(type == TT_LBRACE || ntype == NT_BLOCK)
+        else if(ntype == NT_GETTER)
+            {
+                if(node->token.lexeme == NULL)
                     {
-                        bool is_function_block = (node->parent && node->parent->node_type == NT_FUNC_DECL);
+                        ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
+                    }
+                if(node->n_of_children < 1)
+                    {
+                        ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                    }
+                char label_buffer[256];
+                sprintf(label_buffer, "getter$%s", node->token.lexeme);
+                print_label(label_buffer);
+                printf("PUSHFRAME\n");
+                printf("CREATEFRAME\n");
+                print_defvar("LF@retval");
+                print_move("LF@retval", "nil@nil");
+                stack_push(node);
+                generate_node(node->children[0], current_scope);
+                stack_pop();
+            }
+        else if(ntype == NT_SETTER)
+            {
+                if(node->token.lexeme == NULL)
+                    {
+                        ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
+                    }
+                if(node->n_of_children < 2)
+                    {
+                        ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                    }
+                char label_buffer[256];
+                sprintf(label_buffer, "setter$%s", node->token.lexeme);
+                print_label(label_buffer);
+                printf("PUSHFRAME\n");
+                printf("CREATEFRAME\n");
+                print_defvar("LF@retval");
+                print_move("LF@retval", "nil@nil");
+                stack_push(node);
+                if (node->children[0] && node->children[0]->n_of_children > 0) 
+                    {
+                        ast_node_ptr parameter_node = node->children[0]->children[0];
+                        char *param_name = parameter_node->token.lexeme;
+                        char *unique = stack_register_var(param_name, parameter_node);
+                        if(unique)
+                            {
+                                sprintf(helper_buff, "LF@%s", unique);
+                                print_defvar(helper_buff);
+                                print_move(helper_buff, "LF@par1");
+                            }
+                    }
+                generate_node(node->children[1], current_scope);
+                stack_pop();
+            }
+        //The body of a funcion, getter, setter, if/else or while
+        else if(type == TT_LBRACE || ntype == NT_BLOCK || ntype == NT_IF_BODY || ntype == NT_ELSE_BODY || ntype == NT_WHILE_BODY)
+                    {
+                        bool is_function_block = (node->parent && (node->parent->node_type == NT_FUNC_DECL || node->parent->node_type == NT_GETTER || node->parent->node_type == NT_SETTER));
                         //Go through the body
                         if(is_function_block == false)
                             {
@@ -175,8 +238,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         //We get a label for the end and for else
                         char label_end[64];
                         char label_else[64];
+                        char label_true[64];
                         get_unique_label(label_end, "if_end");
                         get_unique_label(label_else, "if_else");
+                        get_unique_label(label_true, "if_true");
                         if(node->n_of_children < 2 || node->children == NULL)
                             {
                                 ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
@@ -185,11 +250,16 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         generate_node(node->children[0], current_scope);
                         print_pops("GF@tmp_res");
                         print_pushs(VARIABLE, "tmp_res", "GF");
-                        print_pushs(LITERAL_BOOL, "false", NULL);
-                        print_jumpifeqs(label_else);
-                        print_pushs(VARIABLE, "tmp_res", "GF");
                         print_pushs(LITERAL_NULL, "nil", NULL);
                         print_jumpifeqs(label_else);
+                        print_pushs(VARIABLE, "tmp_res", "GF");
+                        print_types();
+                        print_pushs(LITERAL_STRING, "bool", NULL);
+                        print_jumpifneqs(label_true);
+                        print_pushs(VARIABLE, "tmp_res", "GF");
+                        print_pushs(LITERAL_BOOL, "false", NULL);
+                        print_jumpifeqs(label_else);
+                        print_label(label_true);
                         generate_node(node->children[1], current_scope);
                         print_jump(label_end);
                         print_label(label_else);
@@ -206,8 +276,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         //Get label for start and end
                         char w_start[64];
                         char w_end[64];
+                        char w_true[64];
                         get_unique_label(w_start, "while_start");
                         get_unique_label(w_end, "while_end");
+                        get_unique_label(w_true, "while_true");
                         if(node->n_of_children < 2 || node->children == NULL)
                             {
                                 ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
@@ -217,11 +289,16 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         generate_node(node->children[0], current_scope);
                         print_pops("GF@tmp_res");
                         print_pushs(VARIABLE, "tmp_res", "GF");
-                        print_pushs(LITERAL_BOOL, "false", NULL);
-                        print_jumpifeqs(w_end);
-                        print_pushs(VARIABLE, "tmp_res", "GF");
                         print_pushs(LITERAL_NULL, "nil", NULL);
                         print_jumpifeqs(w_end);
+                        print_pushs(VARIABLE, "tmp_res", "GF");
+                        print_types();
+                        print_pushs(LITERAL_STRING, "bool", NULL);
+                        print_jumpifneqs(w_true);
+                        print_pushs(VARIABLE, "tmp_res", "GF");
+                        print_pushs(LITERAL_BOOL, "false", NULL);
+                        print_jumpifeqs(w_end);
+                        print_label(w_true);
                         generate_node(node->children[1], current_scope);
                         print_jump(w_start);
                         print_label(w_end);
@@ -265,7 +342,6 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         if(global_check(var_name))
                             {
                                 sprintf(helper_buff, "GF@%s", var_name);
-                                print_defvar(helper_buff);
                                 print_move(helper_buff, "nil@nil");
                             }
                         else
@@ -310,11 +386,13 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 for(int i = 0; i < node->n_of_children; i++) 
                     {
                         generate_node(node->children[i], current_scope);
-                        sprintf(helper_buff, "TF@%%%d", i+1);
+                        sprintf(helper_buff, "TF@par%d", i+1);
                         print_defvar(helper_buff);
                         print_pops(helper_buff);
                     } 
-                print_call(func_name);
+                char label_buffer[256];
+                sprintf(label_buffer, "%s$%d", func_name, node->n_of_children);
+                print_call(label_buffer);
                 print_pushs(VARIABLE, "retval", "TF");
             }
         //If it's just identifier
@@ -331,9 +409,17 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 memset(operand, 0, 128);
                 //Call resolve id to get the frame, id of var and var_name into operand
                 stack_resolve_id(operand, var_name);
-                if(operand[0] != '\0')
+                //Check if it's global and check if it's a getter
+                if (strncmp(operand, "GF@", 3) == 0 && get_function_type(var_name, 0) == 2) 
                     {
-                        //Push operand 
+                        printf("CREATEFRAME\n");
+                        char getter_label[256];
+                        sprintf(getter_label, "getter$%s", var_name);
+                        print_call(getter_label);
+                        print_pushs(VARIABLE, "retval", "TF");
+                    } 
+                else if(operand[0] != '\0')
+                    {
                         printf("PUSHS %s\n", operand); 
                     }
             }
@@ -353,8 +439,20 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 char operand[128];
                 memset(operand, 0, 128);
                 //Call resolve id to get the frame, id of var and var_name into operand
-                stack_resolve_id(operand, var_name);              
-                if(operand[0] != '\0')
+                stack_resolve_id(operand, var_name);   
+                //Then check if operand is global and if it is check if it's a setter           
+                if (strncmp(operand, "GF@", 3) == 0 && get_function_type(var_name, 1) == 3) 
+                    {
+                        print_pops("GF@tmp_res");
+                        printf("CREATEFRAME\n");
+                        print_defvar("TF@par1");
+                        print_move("TF@par1", "GF@tmp_res"); 
+                        char label_buffer[256];
+                        sprintf(label_buffer, "setter$%s", var_name);
+                        print_call(label_buffer);
+                        print_pushs(VARIABLE, "retval", "TF");
+                    } 
+                else if(operand[0] != '\0')
                     {
                         print_pops(operand);
                         printf("PUSHS %s\n", operand); 
@@ -540,7 +638,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 if(strcmp(builtin_type, "write") == 0)
                     {
                         //WRITE
-                        for(int i = 0; i < node->n_of_children; i++)
+                        for(int i = 0; i < node->children[1]->n_of_children; i++)
                             {
                                 generate_node(node->children[1]->children[i], current_scope);
                                 print_pops("GF@tmp_op1");
@@ -735,6 +833,23 @@ bool global_check(const char* var_name)
             }
     }
 
+//Function to search symtable for global vars and define them at the start
+void generate_globals(bst_node_ptr symtable)
+    {
+        if (symtable == NULL)
+            {
+                return;
+            }
+        generate_globals(symtable->left);
+        char *name = symtable->content.name;
+        if (global_check(name))
+            {
+                printf("DEFVAR GF@%s\n", name);
+                printf("MOVE GF@%s nil@nil\n", name);
+            }
+        generate_globals(symtable->right);
+    }
+
 //Gets the ID
 const char* get_variable_frame(const char* var_name)
     {
@@ -794,6 +909,57 @@ char* format_string_for_ifjcode(const char* lexeme)
         *buf_ptr = '\0';
         return g_string_buffer;
     }
+
+//Helper function to help differentiate between a regular function, a getter and a setter
+int get_function_type(char* func_name, int parameter_count)
+    {
+        if(root_node == NULL)
+            {
+                // Ak nemame root, nemozeme uvolnit AST, posielame NULL
+                ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, NULL, NULL);
+            }
+        if(func_name == NULL)
+            {
+                ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, root_node, NULL);
+            }
+        for(int i = 0; i < root_node->n_of_children; i++)
+            {
+                ast_node_ptr child = root_node->children[i];
+                if(child->token.lexeme == NULL)
+                    {
+                        continue;
+                    }
+
+                if(strcmp(child->token.lexeme, func_name) == 0)
+                    {
+                        //Function
+                        if(child->node_type == NT_FUNC_DECL)
+                            {
+                                int child_params = 0;
+                                if(child->children[0]->node_type == NT_PARAM)
+                                    {
+                                        child_params = child->children[0]->n_of_children;
+                                    }
+                                if(child_params == parameter_count)
+                                    {
+                                        return 1;
+                                    }
+                            }
+                        //Getter
+                        else if(child->node_type == NT_GETTER && parameter_count == 0)
+                            {
+                                return 2;
+                            }
+                        //Setter
+                        else if(child->node_type == NT_SETTER && parameter_count == 1)
+                            {
+                                return 3;
+                            }
+                    }
+            }
+        return 0;
+    }
+
 
 //
 //Here I created a shadow stack to help me move through scopes
