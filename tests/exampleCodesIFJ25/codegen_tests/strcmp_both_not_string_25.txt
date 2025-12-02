@@ -1,0 +1,23 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var a
+    var b
+    var r
+
+    a = 1
+    b = 2
+    if (1 < 2) {
+        a = null
+        b = 1 < 2    // bool
+    } else {
+        a = 3
+        b = 4
+    }
+
+    r = Ifj.strcmp(a, b)   // nil, bool › 25
+
+    __d = Ifj.write(r)
+}
+}

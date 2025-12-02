@@ -1,0 +1,20 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var a
+    var b
+    var r
+
+    a = "hello"
+    b = "Hello"
+
+    r = Ifj.strcmp(a, b)
+
+    if (r == 0) {
+        __d = Ifj.write("equal\n")
+    } else {
+        __d = Ifj.write("not equal\n")
+    }
+}
+}

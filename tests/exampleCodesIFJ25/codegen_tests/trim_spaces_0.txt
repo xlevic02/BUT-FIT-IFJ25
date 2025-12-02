@@ -1,0 +1,64 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var t
+
+    s = "   ahoj svet   "
+    t = trim(s)
+
+    __d = Ifj.write("[")
+    __d = Ifj.write(t)
+    __d = Ifj.write("]")
+    __d = Ifj.write("\n")
+}
+
+static is_space(c) {
+    var code
+    code = Ifj.ord(c, 0)
+    if (code == 32) {
+        return 1
+    } else {
+        return 0
+    }
+}
+
+static trim(s) {
+    var len
+    var start
+    var end
+    var i
+    var tmp
+
+    len = Ifj.length(s)
+    start = 0
+    end = len
+
+    // nájdi prvý ne-space z¾ava
+    i = 0
+    while (i < len) {
+        tmp = Ifj.substring(s, i, i + 1)
+        if (is_space(tmp) == 1) {
+            i = i + 1
+        } else {
+            start = i
+            i = len      // ukonèí while
+        }
+    }
+
+    // nájdi prvý ne-space sprava
+    i = len
+    while (i > start) {
+        tmp = Ifj.substring(s, i - 1, i)
+        if (is_space(tmp) == 1) {
+            i = i - 1
+        } else {
+            end = i
+            i = start    // ukonèí while
+        }
+    }
+
+    return Ifj.substring(s, start, end)
+}
+}

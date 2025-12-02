@@ -1,0 +1,18 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var v
+
+    v = 3.5
+    if (1 < 2) {
+        v = null          // dynamicky zmenený typ na nil
+    } else {
+        v = 4.5
+    }
+
+    v = Ifj.floor(v)      // nil › 25
+
+    __d = Ifj.write(v)
+}
+}

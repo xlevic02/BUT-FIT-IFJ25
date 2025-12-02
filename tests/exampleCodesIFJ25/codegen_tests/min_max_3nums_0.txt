@@ -1,0 +1,56 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var a0
+    var a1
+    var a2
+    var mn
+    var mx
+
+    a0 = 5
+    a1 = 2
+    a2 = 9
+
+    mn = min3(a0, a1, a2)
+    mx = max3(a0, a1, a2)
+
+    __d = Ifj.write("min=")
+    __d = Ifj.write(mn)
+    __d = Ifj.write(" max=")
+    __d = Ifj.write(mx)
+    __d = Ifj.write("\n")
+}
+
+static min3(x, y, z) {
+    var m
+    m = x
+    if (y < m) {
+        m = y
+    } else {
+        // niè
+    }
+    if (z < m) {
+        m = z
+    } else {
+        // niè
+    }
+    return m
+}
+
+static max3(x, y, z) {
+    var m
+    m = x
+    if (y > m) {
+        m = y
+    } else {
+        // niè
+    }
+    if (z > m) {
+        m = z
+    } else {
+        // niè
+    }
+    return m
+}
+}

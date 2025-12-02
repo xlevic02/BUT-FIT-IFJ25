@@ -1,0 +1,17 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var idx
+    var r
+
+    s = "ABC"
+    idx = 1
+    idx = "1"         // string namiesto int
+
+    r = Ifj.ord(s, idx)   // druhý param string › 25
+
+    __d = Ifj.write(r)
+}
+}

@@ -1,0 +1,13 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var r
+
+    s = "hello"
+    r = (Ifj.substring(s, 0, 1)) == (Ifj.substring(s, 1, 2))
+
+    __d = Ifj.write(r)
+}
+}

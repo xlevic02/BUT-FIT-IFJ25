@@ -1,0 +1,19 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var idx
+    var r
+
+    s = "A"
+    idx = 0
+
+    s = null          // prvý param nil
+    idx = 1 < 2       // druhý param bool
+
+    r = Ifj.ord(s, idx)   // nil, bool › 25
+
+    __d = Ifj.write(r)
+}
+}

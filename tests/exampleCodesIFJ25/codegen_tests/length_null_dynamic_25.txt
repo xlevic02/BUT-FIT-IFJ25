@@ -1,0 +1,15 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var l
+
+    s = "abc"
+    s = null           // za behu zmenený typ
+
+    l = Ifj.length(s)  // nil › 25
+
+    __d = Ifj.write(l)
+}
+}

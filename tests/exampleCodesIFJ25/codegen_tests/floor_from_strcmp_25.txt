@@ -1,0 +1,19 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var a
+    var b
+    var x
+
+    a = "a"
+    b = "b"
+    x = Ifj.strcmp(a, b)   // int
+
+    x = "later_string"     // zmena typu na string
+
+    x = Ifj.floor(x)       // string › 25
+
+    __d = Ifj.write(x)
+}
+}

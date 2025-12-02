@@ -1,0 +1,22 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var x
+    var y
+    var r
+
+    x = "abc"
+    y = "def"
+
+    if (1 < 2) {
+        y = 3.14      // float
+    } else {
+        y = "ghi"
+    }
+
+    r = Ifj.strcmp(x, y)   // string, float › 25
+
+    __d = Ifj.write(r)
+}
+}

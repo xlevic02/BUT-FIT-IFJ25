@@ -1,0 +1,15 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var x
+
+    x = null
+
+    if (x <= 10) {    // nil <= int › 26
+        __d = Ifj.write(1)
+    } else {
+        __d = Ifj.write(0)
+    }
+}
+}

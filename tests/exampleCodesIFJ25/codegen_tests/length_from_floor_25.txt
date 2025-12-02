@@ -1,0 +1,17 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var x
+    var s
+
+    x = 3.5
+    x = Ifj.floor(x)   // int
+
+    s = x              // prepis do premennej (typ int)
+
+    s = Ifj.length(s)  // int › 25
+
+    __d = Ifj.write(s)
+}
+}

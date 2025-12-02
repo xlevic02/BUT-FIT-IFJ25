@@ -1,0 +1,13 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var a
+    var b
+
+    a = 2
+    b = a < 5
+
+    b = b + 1   // boolean + int › runtime 26
+}
+}

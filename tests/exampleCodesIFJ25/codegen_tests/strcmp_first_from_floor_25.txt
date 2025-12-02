@@ -1,0 +1,20 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var t
+    var x
+    var r
+
+    s = "abc"
+    t = "def"
+
+    x = 3.5
+    x = Ifj.floor(x)     // int
+
+    r = Ifj.strcmp(x, t) // int, string › 25
+
+    __d = Ifj.write(r)
+}
+}

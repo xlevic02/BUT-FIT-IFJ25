@@ -1,0 +1,17 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var a
+    var b
+
+    a = "a"
+    b = "b"
+
+    if (a <= b) {        // string <= string › 26 (ak povo¾uješ len EQ pre reazce)
+        __d = Ifj.write(1)
+    } else {
+        __d = Ifj.write(0)
+    }
+}
+}

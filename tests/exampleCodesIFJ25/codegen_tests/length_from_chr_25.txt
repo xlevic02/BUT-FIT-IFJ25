@@ -1,0 +1,15 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var c
+    var x
+
+    c = Ifj.chr(65)   // "A"
+    x = 10            // prepis na int
+
+    x = Ifj.length(x) // int › 25
+
+    __d = Ifj.write(x)
+}
+}

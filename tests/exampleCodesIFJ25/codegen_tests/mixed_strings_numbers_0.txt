@@ -1,0 +1,28 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var name
+    var times
+    var line
+    var num
+    var numStr
+    var msg
+
+    name = "IFJ"
+    times = 3
+
+    // "IFJ" * 3 = "IFJIFJIFJ"
+    line = name * times
+
+    num = 42
+    numStr = Ifj.str(num)      // konverzia èísla na string
+
+    msg = "Answer=" + numStr
+
+    __d = Ifj.write(line)
+    __d = Ifj.write("\n")
+    __d = Ifj.write(msg)
+    __d = Ifj.write("\n")
+}
+}

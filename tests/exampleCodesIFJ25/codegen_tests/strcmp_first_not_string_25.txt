@@ -1,0 +1,18 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var x
+    var y
+    var r
+
+    x = "abc"
+    y = "def"
+
+    x = 10            // prvý param int
+
+    r = Ifj.strcmp(x, y)   // int, string › 25
+
+    __d = Ifj.write(r)
+}
+}

@@ -1,0 +1,15 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var pad
+    var n
+    var r
+
+    pad = "0"
+    n = 3.5
+    r = pad * n      // string * float › 26 (u teba povolené len string * int)
+
+    __d = Ifj.write(r)
+}
+}

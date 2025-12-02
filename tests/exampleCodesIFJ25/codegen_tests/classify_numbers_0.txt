@@ -1,0 +1,51 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var x
+    var y
+    var z
+    var sx
+    var sy
+    var sz
+
+    x = 0 - 5     // záporné cez výraz
+    y = 0
+    z = 10
+
+    sx = classify(x)
+    sy = classify(y)
+    sz = classify(z)
+
+    __d = Ifj.write("x=")
+    __d = Ifj.write(x)
+    __d = Ifj.write(" -> ")
+    __d = Ifj.write(sx)
+    __d = Ifj.write("\n")
+
+    __d = Ifj.write("y=")
+    __d = Ifj.write(y)
+    __d = Ifj.write(" -> ")
+    __d = Ifj.write(sy)
+    __d = Ifj.write("\n")
+
+    __d = Ifj.write("z=")
+    __d = Ifj.write(z)
+    __d = Ifj.write(" -> ")
+    __d = Ifj.write(sz)
+    __d = Ifj.write("\n")
+}
+
+// vráti textový popis èísla
+static classify(n) {
+    if (n < 0) {
+        return "negative"
+    } else {
+        if (n == 0) {
+            return "zero"
+        } else {
+            return "positive"
+        }
+    }
+}
+}

@@ -1,0 +1,15 @@
+import "ifj25" for Ifj
+class Program {
+
+static flag {
+    return 1
+}
+
+static main() {
+    if (flag == 1) {
+        __d = Ifj.write("ok")
+    } else {
+        __d = Ifj.write("no")
+    }
+}
+}

@@ -1,0 +1,23 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var x
+
+    x = 15
+
+    if (x > 0) {
+        if (x < 10) {
+            __d = Ifj.write("0-9\n")
+        } else {
+            if (x < 20) {
+                __d = Ifj.write("10-19\n")
+            } else {
+                __d = Ifj.write("20+\n")
+            }
+        }
+    } else {
+        __d = Ifj.write("non_positive\n")
+    }
+}
+}

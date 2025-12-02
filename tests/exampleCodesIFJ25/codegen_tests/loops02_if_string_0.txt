@@ -1,0 +1,15 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+
+    s = "ahoj"
+
+    if (s == "ahoj") {
+        __d = Ifj.write("match\n")
+    } else {
+        __d = Ifj.write("no_match\n")
+    }
+}
+}

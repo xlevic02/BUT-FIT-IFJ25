@@ -1,0 +1,13 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var r
+    r = is_zero(0)
+    __d = Ifj.write(r)
+}
+
+static is_zero(n) {
+    return n == 0
+}
+}

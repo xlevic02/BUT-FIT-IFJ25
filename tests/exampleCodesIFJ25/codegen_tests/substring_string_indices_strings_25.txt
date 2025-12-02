@@ -1,0 +1,21 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var i
+    var j
+    var r
+
+    s = "abcd"
+    i = 0
+    j = 2
+
+    i = "0"
+    j = "2"
+
+    r = Ifj.substring(s, i, j)   // string, string › 25
+
+    __d = Ifj.write(r)
+}
+}

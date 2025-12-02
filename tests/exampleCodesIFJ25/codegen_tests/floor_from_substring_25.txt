@@ -1,0 +1,17 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var t
+    var x
+
+    s = "123"
+    t = Ifj.substring(s, 0, 1)  // "1" (string)
+    x = t
+
+    x = Ifj.floor(x)            // string › 25
+
+    __d = Ifj.write(x)
+}
+}

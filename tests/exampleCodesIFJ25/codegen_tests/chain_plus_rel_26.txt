@@ -1,0 +1,15 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var a
+    var s
+    var r
+
+    a = 1
+    s = "x"
+    r = (a + s) < 10    // a + s › 26
+
+    __d = Ifj.write(r)
+}
+}

@@ -1,0 +1,17 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var a
+    var c
+
+    a = 3
+    c = a < 5
+
+    if (c) {
+        __d = Ifj.write("OK\n")
+    } else {
+        __d = Ifj.write("NO\n")
+    }
+}
+}

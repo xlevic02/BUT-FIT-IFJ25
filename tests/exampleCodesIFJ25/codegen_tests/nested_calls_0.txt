@@ -1,0 +1,33 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var a
+    var b
+    var c
+
+    a = 0-3
+    b = 10
+
+    // c = max(abs(a), b - 5) = max(3, 5) = 5
+    c = max(abs(a), b - 5)
+    Ifj.write("Result: ")
+    Ifj.write(c)
+}
+
+static abs(x) {
+    if (x < 0) {
+        return 0 - x
+    } else {
+        return x
+    }
+}
+
+static max(x, y) {
+    if (x > y) {
+        return x
+    } else {
+        return y
+    }
+}
+}

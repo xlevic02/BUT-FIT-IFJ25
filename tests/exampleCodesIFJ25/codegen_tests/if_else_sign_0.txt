@@ -1,0 +1,18 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var x
+    x = 0 - 3
+
+    if (x > 0) {
+        __d = Ifj.write("positive\n")
+    } else {
+        if (x < 0) {
+            __d = Ifj.write("negative\n")
+        } else {
+            __d = Ifj.write("zero\n")
+        }
+    }
+}
+}
