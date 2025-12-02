@@ -349,6 +349,8 @@ ast_node_ptr ast_ifj_function_call_node(token_t *current_token, ast_node_ptr cur
 
     bool comma_present = true;
     //Argument handling
+    ast_node_ptr parameter_node = ast_create_node(*current_token, inherent_function_node, NT_PARAM);
+    ast_increase_children(inherent_function_node, parameter_node);
     while(current_token->type != TT_RPAREN){
 
         if (current_token->type == TT_COMMA){
@@ -368,7 +370,7 @@ ast_node_ptr ast_ifj_function_call_node(token_t *current_token, ast_node_ptr cur
             node_type = NT_ID;
         }
         
-        ast_increase_children(inherent_function_node, ast_create_node(*current_token, current_node, node_type));
+        ast_increase_children(parameter_node, ast_create_node(*current_token, current_node, node_type));
         *current_token = get_token();
         comma_present = false;
     }
