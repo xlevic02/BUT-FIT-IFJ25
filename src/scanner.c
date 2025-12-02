@@ -367,8 +367,11 @@ token_t get_token() {
                         if (buf[len - 1] == 'e' || buf[len - 1] == 'E') {
                             buf_append(&buf, &len, &cap, c);
                         } else {
+                            buf[len] = '\0';
+                            if (c != EOF) ungetc(c, stdin);
+                            token_t tok = make_token(TT_FLOAT, buf);
                             free(buf);
-                            error(ERROR_LEXICAL, MSG_LEX_INVALID_NUMBER);
+                            return tok;
                         }    
                 } else if (buf[len - 1] == 'e' || buf[len - 1] == 'E' || buf[len - 1] == '+' || buf[len - 1] == '-') {
                     // no digits after e/+/- → invalid
