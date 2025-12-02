@@ -378,7 +378,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
 
                 //Handle while body
-                ast_regular_node(new_node, current_token);
+                ast_regular_node(tmp_node, current_token);
 
                 *current_token = get_token();
                 break;
