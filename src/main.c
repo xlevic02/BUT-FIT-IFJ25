@@ -25,9 +25,10 @@ void print_ast_branch(const ast_node_ptr node, const char *prefix, int is_last) 
 
     // Print token as optional metadata
     if (node->token.lexeme && node->token.lexeme[0] != '\0') {
-        printf("  token('%s', %s)",
+        printf("  token('%s', %s, %s)",
                node->token.lexeme,
-               token_type_to_string(node->token.type)
+               token_type_to_string(node->token.type),
+               ast_node_type_to_string(node->node_type)
         );
     }
 
@@ -82,10 +83,10 @@ int main(void) {
 
     //return 0;
 }
-/*
+
 void ast_print_token(token_t token){
     printf("Token type: %s, lexeme: %s\n", token_type_to_string(token.type), token.lexeme);
-}*/
+}
 
 const char* ast_node_type_to_string(ast_node_type_t type) {
     switch (type) {
@@ -113,7 +114,6 @@ const char* ast_node_type_to_string(ast_node_type_t type) {
     }
 }
 
-/*
 const char* token_type_to_string(token_type_t type) {
     switch (type) {
         case TT_EOF: return "TT_EOF";
@@ -162,4 +162,4 @@ const char* token_type_to_string(token_type_t type) {
 
         default: return "UNKNOWN_TOKEN";
     }
-}*/
+}
