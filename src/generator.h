@@ -10,10 +10,19 @@
 #include <stdbool.h>
 #include "ast.h"
 #include "symtable.h"
+#include "scanner.h"
+#include "error.h"
 
-static int label_counter = 0;
-static char label_stack[100][32];
-static int label_stack_top = -1;
+#define MAX_STACK_SIZE 100
+typedef struct var_node {
+    char *original_id;
+    char *new_id; 
+    struct var_node *next;
+} var_node;
+typedef struct scope_stack {
+    var_node *arr[MAX_STACK_SIZE];
+    int top;
+} scope_stack;
 typedef enum 
     {
         VARIABLE,
@@ -62,11 +71,14 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope);
 //Main function for generating code
 int generate_code(ast_node_ptr root, bst_scope_ptr symtable);
 
-//Function for getting the name of a variable
-char* get_variable_id(bst_scope_ptr scope, char* lexeme);
+//Checks the frame type
+bool global_check(const char* var_name);
+
+//Recursive function to search and define all global variables
+void generate_globals(bst_node_ptr symtable);
 
 //Funkction to get a frame for a variable from symtable
-char* get_variable_frame(bst_scope_ptr scope, char* var_name);
+const char* get_variable_frame(const char* var_name);
 
 //Creates a unique label for if, else, while
 void get_unique_label(char* buffer, const char* prefix);
@@ -77,9 +89,15 @@ char* format_string_for_ifjcode(const char* lexeme);
 //Function to format float for IFJcode25
 char* format_float_for_ifjcode(const char* lexeme);
 
-//Placeholder functions since our semantic analysis is not done yet
-token_type_t generator_get_id_type(char* lexeme, bst_scope_ptr* current_scope);
-token_type_t generator_get_type(ast_node_ptr node, bst_scope_ptr* current_scope);
+//Function to check if the node is a regular function, getter or setter
+int get_function_type(char* func_name, int parameter_count);
+
+//Shadow stack functions
+void stack_init();
+void stack_push(ast_node_ptr node);
+void stack_pop();
+char* stack_register_var(char *var_name, ast_node_ptr node);
+void stack_resolve_id(char *buffer, char *var_name);
 
 //Scope, function calling
 void print_call(char* label);
@@ -98,7 +116,7 @@ void print_boolean(BOOLEAN boolean);
 void print_conversion(CONVERSION conversion);
 
 //In-Out instructions
-void print_read(char* type, char* var);
+void print_read(char* var, char* type);
 void print_write(char* symbol);
 
 //String instructions

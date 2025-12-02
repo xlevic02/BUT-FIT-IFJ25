@@ -10,7 +10,7 @@
 #define ERROR_LEXICAL 1                        // lexical error
 #define ERROR_SYNTAX 2                         // syntax error
 #define ERROR_SEM_UNDEF 3                      // semantic error: undefined function or variable
-#define ERROR_SEM_REDEF 4                      // semantic error: redefinition of function or variable; assigning value to unmodifiable variable
+#define ERROR_SEM_REDEF 4                      // semantic error: redefinition of function or variable
 #define ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE 5   // static semantic error: wrong number of parameters; wrong type of parameters in built-in function
 #define ERROR_SEM_STATIC_COMPATIBILITY 6       // static semantic error: compatibility error in arithmetic, string or relational expression
 #define ERROR_SEM_OTHER 10                     // other semantic error
@@ -52,14 +52,19 @@
 #define MSG_SYN_MISSING_MAIN "Syntax error:\tmissing main\n"
 #define MSG_SYN_MISSING_CLASS "Syntax error:\tmissing class\n"
 #define MSG_SYN_PROGRAM_DECLARATION "Syntax error:\tincorrect Program declaration\n"
+#define MSG_SYM_NOT_BUILTIN "Syntax error:\tunknown builtin function\n"
 
 // Semantic error
-#define MSG_SEN_UNDEFINED_VAR "Semantic error:\tuse of undefined variable/function\n"
-#define MSG_SEN_REDEFINING "Semantic error:\tredefining variable/function\n"
-#define MSG_SEN_INCOMPATIBLE "Semantic error:\twrong type of variable input into a function\n"
+#define MSG_SEM_UNDEF "Semantic error:\tuse of undefined variable/function\n"
+#define MSG_SEM_REDEF "Semantic error:\tredefining variable/function\n"
+#define MSG_SEM_INCOMPATIBLE "Semantic error:\tincompatible data types in expression\n"
+#define MSG_SEM_RETURN "Semantic error:\tmissing return expression or not an expression in return\n"
+#define MSG_SEM_EXPECTED_EXPR "Semantic error:\tinvalid token in expression\n"
+#define MSG_SEM_PARAM_NUM_OR_TYPE "Semantic error:\twrong number of parameters or wrong types of parameters in builtin function\n"
+#define MSG_SEM_BOOL_IN_VAR "Semantic error:\tboolean value assigned to var\n"
 
 // Internal error
-#define MSG_INT_MALLOC "Internal error:\tfailed to allocate memory for a new token\n"
+#define MSG_INT_MALLOC "Internal error:\tfailed to allocate memory\n"
 #define MSG_INT_DSTR_APPEND "Internal error:\tfailed to append buffer dynamic string\n"
 #define MSG_INT_DSTR_RESET "Internal error:\tfailed to reallocate memory for buffer dynamic string\n"
 #define MSG_INT_DSTR_INIT "Internal error:\tfailed to initialize buffer dynamic string\n"
