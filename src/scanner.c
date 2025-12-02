@@ -352,6 +352,10 @@ token_t get_token() {
                     state = STATE_FLOAT_EXP;
                 } else {
                     buf[len] = '\0';
+                    if (buf[0] == '0' && !(buf[1] == '.' || buf[1] == 'e' ||buf[1] == 'E' )) {
+                        free(buf);
+                        error(ERROR_LEXICAL, MSG_LEX_INVALID_NUMBER);
+                    }
                     if (c != EOF) ungetc(c, stdin);
                     token_t tok = make_token(TT_FLOAT, buf);
                     free(buf);
@@ -368,6 +372,10 @@ token_t get_token() {
                             buf_append(&buf, &len, &cap, c);
                         } else {
                             buf[len] = '\0';
+                            if (buf[0] == '0' && !(buf[1] == '.' || buf[1] == 'e' ||buf[1] == 'E' )) {
+                                free(buf);
+                                error(ERROR_LEXICAL, MSG_LEX_INVALID_NUMBER);
+                            }
                             if (c != EOF) ungetc(c, stdin);
                             token_t tok = make_token(TT_FLOAT, buf);
                             free(buf);
@@ -379,6 +387,10 @@ token_t get_token() {
                     error(ERROR_LEXICAL, MSG_LEX_INVALID_NUMBER);
                 } else {
                     buf[len] = '\0';
+                    if (buf[0] == '0' && !(buf[1] == '.' || buf[1] == 'e' ||buf[1] == 'E' )) {
+                        free(buf);
+                        error(ERROR_LEXICAL, MSG_LEX_INVALID_NUMBER);
+                    }
                     if (c != EOF) ungetc(c, stdin);
                     token_t tok = make_token(TT_FLOAT, buf);
                     free(buf);
