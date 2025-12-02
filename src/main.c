@@ -25,9 +25,10 @@ void print_ast_branch(const ast_node_ptr node, const char *prefix, int is_last) 
 
     // Print token as optional metadata
     if (node->token.lexeme && node->token.lexeme[0] != '\0') {
-        printf("  token('%s', %s)",
+        printf("  token('%s', %s, %s)",
                node->token.lexeme,
-               token_type_to_string(node->token.type)
+               token_type_to_string(node->token.type), 
+               ast_node_type_to_string(node->node_type)
         );
     }
 
