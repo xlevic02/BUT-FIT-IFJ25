@@ -82,10 +82,10 @@ int main(void) {
 
     //return 0;
 }
-
+/*
 void ast_print_token(token_t token){
     printf("Token type: %s, lexeme: %s\n", token_type_to_string(token.type), token.lexeme);
-}
+}*/
 
 const char* ast_node_type_to_string(ast_node_type_t type) {
     switch (type) {
@@ -113,7 +113,7 @@ const char* ast_node_type_to_string(ast_node_type_t type) {
     }
 }
 
-
+/*
 const char* token_type_to_string(token_type_t type) {
     switch (type) {
         case TT_EOF: return "TT_EOF";
@@ -162,4 +162,4 @@ const char* token_type_to_string(token_type_t type) {
 
         default: return "UNKNOWN_TOKEN";
     }
-}
+}*/
