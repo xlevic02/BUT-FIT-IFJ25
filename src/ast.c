@@ -68,7 +68,6 @@ ast_node_ptr create_ast(){
         }
 
         ast_node_ptr new_node = ast_create_node(*current_token, root, NT_FUNC_DECL);
-        new_node->token.type = TT_KEYWORD_STATIC;
         ast_increase_children(root, new_node);
 
         bool is_setter = false;
@@ -180,7 +179,6 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 if (new_node->token.type != TT_IDENTIFIER){
                     ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
-                new_node->token.type = TT_KEYWORD_VAR;
                 ast_increase_children(current_node, new_node);
 
                 *current_token = get_token();
@@ -325,6 +323,8 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
 
 ast_node_ptr ast_ifj_function_call_node(token_t *current_token, ast_node_ptr current_node){
 
+    ast_node_ptr inherent_function_node = ast_create_node(*current_token, current_node, NT_BUILTIN);
+
     if ((*current_token = get_token()).type != TT_DOT){
         ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
     }  
@@ -336,21 +336,23 @@ ast_node_ptr ast_ifj_function_call_node(token_t *current_token, ast_node_ptr cur
         ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
     }
 
-    ast_node_ptr inherent_function_node = ast_create_node(*current_token, current_node, NT_BUILTIN);
-    inherent_function_node->token.type = TT_KEYWORD_IFJ;
+
+    ast_node_ptr id_node = ast_create_node(*current_token, inherent_function_node, NT_ID);
+    ast_increase_children(inherent_function_node, id_node);
 
 
     *current_token = get_token();
     if (current_token->type != TT_LPAREN){
         ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
     }
+
+    ast_node_ptr parameter_node = ast_create_node(*current_token, inherent_function_node, NT_PARAM);
+    ast_increase_children(inherent_function_node, parameter_node);
     *current_token = get_token();
 
 
     bool comma_present = true;
     //Argument handling
-    ast_node_ptr parameter_node = ast_create_node(*current_token, inherent_function_node, NT_PARAM);
-    ast_increase_children(inherent_function_node, parameter_node);
     while(current_token->type != TT_RPAREN){
 
         if (current_token->type == TT_COMMA){
@@ -460,7 +462,11 @@ ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node, ast
         case TT_KEYWORD_NUM:
         case TT_KEYWORD_Null:
         case TT_NULL:
-            node = ast_create_node(*current_token, parent_node, NT_LITERAL);
+            ast_node_type_t node_type = NT_LITERAL;
+            if (current_token->type == TT_KEYWORD_NUM){
+                node_type = NT_DATATYPE;
+            }
+            node = ast_create_node(*current_token, parent_node, node_type);
             *upper_pointer = node;
             *current_token = get_token(); // consume
             break;
@@ -470,7 +476,7 @@ ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node, ast
             *upper_pointer = node;
             *current_token = get_token(); // consume
             if (current_token->type == TT_LPAREN) {
-                ast_parameter_node(current_token, node);
+                ast_increase_children(node, ast_parameter_node(current_token, node));
                 *current_token = get_token(); // consume ')'
             }
             break;
@@ -515,9 +521,14 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
             if(!comma_present){
                 ast_error(ERROR_SYNTAX, "Syntax error:\tmissing comma in parameters\n", parent_node, current_token);
             }
-
+            ast_node_type_t node_type = NT_DATATYPE;
+            if (current_token->type == TT_IDENTIFIER){
+                node_type = NT_ID;
+            }else if(current_token->type == TT_KEYWORD_Null){
+                node_type = NT_LITERAL;
+            }
             comma_present = false;
-            ast_node_ptr subparameter_node = ast_create_node(*current_token, parameter_node, NT_DATATYPE);
+            ast_node_ptr subparameter_node = ast_create_node(*current_token, parameter_node, node_type);
             ast_increase_children(parameter_node, subparameter_node);
             break;
 
