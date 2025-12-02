@@ -8,6 +8,7 @@ CFLAGS := -Wall -Wextra -std=c11 -I./src
 SRC_DIR := src
 BUILD_DIR := build
 INPUT_DIR := inputs
+OUTPUT_DIR := output
 
 # Files
 SOURCES := $(wildcard $(SRC_DIR)/*.c)
@@ -34,7 +35,8 @@ run: $(TARGET)
 	@if [ -z "$(FILE)" ]; then \
 		echo "Usage: make run FILE=<filename.wren>"; \
 	else \
-		$(TARGET) < $(INPUT_DIR)/$(FILE); \
+		rm -f $(OUTPUT_DIR)/$(FILE:.wren=.out); \
+		$(TARGET) < $(INPUT_DIR)/$(FILE) > $(OUTPUT_DIR)/$(FILE:.wren=.out); \
 	fi
 
 # Clean build files
