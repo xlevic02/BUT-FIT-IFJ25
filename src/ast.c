@@ -127,7 +127,7 @@ ast_node_ptr create_ast(){
 
                 ast_regular_node(block_node, current_token);
 
-                if((*current_token = get_token()).type != TT_EOL)
+                if(current_token->type != TT_EOL)
                     ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, root, current_token);
 
                 break;
@@ -141,7 +141,9 @@ ast_node_ptr create_ast(){
         }//switch
     } while (((*current_token = get_token()).type != TT_RBRACE));
 
-    if((*current_token = get_token()).type != TT_EOF)
+    *current_token = get_token();
+    ast_skip_EOL(current_token);
+    if(current_token->type != TT_EOF)
         ast_error(ERROR_SYNTAX, "Syntax error:\tout of program frame\n", root, current_token);
 
 
