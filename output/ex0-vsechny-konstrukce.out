@@ -7,7 +7,9 @@ DEFVAR GF@__a
 MOVE GF@__a nil@nil
 DEFVAR GF@__d
 MOVE GF@__d nil@nil
-JUMP $$main
+CREATEFRAME
+CALL $$main
+EXIT int@0
 LABEL getAnswer$0
 PUSHFRAME
 CREATEFRAME
@@ -15,6 +17,8 @@ DEFVAR LF@retval
 MOVE LF@retval nil@nil
 PUSHS int@42
 POPS LF@retval
+POPFRAME
+RETURN
 POPFRAME
 RETURN
 LABEL getAnswer$1
@@ -98,7 +102,6 @@ POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 JUMP if_end$6
 LABEL if_else$7
 LABEL if_end$6
@@ -106,8 +109,8 @@ PUSHS LF@arg$0
 PUSHS int@42
 MULS
 POPS LF@arg$0
-PUSHS LF@arg$0
-PUSHS GF@ansStr
+DEFVAR LF@ansStr$1
+MOVE LF@ansStr$1 nil@nil
 PUSHS LF@arg$0
 POPS GF@tmp_op1
 PUSHS GF@tmp_op1
@@ -125,10 +128,9 @@ LABEL str_is_float$14
 PUSHS GF@tmp_op1
 FLOAT2STRS
 LABEL str_end$15
-POPS GF@ansStr
-PUSHS GF@ansStr
+POPS LF@ansStr$1
 PUSHS string@Odpoved\032je\032
-PUSHS GF@ansStr
+PUSHS LF@ansStr$1
 POPS GF@tmp_op2
 POPS GF@tmp_op1
 PUSHS GF@tmp_op1
@@ -155,12 +157,13 @@ POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 PUSHS nil@nil
 POPS LF@retval
 POPFRAME
 RETURN
 LABEL if_end$0
+POPFRAME
+RETURN
 LABEL getter$unicorn
 PUSHFRAME
 CREATEFRAME
@@ -207,34 +210,34 @@ POPS LF@retval
 POPFRAME
 RETURN
 LABEL if_end$19
+POPFRAME
+RETURN
 LABEL setter$unicorn
 PUSHFRAME
 CREATEFRAME
 DEFVAR LF@retval
 MOVE LF@retval nil@nil
-DEFVAR LF@val$1
-MOVE LF@val$1 LF@par1
+DEFVAR LF@val$2
+MOVE LF@val$2 LF@par1
 PUSHS string@Jsem\032jednorozci\032setter,\032ziskal\032jsem\032
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
-PUSHS LF@val$1
+PUSHS LF@val$2
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 PUSHS string@\010
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
-PUSHS LF@val$1
+PUSHS LF@val$2
 POPS GF@__a
-PUSHS GF@__a
+POPFRAME
+RETURN
 LABEL unicorn$0
 PUSHFRAME
 CREATEFRAME
@@ -245,10 +248,13 @@ POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
+POPFRAME
+RETURN
 LABEL $$main
 CREATEFRAME
 PUSHFRAME
+DEFVAR LF@retval
+MOVE LF@retval nil@nil
 CREATEFRAME
 CALL getter$unicorn
 PUSHS TF@retval
@@ -256,13 +262,11 @@ POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 PUSHS string@\010
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 PUSHS int@5
 POPS GF@tmp_res
 CREATEFRAME
@@ -270,62 +274,53 @@ DEFVAR TF@par1
 MOVE TF@par1 GF@tmp_res
 CALL setter$unicorn
 PUSHS TF@retval
-PUSHS GF@myValue
+DEFVAR LF@myValue$3
+MOVE LF@myValue$3 nil@nil
 CREATEFRAME
 CALL getter$unicorn
 PUSHS TF@retval
-POPS GF@myValue
-PUSHS GF@myValue
-PUSHS GF@myValue
+POPS LF@myValue$3
+PUSHS LF@myValue$3
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 PUSHS string@\010
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 CREATEFRAME
-DEFVAR TF@par1
-POPS TF@par1
-CALL unicorn$1
+CALL unicorn$0
 PUSHS TF@retval
-POPS GF@myValue
-PUSHS GF@myValue
-PUSHS GF@myValue
+POPS LF@myValue$3
+PUSHS LF@myValue$3
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 PUSHS string@\010
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 PUSHS string@Napis\032cislo:\010
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
-PUSHS GF@valueFromUser
+DEFVAR LF@valueFromUser$4
+MOVE LF@valueFromUser$4 nil@nil
 READ GF@tmp_res int
 PUSHS GF@tmp_res
-POPS GF@valueFromUser
-PUSHS GF@valueFromUser
+POPS LF@valueFromUser$4
 CREATEFRAME
 DEFVAR TF@par1
 POPS TF@par1
 CALL getAnswer$1
 PUSHS TF@retval
-POPS GF@myValue
-PUSHS GF@myValue
-PUSHS GF@myValue
+POPS LF@myValue$3
+PUSHS LF@myValue$3
 PUSHS nil@nil
 EQS
 POPS GF@tmp_res
@@ -345,14 +340,13 @@ POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 PUSHS nil@nil
 POPS LF@retval
 POPFRAME
 RETURN
 JUMP if_end$25
 LABEL if_else$26
-PUSHS GF@myValue
+PUSHS LF@myValue$3
 POPS GF@tmp_op1
 PUSHS GF@tmp_op1
 TYPES
@@ -380,20 +374,18 @@ JUMP if_end$28
 LABEL if_else$29
 LABEL if_end$28
 LABEL if_end$25
-PUSHS GF@myValue
+PUSHS LF@myValue$3
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 PUSHS string@\010
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 LABEL while_start$34
-PUSHS GF@valueFromUser
+PUSHS LF@valueFromUser$4
 PUSHS int@0
 PUSHS int@2
 SUBS
@@ -415,26 +407,23 @@ POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
-PUSHS GF@valueFromUser
+PUSHS LF@valueFromUser$4
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 PUSHS string@\032->\032
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
-PUSHS GF@valueFromUser
+PUSHS LF@valueFromUser$4
 PUSHS int@1
 SUBS
-POPS GF@valueFromUser
-PUSHS GF@valueFromUser
-PUSHS GF@valStr
-PUSHS GF@valueFromUser
+POPS LF@valueFromUser$4
+DEFVAR LF@valStr$5
+MOVE LF@valStr$5 nil@nil
+PUSHS LF@valueFromUser$4
 POPS GF@tmp_op1
 PUSHS GF@tmp_op1
 TYPES
@@ -451,36 +440,32 @@ LABEL str_is_float$38
 PUSHS GF@tmp_op1
 FLOAT2STRS
 LABEL str_end$39
-POPS GF@valStr
-PUSHS GF@valStr
-PUSHS GF@valStr
+POPS LF@valStr$5
+PUSHS LF@valStr$5
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 PUSHS string@\010
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 JUMP while_start$34
 LABEL while_end$35
-PUSHS GF@x
+DEFVAR LF@x$6
+MOVE LF@x$6 nil@nil
 PUSHS int@1
-POPS GF@x
-PUSHS GF@x
-PUSHS GF@x
+POPS LF@x$6
+DEFVAR LF@x$7
+MOVE LF@x$7 nil@nil
 PUSHS string@cervena\032panda\032+\032
-POPS GF@x
-PUSHS GF@x
+POPS LF@x$7
 PUSHS string@(
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 PUSHS int@1
 PUSHS int@1
 EQS
@@ -496,22 +481,21 @@ PUSHS GF@tmp_res
 PUSHS bool@false
 JUMPIFEQS if_else$41
 LABEL if_true$42
-PUSHS GF@y
-PUSHS GF@x
+DEFVAR LF@y$8
+MOVE LF@y$8 nil@nil
+PUSHS LF@x$7
 PUSHS int@3
 MULS
-POPS GF@y
-PUSHS GF@y
-PUSHS GF@x
-PUSHS GF@y
-POPS GF@x
-PUSHS GF@x
-PUSHS GF@x
+POPS LF@y$8
+DEFVAR LF@x$9
+MOVE LF@x$9 nil@nil
+PUSHS LF@y$8
+POPS LF@x$9
+PUSHS LF@x$9
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 JUMP if_end$40
 LABEL if_else$41
 LABEL if_end$40
@@ -520,24 +504,20 @@ POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
-PUSHS GF@x
+PUSHS LF@x$7
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
-PUSHS GF@x
+PUSHS LF@x$6
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 PUSHS string@\010
 POPS GF@tmp_op1
 WRITE GF@tmp_op1
 PUSHS nil@nil
 POPS GF@__d
-PUSHS GF@__d
 POPFRAME
-EXIT int@0
+RETURN

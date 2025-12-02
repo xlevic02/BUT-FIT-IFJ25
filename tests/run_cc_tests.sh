@@ -4,10 +4,10 @@
 
 set -u
 # required variables
-TEST_DIR="exampleCodesIFJ25/codegen_tests"
-PROJECT_BIN="../build/wren_compiler"
-INTERPRETER_BIN="./tools/ic25int-linux-x86_64"
-OUT_FILE="./tools/output.ifjcode25"
+TEST_DIR="./tests/exampleCodesIFJ25/codegen_tests"
+PROJECT_BIN="./build/wren_compiler"
+INTERPRETER_BIN="./tests/tools/ic25int-linux-x86_64"
+OUT_FILE="./tests/tools/output.ifjcode25"
 
 # sanity checks
 if [ ! -d "$TEST_DIR" ]; then
