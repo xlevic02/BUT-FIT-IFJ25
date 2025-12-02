@@ -1,0 +1,19 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var n
+    var r
+
+    s = "x"
+    n = 5
+    if (n > s) {     // int > string › 26
+        r = 1
+    } else {
+        r = 0
+    }
+
+    __d = Ifj.write(r)
+}
+}

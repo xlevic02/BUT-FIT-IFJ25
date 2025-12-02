@@ -1,0 +1,15 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var v
+    var l
+
+    v = "abc"
+    v = 1 < 2           // bool hodnota
+
+    l = Ifj.length(v)   // bool › 25
+
+    __d = Ifj.write(l)
+}
+}

@@ -1,0 +1,39 @@
+.IFJcode25
+DEFVAR GF@tmp_op1
+DEFVAR GF@tmp_op2
+DEFVAR GF@tmp_res
+DEFVAR GF@tmp_type
+DEFVAR GF@__d
+MOVE GF@__d nil@nil
+JUMP $$main
+LABEL setter$setX
+PUSHFRAME
+CREATEFRAME
+DEFVAR LF@retval
+MOVE LF@retval nil@nil
+DEFVAR LF@x$0
+MOVE LF@x$0 LF@par1
+PUSHS LF@x$0
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS GF@__d
+PUSHS string@\010
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS GF@__d
+LABEL $$main
+CREATEFRAME
+PUSHFRAME
+PUSHS int@42
+POPS GF@tmp_res
+CREATEFRAME
+DEFVAR TF@par1
+MOVE TF@par1 GF@tmp_res
+CALL setter$setX
+PUSHS TF@retval
+POPFRAME
+EXIT int@0

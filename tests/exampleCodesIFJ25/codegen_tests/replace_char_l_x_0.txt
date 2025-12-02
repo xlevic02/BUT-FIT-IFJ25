@@ -1,0 +1,44 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var r
+
+    s = "hello world"
+    r = replace_char(s, "l", "x")
+
+    __d = Ifj.write(r)
+    __d = Ifj.write("\n")
+}
+
+static replace_char(s, from, to) {
+    var len
+    var i
+    var out
+    var c
+    var code_from
+    var code_to
+    var code_s
+    var ch
+
+    len = Ifj.length(s)
+    i = 0
+    out = ""
+    code_from = Ifj.ord(from, 0)
+    code_to = Ifj.ord(to, 0)
+
+    while (i < len) {
+        code_s = Ifj.ord(s, i)
+        if (code_s == code_from) {
+            ch = Ifj.chr(code_to)
+        } else {
+            ch = Ifj.chr(code_s)
+        }
+        out = out + ch
+        i = i + 1
+    }
+
+    return out
+}
+}

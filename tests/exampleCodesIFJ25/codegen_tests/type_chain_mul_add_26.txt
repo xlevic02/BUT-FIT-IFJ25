@@ -1,0 +1,19 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var a
+    var b
+    var s
+    var r
+
+    a = 2
+    b = 3
+    s = "x"
+
+    r = b + s       // 3 + "x" › 26, ešte pred násobením
+    r = a * r
+
+    __d = Ifj.write(r)
+}
+}

@@ -1,0 +1,16 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var i
+    var line
+
+    i = 1
+    while (i <= 5) {
+        line = "# " * i
+        __d = Ifj.write(line)
+        __d = Ifj.write("\n")
+        i = i + 1
+    }
+}
+}

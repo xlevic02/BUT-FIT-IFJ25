@@ -1,0 +1,17 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var r
+
+    s = "abc"
+    r = foo(s) + 1      // foo(s) vracia string › string + int › 26
+
+    __d = Ifj.write(r)
+}
+
+static foo(x) {
+    return x
+}
+}

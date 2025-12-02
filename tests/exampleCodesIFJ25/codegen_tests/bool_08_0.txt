@@ -1,0 +1,17 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var i
+    var cond
+
+    i = 0
+    cond = i < 3
+
+    while (cond) {
+        __d = Ifj.write(i)
+        i = i + 1
+        cond = i < 3
+    }
+}
+}

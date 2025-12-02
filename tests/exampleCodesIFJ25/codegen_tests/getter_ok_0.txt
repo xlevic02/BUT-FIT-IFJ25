@@ -1,0 +1,12 @@
+import "ifj25" for Ifj
+class Program {
+
+static value {
+    return 42
+}
+
+static main() {
+    __d = Ifj.write(value)
+    __d = Ifj.write("\n")
+}
+}

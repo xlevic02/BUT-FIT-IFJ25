@@ -1,0 +1,31 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var n
+    var s
+
+    n = 10
+    s = sum_to(n)
+
+    __d = Ifj.write("sum(1..")
+    __d = Ifj.write(n)
+    __d = Ifj.write(") = ")
+    __d = Ifj.write(s)
+    __d = Ifj.write("\n")
+}
+
+static sum_to(n) {
+    var i
+    var s
+
+    i = 1
+    s = 0
+
+    while (i <= n) {
+        s = s + i
+        i = i + 1
+    }
+    return s
+}
+}

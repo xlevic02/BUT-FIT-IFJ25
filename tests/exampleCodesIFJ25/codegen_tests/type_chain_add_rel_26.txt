@@ -1,0 +1,19 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var a
+    var s
+    var r
+
+    a = 1
+    s = "x"
+
+    r = a + s       // int + string › 26 (už tu to skonèí)
+    if (r < 10) {
+        __d = Ifj.write(1)
+    } else {
+        __d = Ifj.write(0)
+    }
+}
+}

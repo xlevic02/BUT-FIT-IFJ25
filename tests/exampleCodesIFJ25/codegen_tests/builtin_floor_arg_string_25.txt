@@ -1,0 +1,13 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var t
+    var r
+
+    t = "not_number"
+    r = Ifj.floor(t)   // zlý typ parametra › 26
+
+    __d = Ifj.write(r)
+}
+}

@@ -460,7 +460,7 @@ ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node, ast
         case TT_STRING:
         case TT_KEYWORD_NUM:
         case TT_KEYWORD_Null:
-        case TT_NULL:
+        case TT_NULL:{
             ast_node_type_t node_type = NT_LITERAL;
             if (current_token->type == TT_KEYWORD_NUM){
                 node_type = NT_DATATYPE;
@@ -468,7 +468,7 @@ ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node, ast
             node = ast_create_node(*current_token, parent_node, node_type);
             *upper_pointer = node;
             *current_token = get_token(); // consume
-            break;
+        }break;
             
         case TT_IDENTIFIER:
             node = ast_create_node(*current_token, parent_node, NT_ID);
@@ -516,7 +516,7 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
         case TT_FLOAT:
         case TT_STRING:
         case TT_KEYWORD_Null:
-        case TT_IDENTIFIER:
+        case TT_IDENTIFIER:{
             if(!comma_present){
                 ast_error(ERROR_SYNTAX, "Syntax error:\tmissing comma in parameters\n", parent_node, current_token);
             }
@@ -529,7 +529,7 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
             comma_present = false;
             ast_node_ptr subparameter_node = ast_create_node(*current_token, parameter_node, node_type);
             ast_increase_children(parameter_node, subparameter_node);
-            break;
+        }break;
 
         case TT_COMMA:
             if (comma_present){

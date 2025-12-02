@@ -1,0 +1,17 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var j
+    var r
+
+    s = "abcd"
+    j = 2
+    j = null           // tretí param nil
+
+    r = Ifj.substring(s, 0, j)   // tretí param nil › 25
+
+    __d = Ifj.write(r)
+}
+}

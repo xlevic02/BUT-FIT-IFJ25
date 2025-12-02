@@ -1,0 +1,25 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var a
+    var b
+    var r
+
+    a = 2
+    b = 10
+    r = power(a, b)
+
+    __d = Ifj.write("2^10 = ")
+    __d = Ifj.write(r)
+    __d = Ifj.write("\n")
+}
+
+static power(x, n) {
+    if (n == 0) {
+        return 1
+    } else {
+        return x * power(x, n - 1)
+    }
+}
+}

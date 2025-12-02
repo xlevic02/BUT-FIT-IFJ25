@@ -1,0 +1,17 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var f
+
+    s = "abc"
+    f = 3.14
+
+    if (f > s) {      // float > string › 26
+        __d = Ifj.write(1)
+    } else {
+        __d = Ifj.write(0)
+    }
+}
+}

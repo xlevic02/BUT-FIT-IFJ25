@@ -1,0 +1,19 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var x
+    var l
+
+    x = "test"
+    if (2 < 3) {
+        x = 3.14        // float
+    } else {
+        x = "ok"
+    }
+
+    l = Ifj.length(x)   // môže by float › 25
+
+    __d = Ifj.write(l)
+}
+}

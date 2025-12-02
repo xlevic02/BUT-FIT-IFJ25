@@ -1,0 +1,29 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var i
+    var limit
+
+    limit = 3
+    i = 0
+
+    while (i < limit) {
+        if (i == 1) {
+            var j
+            j = 0
+            while (j < 2) {
+                __d = Ifj.write("inner ")
+                __d = Ifj.write(j)
+                __d = Ifj.write("\n")
+                j = j + 1
+            }
+        } else {
+            __d = Ifj.write("outer ")
+            __d = Ifj.write(i)
+            __d = Ifj.write("\n")
+        }
+        i = i + 1
+    }
+}
+}

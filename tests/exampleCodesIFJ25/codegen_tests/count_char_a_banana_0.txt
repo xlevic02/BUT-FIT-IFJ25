@@ -1,0 +1,43 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var ch
+    var cnt
+
+    s = "banana"
+    ch = "a"
+    cnt = count_char(s, ch)
+
+    __d = Ifj.write("count 'a' in banana = ")
+    __d = Ifj.write(cnt)
+    __d = Ifj.write("\n")
+}
+
+static count_char(s, ch) {
+    var i
+    var len
+    var code_s
+    var code_ch
+    var c
+    var result
+
+    len = Ifj.length(s)
+    result = 0
+    code_ch = Ifj.ord(ch, 0)
+    i = 0
+
+    while (i < len) {
+        code_s = Ifj.ord(s, i)
+        if (code_s == code_ch) {
+            result = result + 1
+        } else {
+            // niè
+        }
+        i = i + 1
+    }
+
+    return result
+}
+}

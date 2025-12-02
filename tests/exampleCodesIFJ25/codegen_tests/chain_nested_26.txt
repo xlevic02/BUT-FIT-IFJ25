@@ -1,0 +1,18 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var x
+    var y
+    var s
+    var r
+
+    x = 1
+    y = 2
+    s = "abc"
+
+    r = (x + y) * (y - s)   // y - s › 26
+
+    __d = Ifj.write(r)
+}
+}

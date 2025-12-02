@@ -1,0 +1,23 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var i
+    var j
+
+    i = 0
+    while (i < 4) {
+        j = 0
+        while (j < 4) {
+            if (i == j) {
+                __d = Ifj.write("X")
+            } else {
+                __d = Ifj.write(".")
+            }
+            j = j + 1
+        }
+        __d = Ifj.write("\n")
+        i = i + 1
+    }
+}
+}

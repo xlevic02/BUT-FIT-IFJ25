@@ -1,0 +1,70 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var a
+    var b
+    var c
+    var mn
+    var mx
+    var s
+    var avg
+
+    a = 1
+    b = 4
+    c = 7
+
+    mn = min3(a, b, c)
+    mx = max3(a, b, c)
+    s = sum3(a, b, c)
+
+    // floor((a + b + c) / 3)
+    avg = Ifj.floor(s / 3)
+
+    __d = Ifj.write("min=")
+    __d = Ifj.write(mn)
+    __d = Ifj.write(" max=")
+    __d = Ifj.write(mx)
+    __d = Ifj.write(" sum=")
+    __d = Ifj.write(s)
+    __d = Ifj.write(" avg=")
+    __d = Ifj.write(avg)
+    __d = Ifj.write("\n")
+}
+
+static min3(x, y, z) {
+    var m
+    m = x
+    if (y < m) {
+        m = y
+    } else {
+        // niè
+    }
+    if (z < m) {
+        m = z
+    } else {
+        // niè
+    }
+    return m
+}
+
+static max3(x, y, z) {
+    var m
+    m = x
+    if (y > m) {
+        m = y
+    } else {
+        // niè
+    }
+    if (z > m) {
+        m = z
+    } else {
+        // niè
+    }
+    return m
+}
+
+static sum3(x, y, z) {
+    return x + y + z
+}
+}

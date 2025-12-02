@@ -1,0 +1,15 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var code
+    var s
+
+    code = 65
+    code = "65"        // string
+
+    s = Ifj.chr(code)  // string › 25
+
+    __d = Ifj.write(s)
+}
+}

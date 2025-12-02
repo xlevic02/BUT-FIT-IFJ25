@@ -1,0 +1,21 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var i
+    var r
+
+    s = "abcd"
+    i = 1
+    if (1 < 2) {
+        i = "1"        // string namiesto indexu
+    } else {
+        i = 0
+    }
+
+    r = Ifj.substring(s, i, 3)   // druhý param string › 25
+
+    __d = Ifj.write(r)
+}
+}

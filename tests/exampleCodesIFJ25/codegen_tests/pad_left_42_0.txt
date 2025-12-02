@@ -1,0 +1,30 @@
+import "ifj25" for Ifj
+class Program {
+
+static main() {
+    var s
+    var res
+
+    s = "42"
+    res = pad_left(s, 5, "0")
+
+    __d = Ifj.write(res)
+    __d = Ifj.write("\n")
+}
+
+static pad_left(s, width, pad) {
+    var len
+    var diff
+    var pref
+
+    len = Ifj.length(s)
+    diff = width - len
+
+    if (diff <= 0) {
+        return s
+    } else {
+        pref = pad * diff
+        return pref + s
+    }
+}
+}
