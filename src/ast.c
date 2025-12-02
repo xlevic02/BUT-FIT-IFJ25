@@ -253,7 +253,6 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 ast_increase_children(current_node, while_node);
                 *current_token = get_token();
                 if (current_token->type != TT_LPAREN){
-                    free(while_node);
                     ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 ast_skip_EOL(current_token);
@@ -662,64 +661,6 @@ void free_ast(ast_node_ptr *node){
     }
     free(*node);
     *node = NULL;
-}
-
-
-// Helper function to convert token type to string for visualization
-const char* token_type_to_string(token_type_t type) {
-    switch (type) {
-        case TT_EOF: return "TT_EOF";
-        case TT_EOL: return "TT_EOL";
-
-        case TT_IDENTIFIER: return "TT_IDENTIFIER";
-        case TT_NULL: return "TT_NULL";
-        case TT_INT: return "TT_INT";
-        case TT_FLOAT: return "TT_FLOAT";
-        case TT_STRING: return "TT_STRING";
-
-        case TT_KEYWORD_CLASS: return "TT_KEYWORD_CLASS";
-        case TT_KEYWORD_IF: return "TT_KEYWORD_IF";
-        case TT_KEYWORD_ELSE: return "TT_KEYWORD_ELSE";
-        case TT_KEYWORD_IS: return "TT_KEYWORD_IS";
-        case TT_KEYWORD_RETURN: return "TT_KEYWORD_RETURN";
-        case TT_KEYWORD_VAR: return "TT_KEYWORD_VAR";
-        case TT_KEYWORD_WHILE: return "TT_KEYWORD_WHILE";
-        case TT_KEYWORD_IFJ: return "TT_KEYWORD_IFJ";
-        case TT_KEYWORD_STATIC: return "TT_KEYWORD_STATIC";
-        case TT_KEYWORD_IMPORT: return "TT_KEYWORD_IMPORT";
-        case TT_KEYWORD_FOR: return "TT_KEYWORD_FOR";
-        case TT_KEYWORD_NUM: return "TT_KEYWORD_NUM";
-        case TT_KEYWORD_Null: return "TT_KEYWORD_Null";
-
-        case TT_ASSIGN: return "TT_ASSIGN";
-        case TT_PLUS: return "TT_PLUS";
-        case TT_MINUS: return "TT_MINUS";
-        case TT_MUL: return "TT_MUL";
-        case TT_DIV: return "TT_DIV";
-        case TT_EQ: return "TT_EQ";
-        case TT_NEQ: return "TT_NEQ";
-        case TT_LT: return "TT_LT";
-        case TT_GT: return "TT_GT";
-        case TT_LE: return "TT_LE";
-        case TT_GE: return "TT_GE";
-
-        case TT_LPAREN: return "TT_LPAREN";
-        case TT_RPAREN: return "TT_RPAREN";
-        case TT_LBRACE: return "TT_LBRACE";
-        case TT_RBRACE: return "TT_RBRACE";
-        case TT_COMMA: return "TT_COMMA";
-        case TT_DOT: return "TT_DOT";
-
-        case TT_ERROR: return "TT_ERROR";
-
-        default: return "UNKNOWN_TOKEN";
-    }
-}
-
-
-// Debugging function to print token information DO NOT CALL THIS WHEN AST IS FREED
-void ast_print_token(token_t token){
-    printf("Token type: %s, lexeme: %s\n", token_type_to_string(token.type), token.lexeme);
 }
 
 
