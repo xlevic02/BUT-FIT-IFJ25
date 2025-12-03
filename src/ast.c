@@ -489,7 +489,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
         ast_skip_EOL(current_token);
 
     }//while
-}
+} //ast_regular_node
 
 ast_node_ptr ast_expression_subtree(token_t *current_token, ast_node_ptr parent_node) {
     ast_node_ptr term = NULL;
@@ -521,8 +521,8 @@ ast_node_ptr ast_expression_subtree(token_t *current_token, ast_node_ptr parent_
                 }
 
                 if (ast_operator_eval(operator, parent_node, term)) {
-                    //free_token(current_token);
-                    //free(current_token);
+                    free_token(current_token);
+                    free(current_token);
                     free(operator);
                     destroy_ast(term);
                     return NULL;
