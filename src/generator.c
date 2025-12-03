@@ -4,9 +4,6 @@
 #include "generator.h"
 
 
-////
-// This SHOULD be able to generate assembler code.
-////
 
 static int label_counter = 0;
 static scope_stack stack;
@@ -55,7 +52,6 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
                     {
                         if(root->children[i]->token.lexeme && strcmp(root->children[i]->token.lexeme, "main") != 0)
                             {
-                                //printf("Entering Generate Node\n"); // Debugging line
                                 generate_node(root->children[i], &symtable);
                             }
                     }
