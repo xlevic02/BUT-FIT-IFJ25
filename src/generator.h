@@ -86,9 +86,6 @@ bool global_check(const char* var_name);
 //Recursive function to search and define all global variables
 void generate_globals(bst_node_ptr symtable);
 
-//Funkction to get a frame for a variable from symtable
-const char* get_variable_frame(const char* var_name);
-
 //Creates a unique label for if, else, while
 void get_unique_label(char* buffer, const char* prefix);
 

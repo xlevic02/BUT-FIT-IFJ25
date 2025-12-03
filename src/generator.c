@@ -1006,9 +1006,29 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                             {
                                 ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
                             }
+                        char label_error[64], label_end[64];
+                        get_unique_label(label_error, "op_error");
+                        get_unique_label(label_end, "op_end");
                         generate_node(node->children[1]->children[0], current_scope);
                         generate_node(node->children[1]->children[1], current_scope);
+                        print_conversion(FLOAT2INT);
+                        print_pops("GF@tmp_op2");
+                        print_pops("GF@tmp_op1");
+                        print_strlen("GF@tmp_res", "GF@tmp_op1");
+                        print_pushs(VARIABLE, "tmp_res", "GF");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_relation(LT);
+                        print_pops("GF@tmp_res");
+                        printf("JUMPIFEQ %s GF@tmp_res bool@true\n", label_error);
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
                         print_conversion(STRI2INT);
+                        print_pops("GF@tmp_res");
+                        print_pushs(VARIABLE, "tmp_res", "GF");
+                        print_jump(label_end);
+                        print_label(label_error);
+                        print_exit("int@58");
+                        print_label(label_end);
                     }
                 else if(strcmp(builtin_type, "chr") == 0)
                     {
@@ -1018,7 +1038,26 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                                 ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
                             }
                         generate_node(node->children[1]->children[0], current_scope);
+                        char label_error[64], label_end[64];
+                        get_unique_label(label_error, "op_error");
+                        get_unique_label(label_end, "op_end");
+                        print_pops("GF@tmp_op1");
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(LITERAL_INT, "0", NULL);
+                        print_relation(LT);
+                        print_pops("GF@tmp_res");
+                        printf("JUMPIFEQ %s GF@tmp_res bool@true\n", label_error);
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(LITERAL_INT, "255", NULL);
+                        print_relation(GT);
+                        print_pops("GF@tmp_res");
+                        printf("JUMPIFEQ %s GF@tmp_res bool@true\n", label_error);
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
                         print_conversion(INT2CHAR);
+                        print_jump(label_end);
+                        print_label(label_error);
+                        print_exit("int@58");
+                        print_label(label_end);
                     }
             }   
     }
