@@ -25,10 +25,9 @@ void print_ast_branch(const ast_node_ptr node, const char *prefix, int is_last) 
 
     // Print token as optional metadata
     if (node->token.lexeme && node->token.lexeme[0] != '\0') {
-        printf("  token('%s', %s, %s)",
+        printf("  token('%s', %s)",
                node->token.lexeme,
-               token_type_to_string(node->token.type),
-               ast_node_type_to_string(node->node_type)
+               token_type_to_string(node->token.type)
         );
     }
 
@@ -71,7 +70,6 @@ int main(void) {
 
     bst_scope_ptr global_scope = sem_start_analysis(ast_root);
     generate_code(ast_root, global_scope);
-    //printf("symtable ok\n");
 
     return 0;
     //visualize_ast(ast_root);
@@ -114,6 +112,7 @@ const char* ast_node_type_to_string(ast_node_type_t type) {
         default: return "UNKNOWN_NODE";
     }
 }
+
 
 const char* token_type_to_string(token_type_t type) {
     switch (type) {

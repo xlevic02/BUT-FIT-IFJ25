@@ -1,3 +1,4 @@
+
 // Implementace prekladace imperativniho jazyka IFJ25
 // AST by: Jan "xspacej00" Špaček on 10/09/2025
 //         Jan Frantisek "xlevic02" Levicek on 11/10/2025
@@ -65,8 +66,8 @@ ast_node_ptr create_ast(){
             //Skip empty lines
             case TT_EOL:
                 break;
-            
-            //Function handling
+
+                //Function handling
             case TT_KEYWORD_STATIC:
                 if((*current_token = get_token()).type != TT_IDENTIFIER)
                     ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, root, current_token);
@@ -135,8 +136,8 @@ ast_node_ptr create_ast(){
 
 
                 break;
-            
-            //Fail state of incompatible tokens
+
+                //Fail state of incompatible tokens
             default:
                 //should not happen
                 ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, root, current_token);
@@ -213,7 +214,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
 
 
-            //Return statement
+                //Return statement
             case TT_KEYWORD_RETURN:
                 new_node = ast_create_node(*current_token, current_node, NT_RETURN);
                 if(new_node == NULL)
@@ -235,8 +236,8 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
 
 
-                
-            //Variable declaration
+
+                //Variable declaration
             case TT_KEYWORD_VAR:
                 *current_token = get_token();
                 if(current_token->type != TT_IDENTIFIER)
@@ -254,13 +255,13 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
 
                 *current_token = get_token();
-                break; 
+                break;
 
 
 
 
 
-            //If statement
+                //If statement
             case TT_KEYWORD_IF:
                 new_node = ast_create_node(*current_token, current_node, NT_IF_STATEMENT);
                 if(new_node == NULL)
@@ -310,7 +311,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
                 //Else body
                 if (current_token->type != TT_KEYWORD_ELSE){
-                    break; 
+                    break;
                 }
 
                 tmp_node = ast_create_node(*current_token, new_node, NT_ELSE_BODY);
@@ -343,10 +344,10 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
 
 
-            //case TT_KEYWORD_FOR: possible TODO
-            
+                //case TT_KEYWORD_FOR: possible TODO
 
-            //While loop
+
+                //While loop
             case TT_KEYWORD_WHILE:
                 new_node = ast_create_node(*current_token, current_node, NT_WHILE);
                 if(new_node == NULL)
@@ -438,30 +439,30 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
                 break;
 
 
-            /*    //Should not happen
-            case TT_KEYWORD_NUM:
-            case TT_RPAREN:
-            case TT_COMMA:
-            case TT_DOT:
-            case TT_LBRACE:
-            case TT_KEYWORD_ELSE:
-            case TT_KEYWORD_IS:
-            case TT_ASSIGN:
-            case TT_PLUS:
-            case TT_MINUS:
-            case TT_MUL:
-            case TT_DIV:
-            case TT_EQ:
-            case TT_NEQ:
-            case TT_LT:
-            case TT_GT:
-            case TT_LE:
-            case TT_GE:
-            case TT_KEYWORD_CLASS:
-            case TT_KEYWORD_IMPORT:
-            case TT_EOF:
-            case TT_KEYWORD_STATIC:
-            case TT_KEYWORD_IFJ */
+                /*    //Should not happen
+                case TT_KEYWORD_NUM:
+                case TT_RPAREN:
+                case TT_COMMA:
+                case TT_DOT:
+                case TT_LBRACE:
+                case TT_KEYWORD_ELSE:
+                case TT_KEYWORD_IS:
+                case TT_ASSIGN:
+                case TT_PLUS:
+                case TT_MINUS:
+                case TT_MUL:
+                case TT_DIV:
+                case TT_EQ:
+                case TT_NEQ:
+                case TT_LT:
+                case TT_GT:
+                case TT_LE:
+                case TT_GE:
+                case TT_KEYWORD_CLASS:
+                case TT_KEYWORD_IMPORT:
+                case TT_EOF:
+                case TT_KEYWORD_STATIC:
+                case TT_KEYWORD_IFJ */
 
                 //should not happen
             default:
@@ -910,7 +911,7 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
                 *current_token = get_token();
                 ast_skip_EOL(current_token);
                 break;
-        
+
             default:
                 destroy_ast(parameter_node);
                 return (ast_node_ptr) -1;

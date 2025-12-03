@@ -1,3 +1,4 @@
+
 // Implementace generatoru vysledneho kodu IFJcode25
 //generator.h by Marek "xbalism00" Bališ on 11/11/25
 
@@ -16,60 +17,60 @@
 #define MAX_STACK_SIZE 100
 typedef struct var_node {
     char *original_id;
-    char *new_id; 
+    char *new_id;
     struct var_node *next;
 } var_node;
 typedef struct scope_stack {
     var_node *arr[MAX_STACK_SIZE];
     int top;
 } scope_stack;
-typedef enum 
-    {
-        VARIABLE,
-        LITERAL_INT,
-        LITERAL_FLOAT,
-        LITERAL_STRING,
-        LITERAL_BOOL,
-        LITERAL_NULL
-    }SYM_TYPE;
 typedef enum
-    {
-        ADD,
-        SUB,
-        MUL,
-        DIV,
-        IDIV
-    }ARITHMETIC;
+{
+    VARIABLE,
+    LITERAL_INT,
+    LITERAL_FLOAT,
+    LITERAL_STRING,
+    LITERAL_BOOL,
+    LITERAL_NULL
+}SYM_TYPE;
+typedef enum
+{
+    ADD,
+    SUB,
+    MUL,
+    DIV,
+    IDIV
+}ARITHMETIC;
 
 typedef enum
-    {
-        LT,
-        GT,
-        EQ
-    }RELATION;
+{
+    LT,
+    GT,
+    EQ
+}RELATION;
 
 typedef enum
-    {
-        AND,
-        OR,
-        NOT
-    }BOOLEAN;
+{
+    AND,
+    OR,
+    NOT
+}BOOLEAN;
 
 typedef enum
-    {
-        INT2FLOAT,
-        FLOAT2INT,
-        INT2CHAR,
-        STRI2INT,
-        FLOAT2STR,
-        INT2STR
-    }CONVERSION;
+{
+    INT2FLOAT,
+    FLOAT2INT,
+    INT2CHAR,
+    STRI2INT,
+    FLOAT2STR,
+    INT2STR
+}CONVERSION;
 
 //Recursive function to proccess nodes
 void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope);
 
 //Main function for generating code
-int generate_code(ast_node_ptr root, bst_scope_ptr symtable);
+void generate_code(ast_node_ptr root, bst_scope_ptr symtable);
 
 //Checks the frame type
 bool global_check(const char* var_name);
