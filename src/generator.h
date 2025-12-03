@@ -140,7 +140,6 @@ void print_setchar(char* var, char* index, char* symbol);
 
 //Type instructions
 void print_types();
-void print_isint_isints();
 
 //Program flow instructions
 void print_label(char* label);
@@ -148,9 +147,5 @@ void print_jump(char* label);
 void print_jumpifeqs(char* label);
 void print_jumpifneqs(char* label);
 void print_exit(char* symbol);
-
-//Debugging instructions
-void print_break();
-void print_dprint(char* symbol);
 
 #endif //GENERATOR_H
