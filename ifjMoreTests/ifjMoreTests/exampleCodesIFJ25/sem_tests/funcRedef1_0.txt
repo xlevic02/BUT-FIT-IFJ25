@@ -1,0 +1,14 @@
+import "ifj25" for Ifj
+class Program {
+    static main(){
+        var x
+        x = unicorn()
+        x = unicorn(x)
+    }
+    static unicorn(){
+
+    }
+    static unicorn(x){
+        
+    }
+}
