@@ -1,4 +1,3 @@
-
 // Implementace prekladace imperativniho jazyka IFJ25
 // AST by: Jan "xspacej00" Špaček on 10/09/2025
 //         Jan Frantisek "xlevic02" Levicek on 11/10/2025
