@@ -31,6 +31,7 @@ ast_node_ptr create_ast(){
     if (current_token->type != TT_KEYWORD_CLASS ||
         strcmp((*current_token = get_token()).lexeme , "Program"))
     {
+        free(current_token->lexeme);
         free(current_token);
         error(ERROR_SYNTAX, MSG_SYN_PROGRAM_DECLARATION);
     }
@@ -38,14 +39,14 @@ ast_node_ptr create_ast(){
     ast_node_ptr root = ast_create_node(*current_token, NULL, NT_ROOT);
     
 
-    if ((*current_token = get_token()).type != TT_LBRACE){
-
+    if (!ast_quick_free_check(current_token, TT_LBRACE)){
         ast_error(ERROR_SYNTAX, MSG_SYN_BRACE_WRONG, root, current_token);
     }
 
-    if((*current_token = get_token()).type != TT_EOL){
+    if(!ast_quick_free_check(current_token, TT_EOL)){
         ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, root, current_token);
     }
+    *current_token = get_token();
 
     //Main loop to handle all top-level constructs (functions, main)
     do{
@@ -64,6 +65,7 @@ ast_node_ptr create_ast(){
         }
         
         if((*current_token = get_token()).type != TT_IDENTIFIER){
+            free(current_token->lexeme);
             ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_IDENTIFIER, root, current_token);
         }
 
@@ -78,7 +80,7 @@ ast_node_ptr create_ast(){
         }
         if (current_token->type == TT_LPAREN){
             ast_increase_children(new_node, ast_parameter_node(current_token, new_node));
-            if((*current_token = get_token()).type != TT_LBRACE){
+            if(!ast_quick_free_check(current_token, TT_LBRACE)){
                 ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, root, current_token);
             }
         }else if(is_setter){
@@ -91,7 +93,7 @@ ast_node_ptr create_ast(){
         //TODO handle getters/setters, potentially by a specific first node?
 
 
-        if((*current_token = get_token()).type != TT_EOL){
+        if(!ast_quick_free_check(current_token, TT_EOL)){
             ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, root, current_token);
         }
 
@@ -103,6 +105,7 @@ ast_node_ptr create_ast(){
         
     } while (((*current_token = get_token()).type != TT_EOF) || (current_token->type != TT_RBRACE));;
 
+    free(current_token->lexeme);
     if(current_token->type != TT_RBRACE){
         ast_error(2, MSG_SYN_BRACE_WRONG, root, current_token);
     }
@@ -174,9 +177,11 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 
             //Variable declaration
             case TT_KEYWORD_VAR:{
+                free(current_token->lexeme);
                 *current_token = get_token();
                 ast_node_ptr new_node = ast_create_node(*current_token, current_node, NT_VAR_DEF);
                 if (new_node->token.type != TT_IDENTIFIER){
+                    free(current_token->lexeme);
                     ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 ast_increase_children(current_node, new_node);
@@ -193,6 +198,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 ast_node_ptr if_node = ast_create_node(*current_token, current_node, NT_IF_STATEMENT);
                 ast_increase_children(current_node, if_node);
                 *current_token = get_token();
+                free(current_token->lexeme);
                 if (current_token->type != TT_LPAREN){
                     ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
@@ -205,9 +211,10 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 ast_expression_node(current_token, if_node);
 
                 //Handle closing parenthesis, opening brace and EOL
+                free(current_token->lexeme);
                 if (current_token->type != TT_RPAREN ||
-                    (*current_token = get_token()).type != TT_LBRACE ||
-                    (*current_token = get_token()).type != TT_EOL) {
+                    !ast_quick_free_check(current_token, TT_LBRACE) ||
+                    !ast_quick_free_check(current_token,TT_EOL)) {
                     ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 *current_token = get_token();
@@ -230,7 +237,10 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 ast_increase_children(if_node, else_node);
 
                 //Handle opening brace and EOL
-                if ((*current_token = get_token()).type != TT_LBRACE || (*current_token = get_token()).type != TT_EOL){
+                *current_token = get_token();
+                free(current_token->lexeme);
+                if (current_token->type != TT_LBRACE ||
+                    !ast_quick_free_check(current_token, TT_EOL)){
                     ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
                 *current_token = get_token();
@@ -262,7 +272,8 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 ast_expression_node(current_token, while_node);
 
                 //Handle closing parenthesis, opening brace and EOL
-                if(current_token->type != TT_LBRACE || (*current_token = get_token()).type != TT_EOL){
+                free(current_token->lexeme);
+                if(current_token->type != TT_LBRACE || !ast_quick_free_check(current_token, TT_EOL)){
                     ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
                 }
 
@@ -313,6 +324,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
 
         //Ensure each statement ends with an EOL
         if (current_token->type != TT_EOL){
+            free(current_token->lexeme);
             ast_error(2, MSG_SYN_MISSING_EOL, current_node, current_token);
         }
 
@@ -324,7 +336,7 @@ ast_node_ptr ast_ifj_function_call_node(token_t *current_token, ast_node_ptr cur
 
     ast_node_ptr inherent_function_node = ast_create_node(*current_token, current_node, NT_BUILTIN);
 
-    if ((*current_token = get_token()).type != TT_DOT){
+    if (!ast_quick_free_check(current_token, TT_DOT)){
         ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
     }  
 
@@ -332,6 +344,7 @@ ast_node_ptr ast_ifj_function_call_node(token_t *current_token, ast_node_ptr cur
     ast_skip_EOL(current_token);
 
     if (current_token->type != TT_IDENTIFIER){
+        free(current_token->lexeme);
         ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
     }
 
@@ -342,6 +355,7 @@ ast_node_ptr ast_ifj_function_call_node(token_t *current_token, ast_node_ptr cur
 
     *current_token = get_token();
     if (current_token->type != TT_LPAREN){
+        free(current_token->lexeme);
         ast_error(2, MSG_SYN_TOKEN_ORDER, current_node, current_token);
     }
 
@@ -355,6 +369,7 @@ ast_node_ptr ast_ifj_function_call_node(token_t *current_token, ast_node_ptr cur
     while(current_token->type != TT_RPAREN){
 
         if (current_token->type == TT_COMMA){
+            free(current_token->lexeme);
             if (comma_present){
                 ast_error(2, "Syntax error:\tmultiple commas in inherent function call\n", current_node, current_token);
             }
@@ -484,9 +499,11 @@ ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node, ast
             break;
 
         case TT_LPAREN:{
+            free(current_token->lexeme);
             *current_token = get_token(); // consume '('
             node = ast_expression_inner(current_token, 0, parent_node, upper_pointer);
 
+            free(current_token->lexeme);
             if (current_token->type != TT_RPAREN) {
                 ast_error(2, MSG_SYN_TOKEN_ORDER, parent_node, current_token);
             }
@@ -521,6 +538,7 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
         case TT_KEYWORD_Null:
         case TT_IDENTIFIER:{
             if(!comma_present){
+                free(current_token->lexeme);
                 ast_error(ERROR_SYNTAX, "Syntax error:\tmissing comma in parameters\n", parent_node, current_token);
             }
             ast_node_type_t node_type = NT_LITERAL;
@@ -533,6 +551,7 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
         }break;
 
         case TT_COMMA:
+            free(current_token->lexeme);
             if (comma_present){
                 ast_error(2,"Syntax error:\tmultiple commas in parameter\n", parent_node,current_token);
             }
@@ -541,6 +560,7 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
             break;
         
         default:
+            free(current_token->lexeme);
             ast_error(2, "Syntax error:\tillegal token in parameters\n", parent_node, current_token);
             break;
         }
@@ -556,6 +576,7 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
 //Helper function to skip possible EOL tokens
 void ast_skip_EOL(token_t *current_token){
     while(current_token->type == TT_EOL){
+        free(current_token->lexeme);
         *current_token = get_token();
     }
 }
@@ -565,21 +586,25 @@ int ast_handle_prologue(token_t *current_token){
 
     if(current_token->type != TT_KEYWORD_IMPORT) return 1;
 
+    free(current_token->lexeme);
     *current_token = get_token();
     ast_skip_EOL(current_token);
 
     if(strcmp(current_token->lexeme, "ifj25")) return 1;
 
+    free(current_token->lexeme);
     *current_token = get_token();
 
     if(current_token->type == TT_EOL) return 1;
 
     if(current_token->type != TT_KEYWORD_FOR) return 1;
 
+    free(current_token->lexeme);
     *current_token = get_token();
     ast_skip_EOL(current_token);
 
     if(current_token->type != TT_KEYWORD_IFJ) return 1;
+    free(current_token->lexeme);
     *current_token = get_token();
 
     return 0;
@@ -660,6 +685,7 @@ void free_ast(ast_node_ptr *node){
         free((*node)->children);
         (*node)->children = NULL;
     }
+    free((*node)->token.lexeme);
     free(*node);
     *node = NULL;
 }
@@ -687,4 +713,13 @@ int ast_get_precedence(token_type_t type) {
         default:
             return -1; // not an operator
     }
+}
+
+bool ast_quick_free_check(token_t *token, token_type_t type){
+    *token = get_token();
+    free(token->lexeme);
+    if(token->type == type){
+        return true;
+    }
+    return false;
 }
