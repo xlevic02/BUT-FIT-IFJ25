@@ -1,6 +1,8 @@
 import "ifj25" for Ifj
 class Program {
     static main() {
+        var x
+        x = foo(3)
     }
 
     static foo(param) {

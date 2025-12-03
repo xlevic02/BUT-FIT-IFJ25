@@ -363,12 +363,14 @@ ast_node_ptr ast_ifj_function_call_node(token_t *current_token, ast_node_ptr cur
         }
 
         //Only identifiers, literals and Null are allowed as arguments
-        if (current_token->type != TT_IDENTIFIER && current_token->type != TT_INT && current_token->type != TT_FLOAT && current_token->type != TT_STRING && current_token->type != TT_KEYWORD_Null){
+        if (current_token->type != TT_IDENTIFIER && current_token->type != TT_INT && current_token->type != TT_FLOAT && current_token->type != TT_STRING && current_token->type != TT_KEYWORD_Null && current_token->type != TT_KEYWORD_STRING && current_token->type != TT_NULL){
             ast_error(2, "Syntax error:\twrong token in inherent function call\n", current_node, current_token);
         }
         ast_node_type_t node_type = NT_LITERAL;
         if (current_token->type == TT_IDENTIFIER){
             node_type = NT_ID;
+        } else if (current_token->type == TT_KEYWORD_Null || current_token->type == TT_KEYWORD_STRING){
+            node_type = NT_DATATYPE;
         }
         
         ast_increase_children(parameter_node, ast_create_node(*current_token, current_node, node_type));
@@ -460,9 +462,10 @@ ast_node_ptr parse_primary(token_t *current_token, ast_node_ptr parent_node, ast
         case TT_STRING:
         case TT_KEYWORD_NUM:
         case TT_KEYWORD_Null:
+        case TT_KEYWORD_STRING:
         case TT_NULL:{
             ast_node_type_t node_type = NT_LITERAL;
-            if (current_token->type == TT_KEYWORD_NUM){
+            if (current_token->type == TT_KEYWORD_NUM || current_token->type == TT_KEYWORD_STRING){
                 node_type = NT_DATATYPE;
             }
             node = ast_create_node(*current_token, parent_node, node_type);

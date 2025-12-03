@@ -4,6 +4,7 @@ class Program {
     static main() {
         var idk
         var out
+        idk = 0
 
         out = idk * idk
         out = idk * 3.2
