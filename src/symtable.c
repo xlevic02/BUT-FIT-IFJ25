@@ -15,11 +15,9 @@ int bst_define_variable(bst_scope_ptr scope, ast_node_ptr ast_node) {
 
 
     if (scope->tree != NULL)
-        if ((bst_search(scope->tree, key)) != NULL) {
-            fprintf(stderr, "defining %s\n", ast_node->token.lexeme);
-            fprintf(stderr, "found %s\n", bst_search(scope->tree, key)->content.name);
+        if ((bst_search(scope->tree, key)) != NULL)
             return ERROR_SEM_REDEF;
-        }
+
 
     content.value_tree = malloc(sizeof(bst_value_node_t));
     if (content.value_tree == NULL)

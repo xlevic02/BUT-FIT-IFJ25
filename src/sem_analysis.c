@@ -732,39 +732,56 @@ token_type_t sem_func_eval(bst_scope_ptr param_origin_scope, ast_node_ptr func_c
 
 
         for (i = 0; i < func_call_node->children[0]->n_of_children; i++) {
-            key = get_hash(func_call_node->children[0]->children[i]);
-            if (key == 0) {
-                bst_destroy_symbol_table(func_scope);
-                ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, func_call_node, NULL);
-            }
-
-            param_node = bst_search(param_origin_scope->tree, key);
-            while (param_node == NULL) {
-                if (param_origin_scope->parent == NULL) {
+            if(func_call_node->children[0]->children[i]->node_type != NT_LITERAL) {
+                key = get_hash(func_call_node->children[0]->children[i]);
+                if (key == 0) {
                     bst_destroy_symbol_table(func_scope);
-                    ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, func_call_node, NULL);
+                    ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, func_call_node, NULL);
                 }
 
-                param_origin_scope = param_origin_scope->parent;
                 param_node = bst_search(param_origin_scope->tree, key);
-            }
+                while (param_node == NULL) {
+                    if (param_origin_scope->parent == NULL) {
+                        bst_destroy_symbol_table(func_scope);
+                        ast_error(ERROR_SEM_UNDEF, MSG_SEM_UNDEF, func_call_node, NULL);
+                    }
 
-            param_origin_scope = old_scope;
+                    param_origin_scope = param_origin_scope->parent;
+                    param_node = bst_search(param_origin_scope->tree, key);
+                }
+
+                param_origin_scope = old_scope;
 
 
-            key = get_hash(sem_find_func(func_call_node, NT_FUNC_DECL)->children[0]->children[i]);
-            if (key == 0) {
-                bst_destroy_symbol_table(func_scope);
-                ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, func_call_node, NULL);
-            }
+                key = get_hash(sem_find_func(func_call_node, NT_FUNC_DECL)->children[0]->children[i]);
+                if (key == 0) {
+                    bst_destroy_symbol_table(func_scope);
+                    ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, func_call_node, NULL);
+                }
 
-            arg_node = bst_search(func_scope->tree, key);
+                arg_node = bst_search(func_scope->tree, key);
 
-            arg_node = bst_declare_variable(arg_node, param_node->content.value_tree->value);
+                arg_node = bst_declare_variable(arg_node, param_node->content.value_tree->value);
 
-            if (arg_node == (bst_node_ptr) -1) {
-                bst_destroy_symbol_table(func_scope);
-                ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, func_call_node, NULL);
+                if (arg_node == (bst_node_ptr) -1) {
+                    bst_destroy_symbol_table(func_scope);
+                    ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, func_call_node, NULL);
+                }
+            } else {
+                key = get_hash(sem_find_func(func_call_node, NT_FUNC_DECL)->children[0]->children[i]);
+                if (key == 0) {
+                    bst_destroy_symbol_table(func_scope);
+                    ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, func_call_node, NULL);
+                }
+
+                arg_node = bst_search(func_scope->tree, key);
+
+                arg_node = bst_declare_variable(arg_node, func_call_node->children[0]->children[i]->token.type);
+
+                if (arg_node == (bst_node_ptr) -1) {
+                    bst_destroy_symbol_table(func_scope);
+                    ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, func_call_node, NULL);
+                }
             }
         }
     } else {
