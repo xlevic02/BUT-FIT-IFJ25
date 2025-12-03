@@ -149,9 +149,12 @@ ast_node_ptr create_ast(){
         if(current_token->type != TT_EOF)
             ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, root, current_token);
 
-    } else if((*current_token = get_token()).type != TT_EOF)
-        ast_error(ERROR_SYNTAX, "Syntax error:\tout of program frame\n", root, current_token);
+    } else {
+        ast_skip_EOL(current_token);
 
+        if((*current_token = get_token()).type != TT_EOF)
+            ast_error(ERROR_SYNTAX, "Syntax error:\tout of program frame\n", root, current_token);
+    }
 
     free(current_token);
     return root;
@@ -171,6 +174,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
         switch(current_token->type){
             //Assign
             case TT_IDENTIFIER:
+                fprintf(stderr, "assign\n");
                 tmp_tok = *current_token;
                 *current_token = get_token();
 
@@ -212,6 +216,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
             //Return statement
             case TT_KEYWORD_RETURN:
+                fprintf(stderr, "return\n");
                 new_node = ast_create_node(*current_token, current_node, NT_RETURN);
                 if(new_node == NULL)
                     ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, current_node, current_token);
@@ -235,6 +240,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
                 
             //Variable declaration
             case TT_KEYWORD_VAR:
+                fprintf(stderr, "var def\n");
                 *current_token = get_token();
                 if(current_token->type != TT_IDENTIFIER)
                     ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, current_node, current_token);
@@ -259,6 +265,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
             //If statement
             case TT_KEYWORD_IF:
+                fprintf(stderr, "if\n");
                 new_node = ast_create_node(*current_token, current_node, NT_IF_STATEMENT);
                 if(new_node == NULL)
                     ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, current_node, current_token);
@@ -345,6 +352,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
             //While loop
             case TT_KEYWORD_WHILE:
+                fprintf(stderr, "while\n");
                 new_node = ast_create_node(*current_token, current_node, NT_WHILE);
                 if(new_node == NULL)
                     ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, current_node, current_token);
@@ -401,6 +409,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
 
             case TT_LBRACE:
+                fprintf(stderr, "lbrace\n");
                 new_node = ast_create_node(*current_token, current_node, NT_BLOCK);
                 if(new_node == NULL)
                     ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, current_node, current_token);
@@ -424,6 +433,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
                 //End of a block
             case TT_RBRACE:
+                fprintf(stderr, "rbrace\n");
                 *current_token = get_token();
 
                 return;
@@ -432,6 +442,7 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
                 //End of a line, continue
             case TT_EOL:
+                fprintf(stderr, "eol\n");
                 break;
 
 
@@ -462,6 +473,9 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
                 //should not happen
             default:
+                fprintf(stderr, "default\n");
+                fprintf(stderr, "%s %d\n", current_token->lexeme, current_token->type);
+
                 ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, current_node, current_token);
                 break;
         }//switch
