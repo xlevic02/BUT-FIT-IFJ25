@@ -36,13 +36,13 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
         int num_of_children = root->n_of_children;
         if(num_of_children > 0 && root->children == NULL)
             {
-                return 0;
+                ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, root, NULL);
             }
         for(int i = 0; i < num_of_children; i++)    
             {
                 if(root->children[i] == NULL)
                     {
-                        return 0;
+                        ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, root, NULL);
                     }
                 //Generate all the functions that are children of root
                 ast_node_type_t ntype = root->children[i]->node_type;
