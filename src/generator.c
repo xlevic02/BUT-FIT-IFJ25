@@ -5,6 +5,9 @@
 #include "generator.h"
 
 
+////
+// This SHOULD be able to generate assembler code.
+////
 
 static int label_counter = 0;
 static scope_stack stack;
@@ -13,11 +16,12 @@ static ast_node_ptr root_node = NULL;
 static id_list_item *saved_ids = NULL;
 
 //I get the root node and symtable
-void generate_code(ast_node_ptr root, bst_scope_ptr symtable)
+int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
 {
     if(root == NULL)
-        return;
-
+    {
+        return 0;
+    }
     root_node = root;
     stack_init();
     printf(".IFJcode25\n");
@@ -28,28 +32,33 @@ void generate_code(ast_node_ptr root, bst_scope_ptr symtable)
     print_defvar("GF@tmp_type");
     //Generate all the global variables in symtable
     if (symtable != NULL && symtable->tree != NULL)
+    {
         generate_globals(symtable->tree);
-
+    }
     printf("CREATEFRAME\n");
     print_call("$$main");
     print_exit("int@0");
     //I assign roots number of children to int nu_of children
     int num_of_children = root->n_of_children;
     if(num_of_children > 0 && root->children == NULL)
-        return;
-
+    {
+        return 0;
+    }
     for(int i = 0; i < num_of_children; i++)
     {
         if(root->children[i] == NULL)
+        {
             ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, root, NULL);
-
+        }
         //Generate all the functions that are children of root
         ast_node_type_t ntype = root->children[i]->node_type;
         if(ntype == NT_FUNC_DECL || ntype == NT_GETTER || ntype == NT_SETTER)
         {
             if(root->children[i]->token.lexeme && strcmp(root->children[i]->token.lexeme, "main") != 0)
+            {
+                //printf("Entering Generate Node\n"); // Debugging line
                 generate_node(root->children[i], &symtable);
-
+            }
         }
     }
     //Start main
@@ -88,7 +97,7 @@ void generate_code(ast_node_ptr root, bst_scope_ptr symtable)
     }
     printf("POPFRAME\n");
     printf("RETURN\n");
-    return;
+    return 0;
 }
 
 //I generate the nodes themselves
@@ -850,10 +859,8 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
         else if(strcmp(builtin_type, "read_num") == 0)
         {
             //READ_NUM
-            print_break();
             print_read("GF@tmp_res", "float");
             printf("PUSHS GF@tmp_res\n");
-            print_break();
         }
         else if(strcmp(builtin_type, "str") == 0)
         {
@@ -1635,11 +1642,6 @@ void print_types()
     printf("TYPES\n");
 }
 
-void print_isint_isints()
-{
-    printf("ISINTS\n");
-}
-
 void print_label(char* label)
 {
     printf("LABEL %s\n", label);
@@ -1663,13 +1665,4 @@ void print_jumpifneqs(char* label)
 void print_exit(char* symbol)
 {
     printf("EXIT %s\n", symbol);
-}
-
-void print_break()
-{
-    printf("BREAK\n");
-}
-void print_dprint(char* symbol)
-{
-    printf("DPRINT %s\n", symbol);
 }
