@@ -3,23 +3,18 @@
 
 #include "generator.h"
 
-
-////
-// This SHOULD be able to generate assembler code.
-////
-
 static int label_counter = 0;
 static scope_stack stack;
 static int var_counter = 0;
 static ast_node_ptr root_node = NULL; 
 static id_list_item *saved_ids = NULL;
 
-//I get the root node and symtable
+//Get the root node and symtable
 int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
     {
         if(root == NULL)    
             {
-                return 0;
+                ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, root, NULL);
             }
         root_node = root;
         stack_init();
@@ -55,7 +50,6 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
                     {
                         if(root->children[i]->token.lexeme && strcmp(root->children[i]->token.lexeme, "main") != 0)
                             {
-                                //printf("Entering Generate Node\n"); // Debugging line
                                 generate_node(root->children[i], &symtable);
                             }
                     }
@@ -105,8 +99,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
     {
         if(node == NULL)
             {
-                //If generate_node reached the end of ast, recursively return;
-                return;
+                ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
             }
         //Get the tokens and the nodes type 
         token_type_t type = node->token.type;
