@@ -51,6 +51,11 @@ Compile:
 test:
 	$(TESTS_DIR)/run_all_tests.sh
 	
+fix-perms:
+	chmod +rwx $(TESTS_DIR)/*.sh
+	chmod +rwx $(TESTS_DIR)/tools/ic25int-linux-x86_64
+	chmod +rwx $(BUILD_DIR)/wren_compiler
+
 # Clean build files
 clean:
 	rm -rf $(BUILD_DIR)
