@@ -1028,8 +1028,6 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 else if(strcmp(builtin_type, "strcmp") == 0)
                     {
                         //Compare s1 with s2, and then pushes either -1, 1 or 0 depending on if s1 is shorter, longer or equal with s2
-                        //Almost done, now I'll just have to create some additional variables to help, some jumps
-                        // and the labels for those jumps
                         if(node->children[1]->n_of_children < 2)
                             {
                                 ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
