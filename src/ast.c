@@ -99,7 +99,8 @@ ast_node_ptr create_ast(){
 
         ast_node_ptr body_node = ast_create_node(*current_token, new_node, NT_BLOCK);
         body_node->token.type = TT_LBRACE;
-        body_node->token.lexeme = "Block";
+        body_node->token.lexeme = malloc(2);
+        strcpy(body_node->token.lexeme, "{");
         ast_increase_children(new_node, body_node);
         ast_regular_node(body_node, new_node, current_token, 0);
         
@@ -222,7 +223,8 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 //Handle if body
                 ast_node_ptr if_body_node = ast_create_node(*current_token, if_node, NT_IF_BODY);
                 if_body_node->token.type = TT_LBRACE;
-                if_body_node->token.lexeme = "Block";
+                if_body_node->token.lexeme = malloc(strlen("{") + 1);
+                strcpy(if_body_node->token.lexeme, "{");
                 ast_increase_children(if_node, if_body_node);
                 ast_regular_node(if_body_node, if_node, current_token, 0);
 
@@ -280,7 +282,8 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
                 //Handle while body
                 ast_node_ptr while_body_node = ast_create_node(*current_token, while_node, NT_WHILE_BODY);
                 while_body_node->token.type = TT_LBRACE;
-                while_body_node->token.lexeme = "Block";
+                while_body_node->token.lexeme = malloc(strlen("{") + 1);
+                strcpy(while_body_node->token.lexeme, "{");
                 ast_increase_children(while_node, while_body_node);
                 ast_regular_node(while_body_node, while_node, current_token, 0);
 
@@ -301,6 +304,7 @@ ast_node_ptr ast_regular_node(ast_node_ptr current_node, ast_node_ptr previous_n
 
                 //End of a block
             case TT_RBRACE:
+                free(current_token->lexeme);
                 return current_node;
             
             case TT_LBRACE:{
@@ -584,27 +588,30 @@ void ast_skip_EOL(token_t *current_token){
 
 int ast_handle_prologue(token_t *current_token){
 
+    free(current_token->lexeme);
     if(current_token->type != TT_KEYWORD_IMPORT) return 1;
 
-    free(current_token->lexeme);
     *current_token = get_token();
     ast_skip_EOL(current_token);
 
-    if(strcmp(current_token->lexeme, "ifj25")) return 1;
-
+    if(strcmp(current_token->lexeme, "ifj25")) {
+        free(current_token->lexeme);
+        return 1;
+    }
     free(current_token->lexeme);
+
     *current_token = get_token();
 
+    free(current_token->lexeme);
     if(current_token->type == TT_EOL) return 1;
 
     if(current_token->type != TT_KEYWORD_FOR) return 1;
 
-    free(current_token->lexeme);
     *current_token = get_token();
     ast_skip_EOL(current_token);
 
-    if(current_token->type != TT_KEYWORD_IFJ) return 1;
     free(current_token->lexeme);
+    if(current_token->type != TT_KEYWORD_IFJ) return 1;
     *current_token = get_token();
 
     return 0;
@@ -673,6 +680,7 @@ void destroy_ast(ast_node_ptr node){
     free_ast(&node);
 }
 
+
 void free_ast(ast_node_ptr *node){
     if (*node == NULL) {
         return;
@@ -680,12 +688,12 @@ void free_ast(ast_node_ptr *node){
     if ((*node)->children != NULL){
         for (int i = 0; i < (*node)->n_of_children; i++){
             free_ast(&(*node)->children[i]);
-            (*node)->children[i] = NULL;
         }
         free((*node)->children);
-        (*node)->children = NULL;
     }
-    free((*node)->token.lexeme);
+    if ((*node)->token.lexeme != NULL){
+        free((*node)->token.lexeme);
+    } 
     free(*node);
     *node = NULL;
 }
