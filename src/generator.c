@@ -490,6 +490,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
         else if(type == TT_INT)
             {
                 print_pushs(LITERAL_INT, node->token.lexeme, NULL);
+                print_conversion(INT2FLOAT);
             }
         else if(type == TT_FLOAT)
             {
@@ -512,26 +513,6 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 //Pop the results into helper operands
                 print_pops("GF@tmp_op2");
                 print_pops("GF@tmp_op1");
-                char label_op1_float[64], label_op2_float[64];
-                get_unique_label(label_op1_float, "op1_int");
-                get_unique_label(label_op2_float, "op1_int");
-                print_pushs(VARIABLE, "tmp_op1", "GF");
-                print_types();
-                print_pops("GF@tmp_type");
-                printf("JUMPIFEQ %s GF@tmp_type string@int\n", label_op1_float);
-                print_pushs(VARIABLE, "tmp_op1", "GF");
-                print_conversion(INT2FLOAT);
-                print_pops("GF@tmp_op1");
-                print_label(label_op1_float);
-                print_pushs(VARIABLE, "tmp_op2", "GF");
-                print_types();
-                print_pops("GF@tmp_type");
-                printf("JUMPIFEQ %s GF@tmp_type string@int\n", label_op2_float);
-                print_pushs(VARIABLE, "tmp_op2", "GF");
-                print_conversion(INT2FLOAT);
-                print_pops("GF@tmp_op2");
-                print_label(label_op2_float);
-                //All arithmetic expressions
                 if(type == TT_PLUS)
                     {  
                         char label_concat[64], label_add[64], label_end[64];
@@ -562,6 +543,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_pushs(VARIABLE, "tmp_op2", "GF");
                         print_arithmetic(SUB);
                         print_pops("GF@tmp_res");
+                        print_pushs(VARIABLE, "tmp_res", "GF");
                     }
                 else if(type == TT_MUL)
                     {
@@ -677,31 +659,13 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 //Pop the results into helper operands
                 print_pops("GF@tmp_op2");
                 print_pops("GF@tmp_op1");
-                char label_op1_float[64], label_op2_float[64];
-                get_unique_label(label_op1_float, "op1_int");
-                get_unique_label(label_op2_float, "op1_int");
-                print_pushs(VARIABLE, "tmp_op1", "GF");
-                print_types();
-                print_pops("GF@tmp_type");
-                printf("JUMPIFNEQ %s GF@tmp_type string@int\n", label_op1_float);
-                print_pushs(VARIABLE, "tmp_op1", "GF");
-                print_conversion(INT2FLOAT);
-                print_pops("GF@tmp_op1");
-                print_label(label_op1_float);
-                print_pushs(VARIABLE, "tmp_op2", "GF");
-                print_types();
-                print_pops("GF@tmp_type");
-                printf("JUMPIFNEQ %s GF@tmp_type string@int\n", label_op2_float);
-                print_pushs(VARIABLE, "tmp_op2", "GF");
-                print_conversion(INT2FLOAT);
-                print_pops("GF@tmp_op2");
-                print_label(label_op2_float);
                 if(type == TT_GT)
                     {
                         print_pushs(VARIABLE, "tmp_op1", "GF");
                         print_pushs(VARIABLE, "tmp_op2", "GF");
                         print_relation(GT);
                         print_pops("GF@tmp_res");
+                        print_pushs(VARIABLE, "tmp_res", "GF");
                     }
                 else if(type == TT_LT)
                     {
@@ -709,6 +673,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_pushs(VARIABLE, "tmp_op2", "GF");
                         print_relation(LT);
                         print_pops("GF@tmp_res");
+                        print_pushs(VARIABLE, "tmp_res", "GF");
                     }
                 else if(type == TT_EQ)
                     {
@@ -716,6 +681,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_pushs(VARIABLE, "tmp_op2", "GF");
                         print_relation(EQ);
                         print_pops("GF@tmp_res");
+                        print_pushs(VARIABLE, "tmp_res", "GF");
                     }
                 else if(type == TT_LE)
                     {
@@ -724,6 +690,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_relation(GT);
                         print_boolean(NOT);
                         print_pops("GF@tmp_res");
+                        print_pushs(VARIABLE, "tmp_res", "GF");
                     }
                 else if(type == TT_GE)
                     {
@@ -732,6 +699,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_relation(LT);
                         print_boolean(NOT);
                         print_pops("GF@tmp_res");
+                        print_pushs(VARIABLE, "tmp_res", "GF");
                     }
                 else if(type == TT_NEQ)
                     {
@@ -740,6 +708,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_relation(EQ);
                         print_boolean(NOT);
                         print_pops("GF@tmp_res");
+                        print_pushs(VARIABLE, "tmp_res", "GF");
                     }
                 else if(type == TT_KEYWORD_IS)
                     {
