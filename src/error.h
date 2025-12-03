@@ -60,7 +60,7 @@
 #define MSG_SEM_INCOMPATIBLE "Semantic error:\tincompatible data types in expression\n"
 #define MSG_SEM_RETURN "Semantic error:\tmissing return expression or not an expression in return\n"
 #define MSG_SEM_EXPECTED_EXPR "Semantic error:\tinvalid token in expression\n"
-#define MSG_SEM_PARAM_NUM_OR_TYPE "Semantic error:\twrong number of parameters or wrong types of parameters in builtin function\n"
+#define MSG_SEM_PARAM_NUM_OR_TYPE "Semantic error:\twrong number of parameters or wrong types of parameters in function\n"
 #define MSG_SEM_BOOL_IN_VAR "Semantic error:\tboolean value assigned to var\n"
 
 // Internal error
