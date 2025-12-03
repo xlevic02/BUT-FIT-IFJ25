@@ -5,35 +5,47 @@ DEFVAR GF@tmp_res
 DEFVAR GF@tmp_type
 DEFVAR GF@__d
 MOVE GF@__d nil@nil
-JUMP $$main
-LABEL setter$setX
-PUSHFRAME
 CREATEFRAME
-DEFVAR LF@retval
-MOVE LF@retval nil@nil
-DEFVAR LF@x$0
-MOVE LF@x$0 LF@par1
-PUSHS LF@x$0
-POPS GF@tmp_op1
-WRITE GF@tmp_op1
-PUSHS nil@nil
-POPS GF@__d
-PUSHS GF@__d
-PUSHS string@\010
-POPS GF@tmp_op1
-WRITE GF@tmp_op1
-PUSHS nil@nil
-POPS GF@__d
-PUSHS GF@__d
+CALL $$main
+EXIT int@0
 LABEL $$main
 CREATEFRAME
 PUSHFRAME
-PUSHS int@42
+DEFVAR LF@retval
+MOVE LF@retval nil@nil
+DEFVAR LF@s1$0
+MOVE LF@s1$0 nil@nil
+PUSHS string@Hello
+POPS LF@s1$0
+DEFVAR LF@s2$1
+MOVE LF@s2$1 nil@nil
+PUSHS string@\032World
+POPS LF@s2$1
+DEFVAR LF@s3$2
+MOVE LF@s3$2 nil@nil
+PUSHS LF@s1$0
+PUSHS LF@s2$1
+POPS GF@tmp_op2
+POPS GF@tmp_op1
+PUSHS GF@tmp_op1
+TYPES
+POPS GF@tmp_type
+JUMPIFEQ op_concat$0 GF@tmp_type string@string
+PUSHS GF@tmp_op1
+PUSHS GF@tmp_op2
+ADDS
 POPS GF@tmp_res
-CREATEFRAME
-DEFVAR TF@par1
-MOVE TF@par1 GF@tmp_res
-CALL setter$setX
-PUSHS TF@retval
+PUSHS GF@tmp_res
+JUMP op_end$2
+LABEL op_concat$0
+CONCAT GF@tmp_res GF@tmp_op1 GF@tmp_op2
+PUSHS GF@tmp_res
+LABEL op_end$2
+POPS LF@s3$2
+PUSHS LF@s3$2
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
 POPFRAME
-EXIT int@0
+RETURN

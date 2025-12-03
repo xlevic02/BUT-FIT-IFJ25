@@ -1,0 +1,523 @@
+.IFJcode25
+DEFVAR GF@tmp_op1
+DEFVAR GF@tmp_op2
+DEFVAR GF@tmp_res
+DEFVAR GF@tmp_type
+DEFVAR GF@__a
+MOVE GF@__a nil@nil
+DEFVAR GF@__d
+MOVE GF@__d nil@nil
+CREATEFRAME
+CALL $$main
+EXIT int@0
+LABEL getAnswer$0
+PUSHFRAME
+CREATEFRAME
+DEFVAR LF@retval
+MOVE LF@retval nil@nil
+PUSHS int@42
+POPS LF@retval
+POPFRAME
+RETURN
+POPFRAME
+RETURN
+LABEL getAnswer$1
+PUSHFRAME
+CREATEFRAME
+DEFVAR LF@retval
+MOVE LF@retval nil@nil
+DEFVAR LF@arg$0
+MOVE LF@arg$0 LF@par1
+PUSHS LF@arg$0
+POPS GF@tmp_op1
+PUSHS GF@tmp_op1
+TYPES
+POPS GF@tmp_type
+JUMPIFEQ true$3 GF@tmp_type string@int
+JUMPIFEQ true$3 GF@tmp_type string@float
+LABEL false$4
+PUSHS bool@false
+JUMP end$5
+LABEL true$3
+PUSHS bool@true
+LABEL end$5
+POPS GF@tmp_res
+PUSHS GF@tmp_res
+PUSHS nil@nil
+JUMPIFEQS if_else$1
+PUSHS GF@tmp_res
+TYPES
+PUSHS string@bool
+JUMPIFNEQS if_true$2
+PUSHS GF@tmp_res
+PUSHS bool@false
+JUMPIFEQS if_else$1
+LABEL if_true$2
+PUSHS LF@arg$0
+PUSHS int@1
+SUBS
+PUSHS int@32
+PUSHS float@0x1.5066666666666p+6
+MULS
+PUSHS float@0x1.3333333333333p+1
+POPS GF@tmp_op2
+POPS GF@tmp_op1
+PUSHS GF@tmp_op1
+TYPES
+POPS GF@tmp_type
+JUMPIFEQ op_idiv$10 GF@tmp_type string@int
+JUMPIFEQ op2_zero$9 GF@tmp_op2 float@0x0p+0
+PUSHS GF@tmp_op1
+PUSHS GF@tmp_op2
+DIVS
+POPS GF@tmp_res
+PUSHS GF@tmp_res
+JUMP op_end$12
+LABEL op_idiv$10
+JUMPIFEQ op2_zero$9 GF@tmp_op2 int@0
+PUSHS GF@tmp_op1
+PUSHS GF@tmp_op2
+IDIVS
+POPS GF@tmp_res
+PUSHS GF@tmp_res
+JUMP op_end$12
+LABEL op2_zero$9
+EXIT int@57
+LABEL op_end$12
+GTS
+POPS GF@tmp_res
+PUSHS GF@tmp_res
+PUSHS nil@nil
+JUMPIFEQS if_else$7
+PUSHS GF@tmp_res
+TYPES
+PUSHS string@bool
+JUMPIFNEQS if_true$8
+PUSHS GF@tmp_res
+PUSHS bool@false
+JUMPIFEQS if_else$7
+LABEL if_true$8
+PUSHS string@Celkem\032velke\032cislo!\010
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+JUMP if_end$6
+LABEL if_else$7
+LABEL if_end$6
+PUSHS LF@arg$0
+PUSHS int@42
+MULS
+POPS LF@arg$0
+DEFVAR LF@ansStr$1
+MOVE LF@ansStr$1 nil@nil
+PUSHS LF@arg$0
+POPS GF@tmp_op1
+PUSHS GF@tmp_op1
+TYPES
+POPS GF@tmp_type
+JUMPIFEQ str_is_int$13 GF@tmp_type string@int
+JUMPIFEQ str_is_float$14 GF@tmp_type string@float
+PUSHS GF@tmp_op1
+JUMP str_end$15
+LABEL str_is_int$13
+PUSHS GF@tmp_op1
+INT2STRS
+JUMP str_end$15
+LABEL str_is_float$14
+PUSHS GF@tmp_op1
+FLOAT2STRS
+LABEL str_end$15
+POPS LF@ansStr$1
+PUSHS string@Odpoved\032je\032
+PUSHS LF@ansStr$1
+POPS GF@tmp_op2
+POPS GF@tmp_op1
+PUSHS GF@tmp_op1
+TYPES
+POPS GF@tmp_type
+JUMPIFEQ op_concat$16 GF@tmp_type string@string
+PUSHS GF@tmp_op1
+PUSHS GF@tmp_op2
+ADDS
+POPS GF@tmp_res
+PUSHS GF@tmp_res
+JUMP op_end$18
+LABEL op_concat$16
+CONCAT GF@tmp_res GF@tmp_op1 GF@tmp_op2
+PUSHS GF@tmp_res
+LABEL op_end$18
+POPS LF@retval
+POPFRAME
+RETURN
+JUMP if_end$0
+LABEL if_else$1
+PUSHS string@Neplatny\032argument\010
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS nil@nil
+POPS LF@retval
+POPFRAME
+RETURN
+LABEL if_end$0
+POPFRAME
+RETURN
+LABEL getter$unicorn
+PUSHFRAME
+CREATEFRAME
+DEFVAR LF@retval
+MOVE LF@retval nil@nil
+PUSHS GF@__a
+POPS GF@tmp_res
+PUSHS GF@tmp_res
+PUSHS nil@nil
+JUMPIFEQS if_else$20
+PUSHS GF@tmp_res
+TYPES
+PUSHS string@bool
+JUMPIFNEQS if_true$21
+PUSHS GF@tmp_res
+PUSHS bool@false
+JUMPIFEQS if_else$20
+LABEL if_true$21
+PUSHS GF@__a
+PUSHS int@10
+POPS GF@tmp_op2
+POPS GF@tmp_op1
+PUSHS GF@tmp_op1
+TYPES
+POPS GF@tmp_type
+JUMPIFEQ op_concat$22 GF@tmp_type string@string
+PUSHS GF@tmp_op1
+PUSHS GF@tmp_op2
+ADDS
+POPS GF@tmp_res
+PUSHS GF@tmp_res
+JUMP op_end$24
+LABEL op_concat$22
+CONCAT GF@tmp_res GF@tmp_op1 GF@tmp_op2
+PUSHS GF@tmp_res
+LABEL op_end$24
+POPS LF@retval
+POPFRAME
+RETURN
+JUMP if_end$19
+LABEL if_else$20
+PUSHS nil@nil
+POPS LF@retval
+POPFRAME
+RETURN
+LABEL if_end$19
+POPFRAME
+RETURN
+LABEL setter$unicorn
+PUSHFRAME
+CREATEFRAME
+DEFVAR LF@retval
+MOVE LF@retval nil@nil
+DEFVAR LF@val$2
+MOVE LF@val$2 LF@par1
+PUSHS string@Jsem\032jednorozci\032setter,\032ziskal\032jsem\032
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS LF@val$2
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS string@\010
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS LF@val$2
+POPS GF@__a
+POPFRAME
+RETURN
+LABEL unicorn$0
+PUSHFRAME
+CREATEFRAME
+DEFVAR LF@retval
+MOVE LF@retval nil@nil
+PUSHS string@Jsem\032ve\032funkci\032unicorn,\032ne\032v\032getteru\010
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+POPFRAME
+RETURN
+LABEL $$main
+CREATEFRAME
+PUSHFRAME
+DEFVAR LF@retval
+MOVE LF@retval nil@nil
+CREATEFRAME
+CALL getter$unicorn
+PUSHS TF@retval
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS string@\010
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS int@5
+POPS GF@tmp_res
+CREATEFRAME
+DEFVAR TF@par1
+MOVE TF@par1 GF@tmp_res
+CALL setter$unicorn
+PUSHS TF@retval
+DEFVAR LF@myValue$3
+MOVE LF@myValue$3 nil@nil
+CREATEFRAME
+CALL getter$unicorn
+PUSHS TF@retval
+POPS LF@myValue$3
+PUSHS LF@myValue$3
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS string@\010
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+CREATEFRAME
+CALL unicorn$0
+PUSHS TF@retval
+POPS LF@myValue$3
+PUSHS LF@myValue$3
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS string@\010
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS string@Napis\032cislo:\010
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+DEFVAR LF@valueFromUser$4
+MOVE LF@valueFromUser$4 nil@nil
+READ GF@tmp_res int
+PUSHS GF@tmp_res
+POPS LF@valueFromUser$4
+CREATEFRAME
+DEFVAR TF@par1
+POPS TF@par1
+CALL getAnswer$1
+PUSHS TF@retval
+POPS LF@myValue$3
+PUSHS LF@myValue$3
+PUSHS nil@nil
+EQS
+POPS GF@tmp_res
+PUSHS GF@tmp_res
+PUSHS nil@nil
+JUMPIFEQS if_else$26
+PUSHS GF@tmp_res
+TYPES
+PUSHS string@bool
+JUMPIFNEQS if_true$27
+PUSHS GF@tmp_res
+PUSHS bool@false
+JUMPIFEQS if_else$26
+LABEL if_true$27
+PUSHS string@ODPOVED\032NENI!\010
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS nil@nil
+POPS LF@retval
+POPFRAME
+RETURN
+JUMP if_end$25
+LABEL if_else$26
+PUSHS LF@myValue$3
+POPS GF@tmp_op1
+PUSHS GF@tmp_op1
+TYPES
+POPS GF@tmp_type
+JUMPIFEQ true$31 GF@tmp_type string@nil
+LABEL false$32
+PUSHS bool@false
+JUMP end$33
+LABEL true$31
+PUSHS bool@true
+LABEL end$33
+POPS GF@tmp_res
+PUSHS GF@tmp_res
+PUSHS nil@nil
+JUMPIFEQS if_else$29
+PUSHS GF@tmp_res
+TYPES
+PUSHS string@bool
+JUMPIFNEQS if_true$30
+PUSHS GF@tmp_res
+PUSHS bool@false
+JUMPIFEQS if_else$29
+LABEL if_true$30
+JUMP if_end$28
+LABEL if_else$29
+LABEL if_end$28
+LABEL if_end$25
+PUSHS LF@myValue$3
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS string@\010
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+LABEL while_start$34
+PUSHS LF@valueFromUser$4
+PUSHS int@0
+PUSHS int@2
+SUBS
+GTS
+POPS GF@tmp_res
+PUSHS GF@tmp_res
+PUSHS nil@nil
+JUMPIFEQS while_end$35
+PUSHS GF@tmp_res
+TYPES
+PUSHS string@bool
+JUMPIFNEQS while_true$36
+PUSHS GF@tmp_res
+PUSHS bool@false
+JUMPIFEQS while_end$35
+LABEL while_true$36
+PUSHS string@Jedeme\032dolu!\032
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS LF@valueFromUser$4
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS string@\032->\032
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS LF@valueFromUser$4
+PUSHS int@1
+SUBS
+POPS LF@valueFromUser$4
+DEFVAR LF@valStr$5
+MOVE LF@valStr$5 nil@nil
+PUSHS LF@valueFromUser$4
+POPS GF@tmp_op1
+PUSHS GF@tmp_op1
+TYPES
+POPS GF@tmp_type
+JUMPIFEQ str_is_int$37 GF@tmp_type string@int
+JUMPIFEQ str_is_float$38 GF@tmp_type string@float
+PUSHS GF@tmp_op1
+JUMP str_end$39
+LABEL str_is_int$37
+PUSHS GF@tmp_op1
+INT2STRS
+JUMP str_end$39
+LABEL str_is_float$38
+PUSHS GF@tmp_op1
+FLOAT2STRS
+LABEL str_end$39
+POPS LF@valStr$5
+PUSHS LF@valStr$5
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS string@\010
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+JUMP while_start$34
+LABEL while_end$35
+DEFVAR LF@x$6
+MOVE LF@x$6 nil@nil
+PUSHS int@1
+POPS LF@x$6
+DEFVAR LF@x$7
+MOVE LF@x$7 nil@nil
+PUSHS string@cervena\032panda\032+\032
+POPS LF@x$7
+PUSHS string@(
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS int@1
+PUSHS int@1
+EQS
+POPS GF@tmp_res
+PUSHS GF@tmp_res
+PUSHS nil@nil
+JUMPIFEQS if_else$41
+PUSHS GF@tmp_res
+TYPES
+PUSHS string@bool
+JUMPIFNEQS if_true$42
+PUSHS GF@tmp_res
+PUSHS bool@false
+JUMPIFEQS if_else$41
+LABEL if_true$42
+DEFVAR LF@y$8
+MOVE LF@y$8 nil@nil
+PUSHS LF@x$7
+PUSHS int@3
+MULS
+POPS LF@y$8
+DEFVAR LF@x$9
+MOVE LF@x$9 nil@nil
+PUSHS LF@y$8
+POPS LF@x$9
+PUSHS LF@x$9
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+JUMP if_end$40
+LABEL if_else$41
+LABEL if_end$40
+PUSHS string@konec)\032
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS LF@x$7
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS LF@x$6
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+PUSHS string@\010
+POPS GF@tmp_op1
+WRITE GF@tmp_op1
+PUSHS nil@nil
+POPS GF@__d
+POPFRAME
+RETURN
