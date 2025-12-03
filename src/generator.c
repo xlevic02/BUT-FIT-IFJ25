@@ -873,10 +873,8 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 else if(strcmp(builtin_type, "read_num") == 0)
                     {
                         //READ_NUM
-                        print_break();
                         print_read("GF@tmp_res", "float");
                         printf("PUSHS GF@tmp_res\n");
-                        print_break();
                     }
                 else if(strcmp(builtin_type, "str") == 0)
                     {
@@ -1729,11 +1727,6 @@ void print_types()
         printf("TYPES\n");
     }
 
-void print_isint_isints()
-    {
-        printf("ISINTS\n");
-    }
-
 void print_label(char* label)
     {
         printf("LABEL %s\n", label);
@@ -1757,13 +1750,4 @@ void print_jumpifneqs(char* label)
 void print_exit(char* symbol)
     {
         printf("EXIT %s\n", symbol);
-    }
-
-void print_break()
-    {
-        printf("BREAK\n");
-    }
-void print_dprint(char* symbol)
-    {
-        printf("DPRINT %s\n", symbol);
     }
