@@ -223,12 +223,9 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
 
                 *current_token = get_token();
-                if(current_token->type != TT_EOL){
-                    if (current_token->type == TT_EOF)
-                        ast_error(ERROR_SYNTAX, MSG_SYN_UNEXPECTED_EOF, new_node, current_token);
 
-                    ast_expression_node(new_node, current_token);
-                }
+                ast_expression_node(new_node, current_token);
+
 
                 break;
 
