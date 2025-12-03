@@ -103,7 +103,6 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
     for (int i = 0; i < block_node->n_of_children; i++) {
         switch (block_node->children[i]->node_type) {
             case NT_VAR_DEF:
-                fprintf(stderr, "var def\n");
                 if (strncmp(block_node->children[i]->token.lexeme, "__", 2) == 0)
                     while (scope->parent != NULL)
                         scope = scope->parent;
@@ -126,7 +125,6 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
                 break;
 
             case NT_ASSIGN:
-                fprintf(stderr, "assign\n");
                 key = get_hash(block_node->children[i]->children[0]);
                 if (key == 0) {
                     bst_destroy_symbol_table(scope);
@@ -173,7 +171,6 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
                                     break;
 
                                 case ERROR_SEM_REDEF:
-                                    fprintf(stderr, "block eval 2\n");
                                     bst_destroy_symbol_table(scope);
                                     ast_error(ERROR_SEM_REDEF, MSG_SEM_REDEF, block_node, NULL);
 
@@ -194,6 +191,7 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
                 scope = old_scope;
 
                 token_type_t expr_type = sem_expr_type_eval(scope, block_node->children[i]->children[1]);
+
 
                 if(expr_type == TT_BOOL) {
                     bst_destroy_symbol_table(scope);
@@ -219,7 +217,6 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
                 break;
 
             case NT_IF_STATEMENT:
-                fprintf(stderr, "if statement\n");
                 condition = sem_expr_type_eval(old_scope, block_node->children[i]->children[0]);
 
                 if (condition != TT_NULL &&
@@ -262,7 +259,6 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
                 break;
 
             case NT_WHILE:
-                fprintf(stderr, "while\n");
                 condition = sem_expr_type_eval(scope, block_node->children[i]->children[0]);
 
                 if (condition == TT_NULL ||
@@ -285,7 +281,6 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
                 break;
 
             case NT_BLOCK:
-                fprintf(stderr, "block\n");
                 if (bst_increase_scope(&scope)) {
                     bst_destroy_symbol_table(scope);
                     ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, block_node, NULL);
@@ -302,7 +297,6 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
                 break;
 
             case NT_RETURN:
-                fprintf(stderr, "return\n");
                 while  (func_decl_node->node_type != NT_FUNC_DECL &&
                         func_decl_node->node_type != NT_GETTER &&
                         func_decl_node->node_type != NT_SETTER)
@@ -448,7 +442,6 @@ token_type_t sem_expr_type_eval(bst_scope_ptr scope, ast_node_ptr expr_node) {
                 for(int i = 0; i < root->n_of_children; i++)
                     if(strcmp(root->children[i]->token.lexeme, expr_node->token.lexeme) == 0) {
                         bst_destroy_symbol_table(scope);
-                        fprintf(stderr, "func call\n");
                         ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, root, NULL);
                     }
 
@@ -983,7 +976,6 @@ token_type_t sem_func_eval(bst_scope_ptr param_origin_scope, ast_node_ptr func_c
 
 // evaluates correctness of parameters and returns return datatype of builtin function
 token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
-    fprintf(stderr, "in builtin\n");
     unsigned int key;
     ast_node_ptr builtin_id = builtin_node->children[0];
     ast_node_ptr param_node = builtin_node->children[1];
@@ -1003,7 +995,6 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
         strcmp(builtin_id->token.lexeme, "str") == 0) {
         if (param_node->n_of_children != 1) {
             bst_destroy_symbol_table(scope);
-            fprintf(stderr, "write or str\n");
             ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
         }
 
@@ -1054,7 +1045,6 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
     if (strcmp(builtin_id->token.lexeme, "floor") == 0) {
         if (param_node->n_of_children != 1) {
             bst_destroy_symbol_table(scope);
-            fprintf(stderr, "floor\n");
             ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
         }
 
@@ -1070,7 +1060,6 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
                 if (scope->parent == NULL) {
                     if(strncmp(param_node->children[0]->token.lexeme, "__", 2) == 0) {
                         bst_destroy_symbol_table(scope);
-                        fprintf(stderr, "floor2\n");
                         ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
                     }
 
@@ -1100,7 +1089,6 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
             param_value != TT_RUNNING_NUM &&
             param_value != TT_RUNNING_UNDEF) {
             bst_destroy_symbol_table(scope);
-            fprintf(stderr, "floor3\n");
             ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
         }
 
@@ -1110,7 +1098,6 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
     if (strcmp(builtin_id->token.lexeme, "length") == 0) {
         if (param_node->n_of_children != 1) {
             bst_destroy_symbol_table(scope);
-            fprintf(stderr, "length\n");
             ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
         }
 
@@ -1126,7 +1113,6 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
                 if (scope->parent == NULL) {
                     if(strncmp(param_node->children[0]->token.lexeme, "__", 2) == 0) {
                         bst_destroy_symbol_table(scope);
-                        fprintf(stderr, "length2\n");
                         ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
                     }
 
@@ -1154,7 +1140,6 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
             param_value != TT_RUNNING_STRING &&
             param_value != TT_RUNNING_UNDEF) {
             bst_destroy_symbol_table(scope);
-            fprintf(stderr, "length3\n");
             ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
         }
 
@@ -1164,7 +1149,6 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
     if (strcmp(builtin_id->token.lexeme, "substring") == 0) {
         if (param_node->n_of_children != 3) {
             bst_destroy_symbol_table(scope);
-            fprintf(stderr, "substring\n");
             ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
         }
 
@@ -1176,11 +1160,11 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
                     ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, builtin_node, NULL);
                 }
 
+                arg = bst_search(scope->tree, key);
                 while (arg == NULL) {
                     if (scope->parent == NULL) {
                         if (strncmp(param_node->children[i]->token.lexeme, "__", 2) == 0) {
                             bst_destroy_symbol_table(scope);
-                            fprintf(stderr, "substring2\n");
                             ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node,
                                       NULL);
                         }
@@ -1211,14 +1195,12 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
                     param_value != TT_RUNNING_NUM &&
                     param_value != TT_RUNNING_UNDEF) {
                     bst_destroy_symbol_table(scope);
-                    fprintf(stderr, "substring3\n");
                     ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
                 }
             } else if  (param_value != TT_STRING &&
                         param_value != TT_RUNNING_STRING &&
                         param_value != TT_RUNNING_UNDEF) {
                 bst_destroy_symbol_table(scope);
-                fprintf(stderr, "substring4\n");
                 ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
             }
 
@@ -1232,7 +1214,6 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
     if (strcmp(builtin_id->token.lexeme, "strcmp") == 0) {
         if (param_node->n_of_children != 2) {
             bst_destroy_symbol_table(scope);
-            fprintf(stderr, "strcmp\n");
             ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
         }
 
@@ -1244,11 +1225,11 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
                     ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, builtin_node, NULL);
                 }
 
+                arg = bst_search(scope->tree, key);
                 while (arg == NULL) {
                     if (scope->parent == NULL) {
                         if(strncmp(param_node->children[i]->token.lexeme, "__", 2) == 0) {
                             bst_destroy_symbol_table(scope);
-                            fprintf(stderr, "strcmp2\n");
                             ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
                         }
 
@@ -1276,7 +1257,6 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
                 param_value != TT_RUNNING_STRING &&
                 param_value != TT_RUNNING_UNDEF) {
                 bst_destroy_symbol_table(scope);
-                fprintf(stderr, "strcmp3\n");
                 ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
             }
 
@@ -1289,7 +1269,6 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
     if (strcmp(builtin_id->token.lexeme, "ord") == 0) {
         if (param_node->n_of_children != 2) {
             bst_destroy_symbol_table(scope);
-            fprintf(stderr, "ord\n");
             ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
         }
 
@@ -1301,11 +1280,11 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
                     ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, builtin_node, NULL);
                 }
 
+                arg = bst_search(scope->tree, key);
                 while (arg == NULL) {
                     if (scope->parent == NULL) {
                         if(strncmp(param_node->children[i]->token.lexeme, "__", 2) == 0) {
                             bst_destroy_symbol_table(scope);
-                            fprintf(stderr, "ord2\n");
                             ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
                         }
 
@@ -1329,22 +1308,18 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
             } else
                 param_value = param_node->children[i]->token.type;
 
-            fprintf(stderr, "param node child %d is %s %d\n", i, param_node->children[i]->token.lexeme, param_node->children[i]->token.type);
 
             if (i) {
                 if (param_value != TT_INT &&
                     param_value != TT_RUNNING_NUM &&
                     param_value != TT_RUNNING_UNDEF) {
-                    fprintf(stderr, "param value %d\ni = %d\n", param_value, i);
                     bst_destroy_symbol_table(scope);
-                    fprintf(stderr, "ord3\n");
                     ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
                 }
             } else if  (param_value != TT_STRING &&
                         param_value != TT_RUNNING_STRING &&
                         param_value != TT_RUNNING_UNDEF) {
                 bst_destroy_symbol_table(scope);
-                fprintf(stderr, "ord4\n");
                 ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
             }
 
@@ -1357,7 +1332,6 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
     if (strcmp(builtin_id->token.lexeme, "chr") == 0) {
         if (param_node->n_of_children != 1) {
             bst_destroy_symbol_table(scope);
-            fprintf(stderr, "chr\n");
             ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
         }
 
@@ -1368,11 +1342,11 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
                 ast_error(ERROR_INTERNAL, MSG_INT_MALLOC, builtin_node, NULL);
             }
 
+            arg = bst_search(scope->tree, key);
             while (arg == NULL) {
                 if (scope->parent == NULL) {
                     if(strncmp(param_node->children[0]->token.lexeme, "__", 2) == 0) {
                         bst_destroy_symbol_table(scope);
-                        fprintf(stderr, "chr2\n");
                         ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
                     }
 
@@ -1400,7 +1374,6 @@ token_type_t sem_eval_builtin(bst_scope_ptr scope, ast_node_ptr builtin_node) {
             param_value != TT_RUNNING_NUM &&
             param_value != TT_RUNNING_UNDEF) {
             bst_destroy_symbol_table(scope);
-            fprintf(stderr, "chr3\n");
             ast_error(ERROR_SEM_STATIC_PARAM_NUM_OR_TYPE, MSG_SEM_PARAM_NUM_OR_TYPE, builtin_node, NULL);
         }
 
