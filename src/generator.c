@@ -42,7 +42,7 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
             {
                 if(root->children[i] == NULL)
                     {
-                        ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, root, NULL);
+                        return 0;
                     }
                 //Generate all the functions that are children of root
                 ast_node_type_t ntype = root->children[i]->node_type;
@@ -99,7 +99,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
     {
         if(node == NULL)
             {
-                ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
+                return;
             }
         //Get the tokens and the nodes type 
         token_type_t type = node->token.type;
