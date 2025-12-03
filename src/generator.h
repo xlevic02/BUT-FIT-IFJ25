@@ -1,4 +1,3 @@
-
 // Implementace generatoru vysledneho kodu IFJcode25
 //generator.h by Marek "xbalism00" Bališ on 11/11/25
 
@@ -16,64 +15,64 @@
 
 #define MAX_STACK_SIZE 100
 typedef struct var_node
-{
-    char *original_id;
-    char *new_id;
-    struct var_node *next;
-} var_node;
-typedef struct scope_stack
-{
-    var_node *arr[MAX_STACK_SIZE];
-    int top;
-} scope_stack;
+    {
+        char *original_id;
+        char *new_id; 
+        struct var_node *next;
+    } var_node;
+typedef struct scope_stack 
+    {
+        var_node *arr[MAX_STACK_SIZE];
+        int top;
+    } scope_stack;
 
-typedef struct id_list_item
-{
-    ast_node_ptr node;
-    char *generated_id;
-    struct id_list_item *next;
-} id_list_item;
+typedef struct id_list_item 
+    {
+        ast_node_ptr node;       
+        char *generated_id;      
+        struct id_list_item *next;
+    } id_list_item;
+typedef enum 
+    {
+        VARIABLE,
+        LITERAL_INT,
+        LITERAL_FLOAT,
+        LITERAL_STRING,
+        LITERAL_BOOL,
+        LITERAL_NULL
+    }SYM_TYPE;
 typedef enum
-{
-    VARIABLE,
-    LITERAL_INT,
-    LITERAL_FLOAT,
-    LITERAL_STRING,
-    LITERAL_BOOL,
-    LITERAL_NULL
-}SYM_TYPE;
-typedef enum
-{
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    IDIV
-}ARITHMETIC;
-
-typedef enum
-{
-    LT,
-    GT,
-    EQ
-}RELATION;
+    {
+        ADD,
+        SUB,
+        MUL,
+        DIV,
+        IDIV
+    }ARITHMETIC;
 
 typedef enum
-{
-    AND,
-    OR,
-    NOT
-}BOOLEAN;
+    {
+        LT,
+        GT,
+        EQ
+    }RELATION;
 
 typedef enum
-{
-    INT2FLOAT,
-    FLOAT2INT,
-    INT2CHAR,
-    STRI2INT,
-    FLOAT2STR,
-    INT2STR
-}CONVERSION;
+    {
+        AND,
+        OR,
+        NOT
+    }BOOLEAN;
+
+typedef enum
+    {
+        INT2FLOAT,
+        FLOAT2INT,
+        INT2CHAR,
+        STRI2INT,
+        FLOAT2STR,
+        INT2STR
+    }CONVERSION;
 
 //Recursive function to proccess nodes
 void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope);
@@ -141,7 +140,6 @@ void print_setchar(char* var, char* index, char* symbol);
 
 //Type instructions
 void print_types();
-void print_isint_isints();
 
 //Program flow instructions
 void print_label(char* label);
@@ -149,9 +147,5 @@ void print_jump(char* label);
 void print_jumpifeqs(char* label);
 void print_jumpifneqs(char* label);
 void print_exit(char* symbol);
-
-//Debugging instructions
-void print_break();
-void print_dprint(char* symbol);
 
 #endif //GENERATOR_H
