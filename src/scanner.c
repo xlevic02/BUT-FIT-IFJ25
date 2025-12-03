@@ -155,7 +155,7 @@ token_t get_token() {
                     free(buf);
                     return make_token(TT_EOF, NULL);
                 }
-
+                // Checking carrige return in case some windows files get in
                 if (c == '\r' || c == '\n') {
                     if (c == '\r') {
                         int next = getchar();
@@ -184,7 +184,7 @@ token_t get_token() {
                     state = STATE_STRING;
                     break;
                 }
-                
+                // Evaluating operators and other short tokens
                 else if (c == '/') state = STATE_SLASH;
                 else if (c == '=') state = STATE_EQ;
                 else if (c == '!') state = STATE_NEQ;
@@ -231,7 +231,7 @@ token_t get_token() {
                 }
                 break;
 
-            case STATE_EQ:
+            case STATE_EQ: 
                 if (c == '=') {
                     free(buf);
                     return make_token(TT_EQ, "==");
@@ -285,7 +285,7 @@ token_t get_token() {
                 } else {
                     buf[len] = '\0';
                     if (c != EOF) ungetc(c, stdin);
-                    token_type_t type = keyword_type(buf);
+                    token_type_t type = keyword_type(buf); // Check if is a keyword
                     token_t tok = make_token(type, buf);
                     free(buf);
                     return tok;
@@ -557,7 +557,7 @@ token_t get_token() {
                 state = STATE_START;
                 break;
 
-            case STATE_COMMENT_BLOCK: ; // Yes this is has to be here or it cant compile, yes, c is stupid
+            case STATE_COMMENT_BLOCK: ; // Needs empty statement before declaring varible or it cant compile
                 // Skip until closing */ or EOF
                 int depth = 1;
                 while (depth > 0) {
@@ -591,6 +591,7 @@ token_t get_token() {
     }
 }
 
+// Function to free lexeme of a token
 void free_token(token_t *tok) {
     if (tok == NULL) return;
 
