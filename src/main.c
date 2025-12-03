@@ -25,9 +25,10 @@ void print_ast_branch(const ast_node_ptr node, const char *prefix, int is_last) 
 
     // Print token as optional metadata
     if (node->token.lexeme && node->token.lexeme[0] != '\0') {
-        printf("  token('%s', %s)",
+        printf("  token('%s', %s, %s)",
                node->token.lexeme,
-               token_type_to_string(node->token.type)
+               token_type_to_string(node->token.type),
+               ast_node_type_to_string(node->node_type)
         );
     }
 
@@ -54,33 +55,16 @@ void visualize_ast(const ast_node_ptr root) {
 }
 
 int main(void) {
-
-    /*
-    token_t tok;
-    while ((tok = get_token()).type != TT_EOF) {
-        printf("TOKEN: type=%d, lexeme=\"%s\"\n", tok.type, tok.lexeme);
-        free(tok.lexeme); // FREE THE MEMORY!
-    }
-    printf("TOKEN: type=%d, lexeme=\"%s\"\n", tok.type, tok.lexeme);
-     */
-
     fflush(stdout);
     ast_node_ptr ast_root = create_ast();
-    //visualize_ast(ast_root);
 
     bst_scope_ptr global_scope = sem_start_analysis(ast_root);
     generate_code(ast_root, global_scope);
 
+    bst_destroy_symbol_table(global_scope);
+    destroy_ast(ast_root);
+
     return 0;
-    //visualize_ast(ast_root);
-
-    //free_ast(ast_root);
-    //bst_destroy_symbol_table(global_scope);
-
-    //printf(ast_root == NULL ? "AST successfully freed.\n" : "AST freeing failed!\n");
-    //ast_print_token(ast_root->token);
-
-    //return 0;
 }
 
 void ast_print_token(token_t token){
@@ -112,7 +96,6 @@ const char* ast_node_type_to_string(ast_node_type_t type) {
         default: return "UNKNOWN_NODE";
     }
 }
-
 
 const char* token_type_to_string(token_type_t type) {
     switch (type) {

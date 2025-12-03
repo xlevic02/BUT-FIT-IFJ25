@@ -78,7 +78,7 @@ typedef enum
 void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope);
 
 //Main function for generating code
-int generate_code(ast_node_ptr root, bst_scope_ptr symtable);
+void generate_code(ast_node_ptr root, bst_scope_ptr symtable);
 
 //Checks the frame type
 bool global_check(const char* var_name);
