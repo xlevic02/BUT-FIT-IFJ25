@@ -14,15 +14,24 @@
 #include "error.h"
 
 #define MAX_STACK_SIZE 100
-typedef struct var_node {
-    char *original_id;
-    char *new_id; 
-    struct var_node *next;
-} var_node;
-typedef struct scope_stack {
-    var_node *arr[MAX_STACK_SIZE];
-    int top;
-} scope_stack;
+typedef struct var_node
+    {
+        char *original_id;
+        char *new_id; 
+        struct var_node *next;
+    } var_node;
+typedef struct scope_stack 
+    {
+        var_node *arr[MAX_STACK_SIZE];
+        int top;
+    } scope_stack;
+
+typedef struct id_list_item 
+    {
+        ast_node_ptr node;       
+        char *generated_id;      
+        struct id_list_item *next;
+    } id_list_item;
 typedef enum 
     {
         VARIABLE,
@@ -98,6 +107,13 @@ void stack_push(ast_node_ptr node);
 void stack_pop();
 char* stack_register_var(char *var_name, ast_node_ptr node);
 void stack_resolve_id(char *buffer, char *var_name);
+
+//List functions
+void save_var_id(ast_node_ptr node, char *gen_id);
+char* find_var_id(ast_node_ptr node);
+void cleanup_ids();
+void stack_push_existing(char *var_name, char *unique_id, ast_node_ptr node);
+void scan_variables(ast_node_ptr node);
 
 //Scope, function calling
 void print_call(char* label);

@@ -12,6 +12,7 @@ static int label_counter = 0;
 static scope_stack stack;
 static int var_counter = 0;
 static ast_node_ptr root_node = NULL; 
+static id_list_item *saved_ids = NULL;
 
 //I get the root node and symtable
 int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
@@ -78,11 +79,19 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
         //Generating main
         if(main)
             {
+                stack_push(main); 
+                cleanup_ids();
+                if(main->n_of_children > 1) 
+                    {
+                        scan_variables(main->children[1]);
+                    }
+                stack_pop();
                 stack_push(main);
                 if(main->n_of_children > 1 && main->children != NULL && main->children[1] != NULL)
                     {
                         generate_node(main->children[1], &symtable);
                     }
+                cleanup_ids();
                 stack_pop();
             }
         printf("POPFRAME\n");
@@ -126,6 +135,13 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_defvar("LF@retval");
                         print_move("LF@retval", "nil@nil");
                         stack_push(node);
+                        cleanup_ids();
+                        if(node->n_of_children > 1) 
+                            {
+                                scan_variables(node->children[1]);
+                            }
+                        stack_pop();
+                        stack_push(node);
                         //Increasing the scope
                         //bst_increase_scope(current_scope);
                         //bst_generator_step_in(current_scope);
@@ -158,6 +174,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                             }
                         //fflush(stdout); // Doesnt get here
                         //bst_decrease_scope(current_scope);
+                        cleanup_ids();
                         stack_pop();
                         printf("POPFRAME\n");
                         printf("RETURN\n");
@@ -181,8 +198,13 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 print_defvar("LF@retval");
                 print_move("LF@retval", "nil@nil");
                 stack_push(node);
+                cleanup_ids();
+                scan_variables(node->children[0]);
+                stack_pop();
+                stack_push(node);
                 generate_node(node->children[0], current_scope);
                 stack_pop();
+                cleanup_ids();
                 printf("POPFRAME\n");
                 printf("RETURN\n");
             }
@@ -204,6 +226,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 print_defvar("LF@retval");
                 print_move("LF@retval", "nil@nil");
                 stack_push(node);
+                cleanup_ids();
+                scan_variables(node->children[1]); 
+                stack_pop();
+                stack_push(node);
                 if (node->children[0] && node->children[0]->n_of_children > 0) 
                     {
                         ast_node_ptr parameter_node = node->children[0]->children[0];
@@ -218,6 +244,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                     }
                 generate_node(node->children[1], current_scope);
                 stack_pop();
+                cleanup_ids();
                 printf("POPFRAME\n");
                 printf("RETURN\n");
             }
@@ -325,12 +352,24 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                             }
                         else
                             {
-                                char *unique = stack_register_var(var_name, node);
-                                if(unique)
+                                char *existing_id = find_var_id(node);
+
+                                if (existing_id) 
                                     {
-                                        sprintf(helper_buff, "LF@%s", unique);
-                                        print_defvar(helper_buff);
+                                        stack_push_existing(var_name, existing_id, node);
+                                        sprintf(helper_buff, "LF@%s", existing_id);
                                         print_move(helper_buff, "nil@nil");
+                                    } 
+                                else 
+                                    {
+                                        // Fallback
+                                        char *unique = stack_register_var(var_name, node);
+                                        if(unique)
+                                            {
+                                                sprintf(helper_buff, "LF@%s", unique);
+                                                print_defvar(helper_buff);
+                                                print_move(helper_buff, "nil@nil");
+                                            }
                                     }
                             }
                     }
@@ -453,8 +492,8 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                                 ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
                             }
                         //We start the while, generate the conditions AND THEN check if ther're true
-                        generate_node(node->children[0], current_scope);
                         print_label(w_start);
+                        generate_node(node->children[0], current_scope);
                         print_pops("GF@tmp_res");
                         print_pushs(VARIABLE, "tmp_res", "GF");
                         print_pushs(LITERAL_NULL, "nil", NULL);
@@ -513,6 +552,26 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 //Pop the results into helper operands
                 print_pops("GF@tmp_op2");
                 print_pops("GF@tmp_op1");
+                char label_op1_float[64], label_op2_float[64];
+                get_unique_label(label_op1_float, "op1_int");
+                get_unique_label(label_op2_float, "op1_int");
+                print_pushs(VARIABLE, "tmp_op1", "GF");
+                print_types();
+                print_pops("GF@tmp_type");
+                printf("JUMPIFNEQ %s GF@tmp_type string@int\n", label_op1_float);
+                print_pushs(VARIABLE, "tmp_op1", "GF");
+                print_conversion(INT2FLOAT);
+                print_pops("GF@tmp_op1");
+                print_label(label_op1_float);
+                print_pushs(VARIABLE, "tmp_op2", "GF");
+                print_types();
+                print_pops("GF@tmp_type");
+                printf("JUMPIFNEQ %s GF@tmp_type string@int\n", label_op2_float);
+                print_pushs(VARIABLE, "tmp_op2", "GF");
+                print_conversion(INT2FLOAT);
+                print_pops("GF@tmp_op2");
+                print_label(label_op2_float);
+                //All arithmetic expressions
                 if(type == TT_PLUS)
                     {  
                         char label_concat[64], label_add[64], label_end[64];
@@ -659,6 +718,26 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 //Pop the results into helper operands
                 print_pops("GF@tmp_op2");
                 print_pops("GF@tmp_op1");
+                char label_op1_float[64], label_op2_float[64];
+                get_unique_label(label_op1_float, "op1_int");
+                get_unique_label(label_op2_float, "op1_int");
+                print_pushs(VARIABLE, "tmp_op1", "GF");
+                print_types();
+                print_pops("GF@tmp_type");
+                printf("JUMPIFNEQ %s GF@tmp_type string@int\n", label_op1_float);
+                print_pushs(VARIABLE, "tmp_op1", "GF");
+                print_conversion(INT2FLOAT);
+                print_pops("GF@tmp_op1");
+                print_label(label_op1_float);
+                print_pushs(VARIABLE, "tmp_op2", "GF");
+                print_types();
+                print_pops("GF@tmp_type");
+                printf("JUMPIFNEQ %s GF@tmp_type string@int\n", label_op2_float);
+                print_pushs(VARIABLE, "tmp_op2", "GF");
+                print_conversion(INT2FLOAT);
+                print_pops("GF@tmp_op2");
+                print_label(label_op2_float);
+                //All arithmetic expressions
                 if(type == TT_GT)
                     {
                         print_pushs(VARIABLE, "tmp_op1", "GF");
@@ -1085,7 +1164,40 @@ int get_function_type(char* func_name, int parameter_count)
             }
         return 0;
     }
-
+  
+//Helper function for getting the correct operand
+void stack_resolve_id(char *buffer, char *var_name) 
+    {
+        if(buffer == NULL)
+            {
+                return;
+            }
+        if(var_name == NULL)
+            {
+                buffer[0] = '\0';
+                return;
+            }
+        //I go from the top of the stack to the bottom
+        for(int i = stack.top; i >= 0; i--)
+            {
+                //Create temporary var_node var and give it the current stack top.
+                var_node *var = stack.arr[i];
+                while(var != NULL)
+                    {
+                        //If the original_id is not null and the original_id is var_name
+                        if(var->original_id != NULL && strcmp(var->original_id, var_name) == 0)
+                            {
+                                //Give it the LF@ prefix
+                                sprintf(buffer, "LF@%s", var->new_id);
+                                return;
+                            }
+                        //Move on to the next
+                        var = var->next;
+                    }
+            }
+        //If I don't find it in the stack, I give it the GF@ prefix
+        sprintf(buffer, "GF@%s", var_name);
+    }
 
 //
 //Here I created a shadow stack to help me move through scopes
@@ -1175,39 +1287,130 @@ char* stack_register_var(char *var_name, ast_node_ptr node)
         
         return var->new_id;
     }
+//
+//List, to store and define variables
+//
 
-//Helper function for getting the correct operand
-void stack_resolve_id(char *buffer, char *var_name) 
+// Helper to save generated ID
+void save_var_id(ast_node_ptr node, char *gen_id) 
     {
-        if(buffer == NULL)
+        id_list_item *new_item = malloc(sizeof(id_list_item));
+        if (new_item) 
             {
-                return;
-            }
-        if(var_name == NULL)
-            {
-                buffer[0] = '\0';
-                return;
-            }
-        //I go from the top of the stack to the bottom
-        for(int i = stack.top; i >= 0; i--)
-            {
-                //Create temporary var_node var and give it the current stack top.
-                var_node *var = stack.arr[i];
-                while(var != NULL)
+                new_item->node = node;
+                new_item->generated_id = malloc(strlen(gen_id) + 1);
+                if(new_item->generated_id) 
                     {
-                        //If the original_id is not null and the original_id is var_name
-                        if(var->original_id != NULL && strcmp(var->original_id, var_name) == 0)
+                        strcpy(new_item->generated_id, gen_id);
+                    }
+                new_item->next = saved_ids;
+                saved_ids = new_item;
+            }
+    }
+
+// Find existing ID for node
+char* find_var_id(ast_node_ptr node) 
+    {
+        id_list_item *current = saved_ids;
+        while (current != NULL) 
+            {
+                if (current->node == node) 
+                    {
+                        return current->generated_id;
+                    }
+                current = current->next;
+            }
+        return NULL;
+    }
+
+// Cleanup list
+void cleanup_ids() 
+    {
+        while (saved_ids != NULL) 
+            {
+                id_list_item *next = saved_ids->next;
+                if(saved_ids->generated_id) 
+                    {
+                        free(saved_ids->generated_id);
+                    }
+                free(saved_ids);
+                saved_ids = next;
+            }
+    }
+
+// Manually register variable to stack without generating new ID
+void stack_push_existing(char *var_name, char *unique_id, ast_node_ptr node) 
+    {
+        if (!var_name || !unique_id || stack.top == -1) return;
+        
+        var_node *var = malloc(sizeof(var_node));
+        if (var == NULL) ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
+
+        var->original_id = var_name;
+        var->new_id = malloc(strlen(unique_id) + 1);
+        strcpy(var->new_id, unique_id);
+        
+        var->next = stack.arr[stack.top];
+        stack.arr[stack.top] = var;
+    }
+
+// First pass scanner - finds variables and prints DEFVAR
+void scan_variables(ast_node_ptr node) 
+    {
+        if (node == NULL) return;
+
+        // Skip nested functions
+        if (node->node_type == NT_FUNC_DECL || node->node_type == NT_GETTER || node->node_type == NT_SETTER) 
+            {
+                return; 
+            }
+
+        // Handle scoping for scan pass
+        bool is_block = (node->token.type == TT_LBRACE || node->node_type == NT_BLOCK || 
+                        node->node_type == NT_IF_BODY || node->node_type == NT_ELSE_BODY || 
+                        node->node_type == NT_WHILE_BODY);
+        
+        if (is_block) 
+            {
+                stack_push(node); 
+            }
+
+        // Found variable definition
+        if (node->token.type == TT_KEYWORD_VAR || node->node_type == NT_VAR_DEF) 
+            {
+                char *vname = NULL;
+                if (node->n_of_children > 0 && node->children != NULL && node->children[0] != NULL) 
+                    {
+                        vname = node->children[0]->token.lexeme;
+                    } 
+                else 
+                    {
+                        vname = node->token.lexeme;
+                    }
+                
+                if (vname && !global_check(vname)) 
+                    {
+                        char *uid = stack_register_var(vname, node); 
+                        if (uid) 
                             {
-                                //Give it the LF@ prefix
-                                sprintf(buffer, "LF@%s", var->new_id);
-                                return;
+                                printf("DEFVAR LF@%s\n", uid);
+                                save_var_id(node, uid);
                             }
-                        //Move on to the next
-                        var = var->next;
                     }
             }
-        //If I don't find it in the stack, I give it the GF@ prefix
-        sprintf(buffer, "GF@%s", var_name);
+
+        if (node->children != NULL) 
+            {
+                for (int i = 0; i < node->n_of_children; i++) 
+                    {
+                        scan_variables(node->children[i]);
+                    }
+            }
+
+        if (is_block) 
+            {
+                stack_pop();
+            }
     }
 
 //
