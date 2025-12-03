@@ -3,20 +3,18 @@
 
 #include "generator.h"
 
-
-
 static int label_counter = 0;
 static scope_stack stack;
 static int var_counter = 0;
 static ast_node_ptr root_node = NULL; 
 static id_list_item *saved_ids = NULL;
 
-//I get the root node and symtable
+//Get the root node and symtable
 int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
     {
         if(root == NULL)    
             {
-                return 0;
+                ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, root, NULL);
             }
         root_node = root;
         stack_init();
@@ -38,7 +36,7 @@ int generate_code(ast_node_ptr root, bst_scope_ptr symtable)
         int num_of_children = root->n_of_children;
         if(num_of_children > 0 && root->children == NULL)
             {
-                return 0;
+                ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, root, NULL);
             }
         for(int i = 0; i < num_of_children; i++)    
             {
@@ -101,8 +99,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
     {
         if(node == NULL)
             {
-                //If generate_node reached the end of ast, recursively return;
-                return;
+                ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
             }
         //Get the tokens and the nodes type 
         token_type_t type = node->token.type;
@@ -545,6 +542,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
         //If its an arithmetic expression
         else if(ntype == NT_AR_EXPR)
             {
+                if(node->n_of_children < 2)
+                    {
+                        ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                    }
                 //Generate children
                 generate_node(node->children[0], current_scope);
                 generate_node(node->children[1], current_scope);
@@ -722,10 +723,17 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
         //All boolean expressions
         else if(ntype == NT_BOOL_EXPR)
             {
+                if(node->n_of_children < 1)
+                    {
+                        ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                    }
                 //Its the same as NT_AR_EXPR
                 //Generate children
                 generate_node(node->children[0], current_scope);
-                generate_node(node->children[1], current_scope);
+                if(node->n_of_children > 1)
+                    {
+                        generate_node(node->children[1], current_scope);
+                    }
                 //Pop the results into helper operands
                 print_pops("GF@tmp_op2");
                 print_pops("GF@tmp_op1");
