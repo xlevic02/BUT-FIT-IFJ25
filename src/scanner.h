@@ -83,4 +83,8 @@ token_type_t keyword_type(const char *lexeme);
 
 void buf_append(char **buf, size_t *len, size_t *cap, char c);
 
+void trim_multiline_string(char *buf, size_t *len);
+
+void free_token(token_t *tok);
+
 #endif // SCANNER_H

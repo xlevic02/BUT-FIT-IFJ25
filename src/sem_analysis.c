@@ -178,7 +178,6 @@ void sem_block_eval(bst_scope_ptr scope, ast_node_ptr block_node) {
                             }
 
                             def_node = bst_search(scope->tree, key);
-
                             break;
                         }
 

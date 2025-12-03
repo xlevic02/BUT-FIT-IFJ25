@@ -45,6 +45,59 @@ printf("token: %s\t%d\n", t.lexeme, t.type);     // TODO: test printf
     return t;
 }
 
+// Helper function for trimming multi-line string lexemes
+void trim_multiline_string(char *buf, size_t *len){
+    if (len == 0) return;
+    size_t start = 0;
+    size_t i = 0;
+
+    while (i < *len && (buf[i] == ' ' || buf[i] == '\t')) {
+        i++;
+    }
+    if (i < *len && (buf[i] == '\n' || buf[i] == '\r')) {
+        start = i + 1;
+        if (buf[i] == '\r' && start < *len && buf[start] == '\n') {
+            start++;  
+        }
+    }
+    
+    int end = *len - 1;
+    int last_newline = -1;
+    
+    for (int j = end; j >= 0; j--) {
+        if (buf[j] == '\n' || buf[j] == '\r') {
+            last_newline = j;
+            break;
+        }
+    }
+    
+    if (last_newline >= 0) {
+        bool only_whitespace = true;
+        for (int j = last_newline + 1; j <= end; j++) {
+            if (buf[j] != ' ' && buf[j] != '\t') {
+                only_whitespace = false;
+                break;
+            }
+        }
+        
+        if (only_whitespace) {
+            end = last_newline - 1;
+            if (end >= 0 && buf[end] == '\r') {
+                end--;
+            }
+        }
+    }
+    
+    if (start <= (size_t)(end + 1)) {
+        size_t new_len = end - start + 1;
+        memmove(buf, buf + start, new_len);
+        buf[new_len] = '\0';
+        *len = new_len;
+    } else {
+        buf[0] = '\0';
+    }
+}
+
 // Helper function to append a character to a dynamic buffer, resizing if necessary
 void buf_append(char **buf, size_t *len, size_t *cap, char c) {
     if (*len + 1 >= *cap) {
@@ -243,7 +296,7 @@ token_t get_token() {
                 if (isdigit(c)) {
                     buf_append(&buf, &len, &cap, c);
                 }
-                else if (c == 'x' || c == 'X') {
+                else if (c == 'x') { // 0X is invalid based on wren
                     // Hexadecimal literal
                     if (len == 1 && buf[0] == '0') {
                         buf_append(&buf, &len, &cap, c);
@@ -253,7 +306,7 @@ token_t get_token() {
                                 buf_append(&buf, &len, &cap, c);
                             } 
                             else if (len <= 2) {  
-                                // “0x” or “0X” with nothing after it → invalid
+                                // “0x” with nothing after it -> invalid
                                 free(buf);
                                 error(ERROR_LEXICAL, MSG_LEX_INVALID_NUMBER);
                             } else {
@@ -265,7 +318,7 @@ token_t get_token() {
                             }
                         }
                     } else {
-                        // 'x' or 'X' not preceded by '0', treat as end of integer
+                        // 'x' not preceded by '0', treat as end of integer
                         buf[len] = '\0';
                         if (c != EOF) ungetc(c, stdin);
                         token_t tok = make_token(TT_INT, buf);
@@ -314,8 +367,11 @@ token_t get_token() {
                         if (buf[len - 1] == 'e' || buf[len - 1] == 'E') {
                             buf_append(&buf, &len, &cap, c);
                         } else {
+                            buf[len] = '\0';
+                            if (c != EOF) ungetc(c, stdin);
+                            token_t tok = make_token(TT_FLOAT, buf);
                             free(buf);
-                            error(ERROR_LEXICAL, MSG_LEX_INVALID_NUMBER);
+                            return tok;
                         }    
                 } else if (buf[len - 1] == 'e' || buf[len - 1] == 'E' || buf[len - 1] == '+' || buf[len - 1] == '-') {
                     // no digits after e/+/- → invalid
@@ -357,6 +413,12 @@ token_t get_token() {
                 } else if (c == EOF) {
                     free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
+                } else if (c == '\n' || c == '\r') {
+                    free(buf);
+                    error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
+                } else if (c >= 0 && c <= 31 && c != '\t') {
+                    free(buf);
+                    error(ERROR_LEXICAL, MSG_LEX_PROHIBITED_CHAR);
                 } else {
                     buf_append(&buf, &len, &cap, c);
                 }
@@ -367,7 +429,7 @@ token_t get_token() {
                     free(buf);
                     error(ERROR_LEXICAL, MSG_LEX_UNCLOSED_STRING);
                 }
-                
+
                 if (c == '"') {
                     int c2 = getchar();
                     if (c2 == '"') {
@@ -375,6 +437,7 @@ token_t get_token() {
                         if (c3 == '"') {
                             // End of multi-line string
                             buf[len] = '\0';
+                            trim_multiline_string(buf,&len);
                             token_t tok = make_token(TT_STRING, buf);
                             free(buf);
                             return tok;
@@ -446,6 +509,10 @@ token_t get_token() {
                     // convert the hex string to actual character
                     unsigned int value;
                     sscanf(hex_digits, "%2x", &value);
+                    if (value > 0x7F) {
+                        free(buf);
+                        error(ERROR_LEXICAL, MSG_LEX_INVALID_ESCAPE);
+                    }
                     buf_append(&buf, &len, &cap, (char)value);
 
                     if (c != EOF) ungetc(c, stdin);
@@ -511,4 +578,12 @@ token_t get_token() {
         }
     }
 }
-    
+
+void free_token(token_t *tok) {
+    if (tok == NULL) return;
+
+    if (tok->lexeme != NULL) {
+        free(tok->lexeme);
+        tok->lexeme = NULL;
+    }
+}
