@@ -1,11 +1,12 @@
+// Implementace prekladace imperativniho jazyka IFJ25
+// MAIN by Jan Frantisek "xlevic02" Levicek on 12/03/2025
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include "scanner.h"
 #include "ast.h"
 #include "symtable.h"
 #include "sem_analysis.h"
 #include "generator.h"
+
+
 
 int main(void) {
     fflush(stdout);

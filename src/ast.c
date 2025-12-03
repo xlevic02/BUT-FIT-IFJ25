@@ -1147,6 +1147,8 @@ void ast_setter(token_t* current_token, ast_node_ptr setter_node) {
         ast_error(ERROR_INTERNAL, MSG_INT_REALLOC, setter_node, current_token);
     }
 
+    free_token(current_token);
+
     if((*current_token = get_token()).type != TT_EOL)
         ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_EOL, setter_node, current_token);
 
