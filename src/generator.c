@@ -243,92 +243,60 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                                 stack_pop();
                             }
                     }
-                //When it's an IF
-        else if(type == TT_KEYWORD_IF)
+        //If it's identifier and has children at the same time
+        else if(type == TT_IDENTIFIER && node->n_of_children > 0)
+            {
+                //If token.lexeme is null, error
+                if(node->token.lexeme == NULL)
                     {
-                        //We get a label for the end and for else
-                        char label_end[64];
-                        char label_else[64];
-                        char label_true[64];
-                        get_unique_label(label_end, "if_end");
-                        get_unique_label(label_else, "if_else");
-                        get_unique_label(label_true, "if_true");
-                        if(node->n_of_children < 2 || node->children == NULL)
-                            {
-                                ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
-                            }
-                        //Then generate the conditions and check if they're true or false
-                        generate_node(node->children[0], current_scope);
-                        print_pops("GF@tmp_res");
-                        print_pushs(VARIABLE, "tmp_res", "GF");
-                        print_pushs(LITERAL_NULL, "nil", NULL);
-                        print_jumpifeqs(label_else);
-                        print_pushs(VARIABLE, "tmp_res", "GF");
-                        print_types();
-                        print_pushs(LITERAL_STRING, "bool", NULL);
-                        print_jumpifneqs(label_true);
-                        print_pushs(VARIABLE, "tmp_res", "GF");
-                        print_pushs(LITERAL_BOOL, "false", NULL);
-                        print_jumpifeqs(label_else);
-                        print_label(label_true);
-                        generate_node(node->children[1], current_scope);
-                        print_jump(label_end);
-                        print_label(label_else);
-                        if(node->n_of_children > 2 && node->children[2])
-                            {
-                                generate_node(node->children[2], current_scope);
-                            }
-                        print_label(label_end);
-
+                        ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
                     }
-                //And now for while
-        else if(type == TT_KEYWORD_WHILE)
+                //If it's not null create func_name and give it token.lexeme
+                char* func_name = node->token.lexeme;
+                printf("CREATEFRAME\n");
+                for(int i = 0; i < node->children[0]->n_of_children; i++) 
                     {
-                        //Get label for start and end
-                        char w_start[64];
-                        char w_end[64];
-                        char w_true[64];
-                        get_unique_label(w_start, "while_start");
-                        get_unique_label(w_end, "while_end");
-                        get_unique_label(w_true, "while_true");
-                        if(node->n_of_children < 2 || node->children == NULL)
-                            {
-                                ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
-                            }
-                        //We start the while, generate the conditions AND THEN check if ther're true
-                        print_label(w_start);
-                        generate_node(node->children[0], current_scope);
-                        print_pops("GF@tmp_res");
-                        print_pushs(VARIABLE, "tmp_res", "GF");
-                        print_pushs(LITERAL_NULL, "nil", NULL);
-                        print_jumpifeqs(w_end);
-                        print_pushs(VARIABLE, "tmp_res", "GF");
-                        print_types();
-                        print_pushs(LITERAL_STRING, "bool", NULL);
-                        print_jumpifneqs(w_true);
-                        print_pushs(VARIABLE, "tmp_res", "GF");
-                        print_pushs(LITERAL_BOOL, "false", NULL);
-                        print_jumpifeqs(w_end);
-                        print_label(w_true);
-                        generate_node(node->children[1], current_scope);
-                        print_jump(w_start);
-                        print_label(w_end);
-                    }
-                //Return
-        else if(type == TT_KEYWORD_RETURN)
+                        generate_node(node->children[0]->children[i], current_scope);
+                        sprintf(helper_buff, "TF@par%d", i+1);
+                        print_defvar(helper_buff);
+                        print_pops(helper_buff);
+                    } 
+                char label_buffer[256];
+                sprintf(label_buffer, "%s$%d", func_name, node->children[0]->n_of_children);
+                print_call(label_buffer);
+                print_pushs(VARIABLE, "retval", "TF");
+            }
+        else if(ntype == NT_ID)
+            {
+                //Same as before, if token.lexeme is null, error
+                if(node->token.lexeme == NULL)
                     {
-                        if(node->children != NULL && node->n_of_children > 0)
-                            {
-                                generate_node(node->children[0], current_scope);
-                                print_pops("LF@retval");
-                            }
-                        else
-                            {
-                                print_move("LF@retval", "nil@nil");
-                            }
-                        printf("POPFRAME\n");
-                        printf("RETURN\n");
+                        ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
                     }
+                char* var_name = node->token.lexeme;
+                //Create buffer operand
+                char operand[128];
+                memset(operand, 0, 128);
+                //Call resolve id to get the frame, id of var and var_name into operand
+                stack_resolve_id(operand, var_name);
+                //Check if it's global and check if it's a getter
+                if (strncmp(operand, "GF@", 3) == 0 && get_function_type(var_name, 0) == 2) 
+                    {
+                        printf("CREATEFRAME\n");
+                        char getter_label[256];
+                        sprintf(getter_label, "getter$%s", var_name);
+                        print_call(getter_label);
+                        print_pushs(VARIABLE, "retval", "TF");
+                    } 
+                else if(operand[0] != '\0')
+                    {
+                        printf("PUSHS %s\n", operand); 
+                    }
+                else
+                    {
+                        printf("PUSHS %s\n", var_name);
+                    }
+            }
                 //Now for variables
         else if(type == TT_KEYWORD_VAR || ntype == NT_VAR_DEF)
                     {
@@ -366,48 +334,8 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                                     }
                             }
                     }
-        //The first five ifs are basicaly what to push
-        else if(type == TT_INT)
-            {
-                print_pushs(LITERAL_INT, node->token.lexeme, NULL);
-            }
-        else if(type == TT_FLOAT)
-            {
-                print_pushs(LITERAL_FLOAT, format_float_for_ifjcode(node->token.lexeme), NULL);
-            }
-        else if(type == TT_STRING)
-            {
-                print_pushs(LITERAL_STRING, format_string_for_ifjcode(node->token.lexeme), NULL);
-            }
-        else if(type == TT_KEYWORD_Null || type == TT_NULL)
-            {
-                print_pushs(LITERAL_NULL, "nil", NULL);
-            }
-        //If it's identifier and has children at the same time
-        else if(type == TT_IDENTIFIER && node->n_of_children > 0)
-            {
-                //If token.lexeme is null, error
-                if(node->token.lexeme == NULL)
-                    {
-                        ast_error(ERROR_GEN_INTERNAL, MSG_GEN_INTERNAL, node, NULL);
-                    }
-                //If it's not null create func_name and give it token.lexeme
-                char* func_name = node->token.lexeme;
-                printf("CREATEFRAME\n");
-                for(int i = 0; i < node->children[0]->n_of_children; i++) 
-                    {
-                        generate_node(node->children[i], current_scope);
-                        sprintf(helper_buff, "TF@par%d", i+1);
-                        print_defvar(helper_buff);
-                        print_pops(helper_buff);
-                    } 
-                char label_buffer[256];
-                sprintf(label_buffer, "%s$%d", func_name, node->children[0]->n_of_children);
-                print_call(label_buffer);
-                print_pushs(VARIABLE, "retval", "TF");
-            }
         //If it's just identifier
-        else if(type == TT_IDENTIFIER || ntype == NT_ID)
+        else if(type == TT_IDENTIFIER)
             {
                 //Same as before, if token.lexeme is null, error
                 if(node->token.lexeme == NULL)
@@ -472,175 +400,386 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         print_pops(operand);
                     } 
             }
-        //Then there's plus
-        else if(type == TT_PLUS)
+                //When it's an IF
+        else if(type == TT_KEYWORD_IF)
+                    {
+                        //We get a label for the end and for else
+                        char label_end[64];
+                        char label_else[64];
+                        char label_true[64];
+                        get_unique_label(label_end, "if_end");
+                        get_unique_label(label_else, "if_else");
+                        get_unique_label(label_true, "if_true");
+                        if(node->n_of_children < 2 || node->children == NULL)
+                            {
+                                ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                            }
+                        //Then generate the conditions and check if they're true or false
+                        generate_node(node->children[0], current_scope);
+                        print_pops("GF@tmp_res");
+                        print_pushs(VARIABLE, "tmp_res", "GF");
+                        print_pushs(LITERAL_NULL, "nil", NULL);
+                        print_jumpifeqs(label_else);
+                        print_pushs(VARIABLE, "tmp_res", "GF");
+                        print_types();
+                        print_pushs(LITERAL_STRING, "bool", NULL);
+                        print_jumpifneqs(label_true);
+                        print_pushs(VARIABLE, "tmp_res", "GF");
+                        print_pushs(LITERAL_BOOL, "false", NULL);
+                        print_jumpifeqs(label_else);
+                        print_label(label_true);
+                        generate_node(node->children[1], current_scope);
+                        print_jump(label_end);
+                        print_label(label_else);
+                        if(node->n_of_children > 2 && node->children[2])
+                            {
+                                generate_node(node->children[2], current_scope);
+                            }
+                        print_label(label_end);
+
+                    }
+                //And now for while
+        else if(type == TT_KEYWORD_WHILE)
+                    {
+                        //Get label for start and end
+                        char w_start[64];
+                        char w_end[64];
+                        char w_true[64];
+                        get_unique_label(w_start, "while_start");
+                        get_unique_label(w_end, "while_end");
+                        get_unique_label(w_true, "while_true");
+                        if(node->n_of_children < 2 || node->children == NULL)
+                            {
+                                ast_error(ERROR_ACCESS_NONEXISTENT_VAR, MSG_ACCESS_NONEXISTENT_VAR, node, NULL);
+                            }
+                        //We start the while, generate the conditions AND THEN check if ther're true
+                        generate_node(node->children[0], current_scope);
+                        print_label(w_start);
+                        print_pops("GF@tmp_res");
+                        print_pushs(VARIABLE, "tmp_res", "GF");
+                        print_pushs(LITERAL_NULL, "nil", NULL);
+                        print_jumpifeqs(w_end);
+                        print_pushs(VARIABLE, "tmp_res", "GF");
+                        print_types();
+                        print_pushs(LITERAL_STRING, "bool", NULL);
+                        print_jumpifneqs(w_true);
+                        print_pushs(VARIABLE, "tmp_res", "GF");
+                        print_pushs(LITERAL_BOOL, "false", NULL);
+                        print_jumpifeqs(w_end);
+                        print_label(w_true);
+                        generate_node(node->children[1], current_scope);
+                        print_jump(w_start);
+                        print_label(w_end);
+                    }
+                //Return
+        else if(type == TT_KEYWORD_RETURN)
+                    {
+                        if(node->children != NULL && node->n_of_children > 0)
+                            {
+                                generate_node(node->children[0], current_scope);
+                                print_pops("LF@retval");
+                            }
+                        else
+                            {
+                                print_move("LF@retval", "nil@nil");
+                            }
+                        printf("POPFRAME\n");
+                        printf("RETURN\n");
+                    }
+        //The first four ifs are basicaly what to push
+        else if(type == TT_INT)
             {
-                //Generate the children
-                generate_node(node->children[0], current_scope);
-                generate_node(node->children[1], current_scope);                
-                //Pop the results into helper operands
-                print_pops("GF@tmp_op2");
-                print_pops("GF@tmp_op1");
-                //Push the first operand and check its type                
-                print_pushs(VARIABLE, "tmp_op1", "GF");
-                print_types();
-                print_pops("GF@tmp_type");                
-                char label_concat[64], label_add[64], label_end[64];
-                get_unique_label(label_concat, "op_concat");
-                get_unique_label(label_add, "op_add");
-                get_unique_label(label_end, "op_end");
-                //If the type is string we'll do concat
-                printf("JUMPIFEQ %s GF@tmp_type string@string\n", label_concat);    
-                //If it's int or float we'll do adds            
-                print_pushs(VARIABLE, "tmp_op1", "GF");
-                print_pushs(VARIABLE, "tmp_op2", "GF");
-                print_arithmetic(ADD);
-                print_pops("GF@tmp_res");
-                print_pushs(VARIABLE, "tmp_res", "GF");
-                print_jump(label_end);     
-                print_label(label_concat);
-                printf("CONCAT GF@tmp_res GF@tmp_op1 GF@tmp_op2\n");
-                print_pushs(VARIABLE, "tmp_res", "GF");              
-                print_label(label_end);
+                print_pushs(LITERAL_INT, node->token.lexeme, NULL);
             }
-        //Minus and mul should be fine
-        else if(type == TT_MINUS)
+        else if(type == TT_FLOAT)
             {
-                generate_node(node->children[0], current_scope);
-                generate_node(node->children[1], current_scope);
-                print_arithmetic(SUB);
+                print_pushs(LITERAL_FLOAT, format_float_for_ifjcode(node->token.lexeme), NULL);
             }
-        else if(type == TT_MUL)
+        else if(type == TT_STRING || ntype == NT_DATATYPE)
             {
-                generate_node(node->children[0], current_scope);
-                generate_node(node->children[1], current_scope);
-                print_arithmetic(MUL);
+                print_pushs(LITERAL_STRING, format_string_for_ifjcode(node->token.lexeme), NULL);
             }
-        else if(type == TT_DIV)
+        else if(type == TT_KEYWORD_Null || type == TT_NULL)
+            {
+                print_pushs(LITERAL_NULL, "nil", NULL);
+            }
+        //If its an arithmetic expression
+        else if(ntype == NT_AR_EXPR)
             {
                 //Generate children
                 generate_node(node->children[0], current_scope);
                 generate_node(node->children[1], current_scope);
-                char op2_zero[64], label_idiv[64], label_div[64], label_end[64];
-                get_unique_label(op2_zero, "op2_zero");
                 //Pop the results into helper operands
                 print_pops("GF@tmp_op2");
                 print_pops("GF@tmp_op1");
-                //Push the first operand and check its type                
+                char label_op1_float[64], label_op2_float[64];
+                get_unique_label(label_op1_float, "op1_int");
+                get_unique_label(label_op2_float, "op1_int");
                 print_pushs(VARIABLE, "tmp_op1", "GF");
-                print_types(); 
-                print_pops("GF@tmp_type");                
-                get_unique_label(label_idiv, "op_idiv");
-                get_unique_label(label_div, "op_div");
-                get_unique_label(label_end, "op_end");
-                //If the operand is int, jump to idiv
-                printf("JUMPIFEQ %s GF@tmp_type string@int\n", label_idiv);
-                //If the operand is float, first check, if the second operand is not zero
-                printf("JUMPIFEQ %s GF@tmp_op2 float@0x0p+0\n", op2_zero);     
-                //If its not zero, do the operation         
-                print_pushs(VARIABLE, "tmp_op1", "GF");
-                print_pushs(VARIABLE, "tmp_op2", "GF");
-                print_arithmetic(DIV);
-                print_pops("GF@tmp_res");
-                print_pushs(VARIABLE, "tmp_res", "GF");
-                print_jump(label_end);     
-                print_label(label_idiv);
-                //Here's the same as float, just for int
-                printf("JUMPIFEQ %s GF@tmp_op2 int@0\n", op2_zero); 
-                print_pushs(VARIABLE, "tmp_op1", "GF");
-                print_pushs(VARIABLE, "tmp_op2", "GF");
-                print_arithmetic(IDIV);
-                print_pops("GF@tmp_res");
-                print_pushs(VARIABLE, "tmp_res", "GF"); 
-                print_jump(label_end);
-                print_label(op2_zero);
-                print_exit("int@57");          
-                print_label(label_end);
-            }
-        //All of relation types (I hope)
-        else if(type == TT_GT)
-            {
-                generate_node(node->children[0], current_scope);
-                generate_node(node->children[1], current_scope);
-                print_relation(GT);
-            }
-        else if(type == TT_LT)
-            {
-                generate_node(node->children[0], current_scope);
-                generate_node(node->children[1], current_scope);
-                print_relation(LT);
-            }
-        else if(type == TT_EQ)
-            {
-                generate_node(node->children[0], current_scope);
-                generate_node(node->children[1], current_scope);
-                print_relation(EQ);
-            }
-        else if(type == TT_LE)
-            {
-                generate_node(node->children[0], current_scope);
-                generate_node(node->children[1], current_scope);
-                print_relation(GT);
-                print_boolean(NOT);
-            }
-        else if(type == TT_GE)
-            {
-                generate_node(node->children[0], current_scope);
-                generate_node(node->children[1], current_scope);
-                print_relation(LT);
-                print_boolean(NOT);
-            }
-        else if(type == TT_NEQ)
-            {
-                generate_node(node->children[0], current_scope);
-                generate_node(node->children[1], current_scope);
-                print_relation(EQ);
-                print_boolean(NOT);
-            }
-        else if(type == TT_KEYWORD_IS)
-            {
-                //Generate the first child
-                generate_node(node->children[0], current_scope);
-                //Create type_node and give it the second child
-                char *type;
-                type = node->children[1]->token.lexeme;
-                char label_true[64], label_false[64], label_end[64];
-                get_unique_label(label_true, "true");
-                get_unique_label(label_false, "false");
-                get_unique_label(label_end, "end");
-                //Pop the first child into helper operand, then check its type and pop it into helper type
-                print_pops("GF@tmp_op1");
-                print_pushs(VARIABLE, "tmp_op1", "GF");
-                print_types(); 
+                print_types();
                 print_pops("GF@tmp_type");
-                print_break();
-                //If type_node is a number
-                if(strcmp(type, "Num") == 0)
+                printf("JUMPIFEQ %s GF@tmp_type string@int\n", label_op1_float);
+                print_pushs(VARIABLE, "tmp_op1", "GF");
+                print_conversion(INT2FLOAT);
+                print_pops("GF@tmp_op1");
+                print_label(label_op1_float);
+                print_pushs(VARIABLE, "tmp_op2", "GF");
+                print_types();
+                print_pops("GF@tmp_type");
+                printf("JUMPIFEQ %s GF@tmp_type string@int\n", label_op2_float);
+                print_pushs(VARIABLE, "tmp_op2", "GF");
+                print_conversion(INT2FLOAT);
+                print_pops("GF@tmp_op2");
+                print_label(label_op2_float);
+                //All arithmetic expressions
+                if(type == TT_PLUS)
+                    {  
+                        char label_concat[64], label_add[64], label_end[64];
+                        get_unique_label(label_concat, "op_concat");
+                        get_unique_label(label_add, "op_add");
+                        get_unique_label(label_end, "op_end");             
+                        //Push the first operand and check its type                
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_types();
+                        print_pops("GF@tmp_type");                
+                        //If the type is string we'll do concat
+                        printf("JUMPIFEQ %s GF@tmp_type string@string\n", label_concat);    
+                        //If it's int or float we'll do adds            
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_arithmetic(ADD);
+                        print_pops("GF@tmp_res");
+                        print_pushs(VARIABLE, "tmp_res", "GF");
+                        print_jump(label_end);     
+                        print_label(label_concat);
+                        print_concat("GF@tmp_res", "GF@tmp_op1", "GF@tmp_op2");
+                        print_pushs(VARIABLE, "tmp_res", "GF");              
+                        print_label(label_end);
+                    }
+                else if(type == TT_MINUS)
                     {
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_arithmetic(SUB);
+                        print_pops("GF@tmp_res");
+                    }
+                else if(type == TT_MUL)
+                    {
+                        char label_string_op1[64], label_string_op2[64], label_mul[64], label_end[64], label_swap_op1_op2[64], label_start[64], label_loop_start[64], label_loop_end[64];
+                        get_unique_label(label_string_op1, "op_1_string");
+                        get_unique_label(label_string_op2, "op_1_string");
+                        get_unique_label(label_mul, "op_mul");
+                        get_unique_label(label_swap_op1_op2, "swap");
+                        get_unique_label(label_start, "start");
+                        get_unique_label(label_loop_start, "loop_start");
+                        get_unique_label(label_loop_end, "loop_end");
+                        get_unique_label(label_end, "op_end");
+                        //Push the first operand and check its type                
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_types();
+                        print_pops("GF@tmp_type");                
+                        printf("JUMPIFEQ %s GF@tmp_type string@string\n", label_string_op1);
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_types();
+                        print_pops("GF@tmp_type");
+                        printf("JUMPIFEQ %s GF@tmp_type string@string\n", label_string_op2);               
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_jump(label_mul);   
+                        print_label(label_string_op1);
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_types();
+                        print_pops("GF@tmp_type");
+                        printf("JUMPIFEQ %s GF@tmp_type string@float\n", label_start);
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_jump(label_mul);
+                        print_label(label_string_op2);
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_types();
+                        print_pops("GF@tmp_type");
+                        printf("JUMPIFEQ %s GF@tmp_type string@float\n", label_swap_op1_op2);
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_jump(label_mul);
+                        print_label(label_swap_op1_op2);
+                        print_move("GF@tmp_res", "GF@tmp_op1");
+                        print_move("GF@tmp_op1", "GF@tmp_op2");
+                        print_move("GF@tmp_op2", "GF@tmp_res");
+                        print_label(label_start);
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_conversion(FLOAT2INT);
+                        print_pops("GF@tmp_op2");
+                        print_move("GF@tmp_res", "string@");
+                        print_label(label_loop_start);
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_pushs(LITERAL_INT, "0", NULL);
+                        print_relation(GT);
+                        print_pushs(LITERAL_BOOL, "false", NULL);
+                        print_jumpifeqs(label_loop_end);
+                        print_concat("GF@tmp_res", "GF@tmp_res", "GF@tmp_op1");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_pushs(LITERAL_INT, "1", NULL);
+                        print_arithmetic(SUB);
+                        print_pops("GF@tmp_op2");
+                        print_jump(label_loop_start);
+                        print_label(label_loop_end);
+                        print_pushs(VARIABLE, "tmp_res", "GF");
+                        print_jump(label_end);
+                        print_label(label_mul);            
+                        print_arithmetic(MUL);
+                        print_pops("GF@tmp_res");
+                        print_pushs(VARIABLE, "tmp_res", "GF"); 
+                        print_label(label_end);
+                    }
+                else if(type == TT_DIV)
+                    {
+                        char op2_zero[64], label_idiv[64], label_div[64], label_end[64];
+                        get_unique_label(op2_zero, "op2_zero");
+                        get_unique_label(label_idiv, "op_idiv");
+                        get_unique_label(label_div, "op_div");
+                        get_unique_label(label_end, "op_end");
+                        //Push the first operand and check its type                
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_types(); 
+                        print_pops("GF@tmp_type");                
+                        //If the operand is int, jump to idiv
+                        printf("JUMPIFEQ %s GF@tmp_type string@int\n", label_idiv);
+                        //If the operand is float, first check, if the second operand is not zero
+                        printf("JUMPIFEQ %s GF@tmp_op2 float@0x0p+0\n", op2_zero);     
+                        //If its not zero, do the operation         
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_arithmetic(DIV);
+                        print_pops("GF@tmp_res");
+                        print_pushs(VARIABLE, "tmp_res", "GF");
+                        print_jump(label_end);     
+                        print_label(label_idiv);
+                        //Here's the same as float, just for int
+                        printf("JUMPIFEQ %s GF@tmp_op2 int@0\n", op2_zero); 
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_arithmetic(IDIV);
+                        print_pops("GF@tmp_res");
+                        print_pushs(VARIABLE, "tmp_res", "GF"); 
+                        print_jump(label_end);
+                        print_label(op2_zero);
+                        print_exit("int@57");          
+                        print_label(label_end);
+                    }
+            }
+        //All boolean expressions
+        else if(ntype == NT_BOOL_EXPR)
+            {
+                //Generate children
+                generate_node(node->children[0], current_scope);
+                generate_node(node->children[1], current_scope);
+                //Pop the results into helper operands
+                print_pops("GF@tmp_op2");
+                print_pops("GF@tmp_op1");
+                char label_op1_float[64], label_op2_float[64];
+                get_unique_label(label_op1_float, "op1_int");
+                get_unique_label(label_op2_float, "op1_int");
+                print_pushs(VARIABLE, "tmp_op1", "GF");
+                print_types();
+                print_pops("GF@tmp_type");
+                printf("JUMPIFNEQ %s GF@tmp_type string@int\n", label_op1_float);
+                print_pushs(VARIABLE, "tmp_op1", "GF");
+                print_conversion(INT2FLOAT);
+                print_pops("GF@tmp_op1");
+                print_label(label_op1_float);
+                print_pushs(VARIABLE, "tmp_op2", "GF");
+                print_types();
+                print_pops("GF@tmp_type");
+                printf("JUMPIFNEQ %s GF@tmp_type string@int\n", label_op2_float);
+                print_pushs(VARIABLE, "tmp_op2", "GF");
+                print_conversion(INT2FLOAT);
+                print_pops("GF@tmp_op2");
+                print_label(label_op2_float);
+                if(type == TT_GT)
+                    {
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_relation(GT);
+                        print_pops("GF@tmp_res");
+                    }
+                else if(type == TT_LT)
+                    {
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_relation(LT);
+                        print_pops("GF@tmp_res");
+                    }
+                else if(type == TT_EQ)
+                    {
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_relation(EQ);
+                        print_pops("GF@tmp_res");
+                    }
+                else if(type == TT_LE)
+                    {
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_relation(GT);
+                        print_boolean(NOT);
+                        print_pops("GF@tmp_res");
+                    }
+                else if(type == TT_GE)
+                    {
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_relation(LT);
+                        print_boolean(NOT);
+                        print_pops("GF@tmp_res");
+                    }
+                else if(type == TT_NEQ)
+                    {
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_pushs(VARIABLE, "tmp_op2", "GF");
+                        print_relation(EQ);
+                        print_boolean(NOT);
+                        print_pops("GF@tmp_res");
+                    }
+                else if(type == TT_KEYWORD_IS)
+                    {
+                        char label_true[64], label_false[64], label_end[64], label_is_num[64], label_is_string[64], label_is_nil[64];
+                        get_unique_label(label_true, "true");
+                        get_unique_label(label_false, "false");
+                        get_unique_label(label_end, "end");
+                        get_unique_label(label_is_num, "is_num");
+                        get_unique_label(label_is_string, "is_string");
+                        get_unique_label(label_is_nil, "is_nil");
+                        //Pop the first child into helper operand, then check its type and pop it into helper type
+                        print_pushs(VARIABLE, "tmp_op1", "GF");
+                        print_types(); 
+                        print_pops("GF@tmp_type");
+                        //If type_node is a number
+                        printf("JUMPIFEQ %s GF@tmp_op2 string@Num\n", label_is_num);
+                        printf("JUMPIFEQ %s GF@tmp_op2 string@String\n", label_is_string);
+                        printf("JUMPIFEQ %s GF@tmp_op2 string@Null\n", label_is_nil);
                         //Jump to true if its type is int or float
-                        printf("JUMPIFEQ %s GF@tmp_type string@int\n", label_true);
+                        print_label(label_is_num);
                         printf("JUMPIFEQ %s GF@tmp_type string@float\n", label_true);
-                    } 
-                //If type_node is string
-                else if (strcmp(type, "String") == 0 || strcmp(type, "string") == 0) 
-                    {
+                        print_jump(label_false);
+                        //If type_node is string
                         //Jump to true if its type is string
+                        print_label(label_is_string);
                         printf("JUMPIFEQ %s GF@tmp_type string@string\n", label_true);
-                    }
-                //If type_node is null 
-                else if (strcmp(type, "Null") == 0 || strcmp(type, "null") == 0 || strcmp(type, "NULL") == 0) 
-                    {
+                        print_jump(label_false);
+                        //If type_node is null 
                         //Jump to true if its type is null
+                        print_label(label_is_nil);
                         printf("JUMPIFEQ %s GF@tmp_type string@nil\n", label_true);
+                        //If its false, we'll push false and jump to the end
+                        print_label(label_false);
+                        print_pushs(LITERAL_BOOL, "false", NULL);
+                        print_jump(label_end);
+                        //If its true, we'll push true
+                        print_label(label_true);
+                        print_pushs(LITERAL_BOOL, "true", NULL);
+                        print_label(label_end);
                     }
-                //If its false, we'll push false and jump to the end
-                print_label(label_false);
-                print_pushs(LITERAL_BOOL, "false", NULL);
-                print_jump(label_end);
-                //If its true, we'll push true
-                print_label(label_true);
-                print_pushs(LITERAL_BOOL, "true", NULL);
-                print_label(label_end);
             }
         //And here's keyword_IFJ, which are builtin functions
         else if(type == TT_KEYWORD_IFJ)
@@ -672,7 +811,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                     {
                         //READ_NUM
                         print_break();
-                        print_read("GF@tmp_res", "int");
+                        print_read("GF@tmp_res", "float");
                         printf("PUSHS GF@tmp_res\n");
                         print_break();
                     }
