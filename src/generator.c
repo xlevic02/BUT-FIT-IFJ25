@@ -613,8 +613,9 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 print_pushs(VARIABLE, "tmp_op1", "GF");
                 print_types(); 
                 print_pops("GF@tmp_type");
+                print_break();
                 //If type_node is a number
-                if(strcmp(type, "Num") == 0 || strcmp(type, "num") == 0)
+                if(strcmp(type, "Num") == 0)
                     {
                         //Jump to true if its type is int or float
                         printf("JUMPIFEQ %s GF@tmp_type string@int\n", label_true);
@@ -627,7 +628,7 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                         printf("JUMPIFEQ %s GF@tmp_type string@string\n", label_true);
                     }
                 //If type_node is null 
-                else if (strcmp(type, "Null") == 0 || strcmp(type, "null") == 0) 
+                else if (strcmp(type, "Null") == 0 || strcmp(type, "null") == 0 || strcmp(type, "NULL") == 0) 
                     {
                         //Jump to true if its type is null
                         printf("JUMPIFEQ %s GF@tmp_type string@nil\n", label_true);
@@ -670,8 +671,10 @@ void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope)
                 else if(strcmp(builtin_type, "read_num") == 0)
                     {
                         //READ_NUM
+                        print_break();
                         print_read("GF@tmp_res", "int");
                         printf("PUSHS GF@tmp_res\n");
+                        print_break();
                     }
                 else if(strcmp(builtin_type, "str") == 0)
                     {
