@@ -63,6 +63,7 @@ int main(void) {
     printf("TOKEN: type=%d, lexeme=\"%s\"\n", tok.type, tok.lexeme);
      */
 
+    fflush(stdout);
     ast_node_ptr ast_root = create_ast();
     visualize_ast(ast_root);
 
