@@ -1,4 +1,3 @@
-
 // Implementace generatoru vysledneho kodu IFJcode25
 //generator.h by Marek "xbalism00" Bališ on 11/11/25
 
@@ -15,62 +14,71 @@
 #include "error.h"
 
 #define MAX_STACK_SIZE 100
-typedef struct var_node {
-    char *original_id;
-    char *new_id;
-    struct var_node *next;
-} var_node;
-typedef struct scope_stack {
-    var_node *arr[MAX_STACK_SIZE];
-    int top;
-} scope_stack;
+typedef struct var_node
+    {
+        char *original_id;
+        char *new_id; 
+        struct var_node *next;
+    } var_node;
+typedef struct scope_stack 
+    {
+        var_node *arr[MAX_STACK_SIZE];
+        int top;
+    } scope_stack;
+
+typedef struct id_list_item 
+    {
+        ast_node_ptr node;       
+        char *generated_id;      
+        struct id_list_item *next;
+    } id_list_item;
+typedef enum 
+    {
+        VARIABLE,
+        LITERAL_INT,
+        LITERAL_FLOAT,
+        LITERAL_STRING,
+        LITERAL_BOOL,
+        LITERAL_NULL
+    }SYM_TYPE;
 typedef enum
-{
-    VARIABLE,
-    LITERAL_INT,
-    LITERAL_FLOAT,
-    LITERAL_STRING,
-    LITERAL_BOOL,
-    LITERAL_NULL
-}SYM_TYPE;
-typedef enum
-{
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    IDIV
-}ARITHMETIC;
+    {
+        ADD,
+        SUB,
+        MUL,
+        DIV,
+        IDIV
+    }ARITHMETIC;
 
 typedef enum
-{
-    LT,
-    GT,
-    EQ
-}RELATION;
+    {
+        LT,
+        GT,
+        EQ
+    }RELATION;
 
 typedef enum
-{
-    AND,
-    OR,
-    NOT
-}BOOLEAN;
+    {
+        AND,
+        OR,
+        NOT
+    }BOOLEAN;
 
 typedef enum
-{
-    INT2FLOAT,
-    FLOAT2INT,
-    INT2CHAR,
-    STRI2INT,
-    FLOAT2STR,
-    INT2STR
-}CONVERSION;
+    {
+        INT2FLOAT,
+        FLOAT2INT,
+        INT2CHAR,
+        STRI2INT,
+        FLOAT2STR,
+        INT2STR
+    }CONVERSION;
 
 //Recursive function to proccess nodes
 void generate_node(ast_node_ptr node, bst_scope_ptr *current_scope);
 
 //Main function for generating code
-void generate_code(ast_node_ptr root, bst_scope_ptr symtable);
+int generate_code(ast_node_ptr root, bst_scope_ptr symtable);
 
 //Checks the frame type
 bool global_check(const char* var_name);
@@ -99,6 +107,13 @@ void stack_push(ast_node_ptr node);
 void stack_pop();
 char* stack_register_var(char *var_name, ast_node_ptr node);
 void stack_resolve_id(char *buffer, char *var_name);
+
+//List functions
+void save_var_id(ast_node_ptr node, char *gen_id);
+char* find_var_id(ast_node_ptr node);
+void cleanup_ids();
+void stack_push_existing(char *var_name, char *unique_id, ast_node_ptr node);
+void scan_variables(ast_node_ptr node);
 
 //Scope, function calling
 void print_call(char* label);
