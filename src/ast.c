@@ -278,7 +278,6 @@ void ast_regular_node(ast_node_ptr current_node, token_t *current_token){
 
 
                 ast_expression_node(new_node, current_token);
-
                 if(current_token->type != TT_RPAREN)
                     ast_error(ERROR_SYNTAX, MSG_SYN_MISSING_TOKEN, current_node, current_token);
 
@@ -996,15 +995,17 @@ void ast_error(int err_num, const char* err_message, ast_node_ptr node, token_t 
 }
 
 void destroy_ast(ast_node_ptr node){
-    if (node == NULL || node == (ast_node_ptr) -1) return;
+    if (node == NULL || node == (ast_node_ptr) -1 || node == (ast_node_ptr) -2) return;
+
     while(node->parent != NULL){
         node = node->parent;
     }
+
     free_ast(node);
 }
 
 void free_ast(ast_node_ptr node){
-    if (node == NULL || node == (ast_node_ptr) -1) return;
+    if (node == NULL || node == (ast_node_ptr) -1 || node == (ast_node_ptr) -2) return;
     if (node->children != NULL){
         for (int i = 0; i < node->n_of_children; i++){
             free_ast(node->children[i]);
