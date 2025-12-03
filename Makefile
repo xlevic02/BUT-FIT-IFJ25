@@ -7,13 +7,15 @@ CFLAGS := -Wall -Wextra -std=c11 -I./src
 # Directories
 SRC_DIR := src
 BUILD_DIR := build
-INPUT_DIR := inputs
+INPUT_DIR := example_wren_files
 OUTPUT_DIR := output
+TESTS_DIR := tests
 
 # Files
 SOURCES := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
 TARGET := $(BUILD_DIR)/wren_compiler
+INTERPRET := $(TESTS_DIR)/tools/ic25int-linux-x86_64
 
 # Default target
 all: $(TARGET)
@@ -38,6 +40,21 @@ run: $(TARGET)
 		rm -f $(OUTPUT_DIR)/$(FILE:.wren=.out); \
 		$(TARGET) < $(INPUT_DIR)/$(FILE) > $(OUTPUT_DIR)/$(FILE:.wren=.out); \
 	fi
+
+Compile:
+	@if [ -z "$(FILE)" ]; then \
+		echo "Usage: make run FILE=<filename.wren>"; \
+	else \
+		$(INTERPRET) $(OUTPUT_DIR)/$(FILE); \
+	fi 
+
+test:
+	$(TESTS_DIR)/run_all_tests.sh
+	
+fix-perms:
+	chmod +rwx $(TESTS_DIR)/*.sh
+	chmod +rwx $(TESTS_DIR)/tools/ic25int-linux-x86_64
+	chmod +rwx $(BUILD_DIR)/wren_compiler
 
 # Clean build files
 clean:

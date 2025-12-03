@@ -18,6 +18,7 @@ int bst_define_variable(bst_scope_ptr scope, ast_node_ptr ast_node) {
         if ((bst_search(scope->tree, key)) != NULL)
             return ERROR_SEM_REDEF;
 
+
     content.value_tree = malloc(sizeof(bst_value_node_t));
     if (content.value_tree == NULL)
         return ERROR_INTERNAL;
@@ -241,6 +242,7 @@ unsigned int get_hash(ast_node_ptr ast_node) {
         ast_node->node_type != NT_SETTER &&
         ast_node->node_type != NT_BUILTIN) {
         size = strlen(name) + 17; // strlen(func:%s:%d) + '\0'
+
         buffer = malloc(sizeof(char) * size);
         if (buffer == NULL)
             return 0;
@@ -266,6 +268,7 @@ unsigned int get_hash(ast_node_ptr ast_node) {
                 format = "var:%s";
             }
         }
+
 
         buffer = malloc(sizeof(char) * size);
         if (buffer == NULL)

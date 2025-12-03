@@ -128,7 +128,7 @@ token_type_t keyword_type(const char *lexeme) {
     if (strcmp(lexeme, "Null") == 0) return TT_KEYWORD_Null;
     if (strcmp(lexeme, "Num") == 0) return TT_KEYWORD_NUM;
     if (strcmp(lexeme, "null") == 0) return TT_NULL;
-    if (strcmp(lexeme, "Str") == 0) return TT_STRING;
+    if (strcmp(lexeme, "String") == 0) return TT_KEYWORD_STRING;
     return TT_IDENTIFIER; // not a keyword, return identifier type
 }
 

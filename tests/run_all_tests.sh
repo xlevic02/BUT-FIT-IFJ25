@@ -3,10 +3,10 @@
 
 set -u
 
-LEX_SCRIPT="./run_lex_tests.sh"
-SYNTAX_SCRIPT="./run_stx_tests.sh"
-SEM_SCRIPT="./run_sem_tests.sh"
-CODEGEN_SCRIPT="./run_cc_tests.sh"
+LEX_SCRIPT="./tests/run_lex_tests.sh"
+SYNTAX_SCRIPT="./tests/run_stx_tests.sh"
+SEM_SCRIPT="./tests/run_sem_tests.sh"
+CODEGEN_SCRIPT="./tests/run_cc_tests.sh"
 
 if [[ ! -x "${LEX_SCRIPT}" || ! -x "${SYNTAX_SCRIPT}" || ! -x "${SEM_SCRIPT}" ]]; then
 	echo "Required test scripts are missing or not executable." >&2

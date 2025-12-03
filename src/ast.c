@@ -523,11 +523,9 @@ ast_node_ptr ast_parameter_node(token_t *current_token, ast_node_ptr parent_node
             if(!comma_present){
                 ast_error(ERROR_SYNTAX, "Syntax error:\tmissing comma in parameters\n", parent_node, current_token);
             }
-            ast_node_type_t node_type = NT_DATATYPE;
+            ast_node_type_t node_type = NT_LITERAL;
             if (current_token->type == TT_IDENTIFIER){
                 node_type = NT_ID;
-            }else if(current_token->type == TT_KEYWORD_Null){
-                node_type = NT_LITERAL;
             }
             comma_present = false;
             ast_node_ptr subparameter_node = ast_create_node(*current_token, parameter_node, node_type);

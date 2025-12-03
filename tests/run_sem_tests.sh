@@ -6,8 +6,8 @@
 
 set -u
 
-TEST_DIR="exampleCodesIFJ25/sem_tests"
-PROJECT_BIN="../build/wren_compiler"
+TEST_DIR="./tests/exampleCodesIFJ25/sem_tests"
+PROJECT_BIN="./build/wren_compiler"
 
 # timeout for each test (anything accepted by `timeout`, e.g., 5s, 200ms); set TEST_TIMEOUT=0 to disable
 TEST_TIMEOUT="${TEST_TIMEOUT:-5s}"
